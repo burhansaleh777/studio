@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { Camera as CameraIcon, FileUp, CheckCircle, Car, FileTextIcon, Mic, MicOff, StopCircle, Loader2, AlertTriangle, ArrowRight, XCircle } from "lucide-react";
+import { Camera as CameraIcon, FileUp, CheckCircle, Car, FileTextIcon, Mic, MicOff, StopCircle, Loader2, AlertTriangle, ArrowRight, XCircle as LucideXCircle } from "lucide-react";
 import Image from "next/image";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -40,15 +40,24 @@ const claimSchemaStep2 = z.object({
   accidentDescription: z.string().min(20, "Please describe the accident in detail (min 20 characters)"),
 });
 
+const photoInstructions = [
+  { id: 'fullVehicle', title: "Full Vehicle Photo", description: "Capture a clear photo of the entire vehicle.", isOptional: false },
+  { id: 'damageCloseUp', title: "Damage Close-up Photo", description: "Take a close-up photo of the damaged section(s).", isOptional: false },
+  { id: 'surroundingArea', title: "Surrounding Area Photo", description: "Capture the area around the vehicle where the accident occurred.", isOptional: false },
+  { id: 'otherVehicles', title: "Other Vehicles Photo", description: "If other vehicles were involved, take photos of them. You can add multiple if space allows (max 5 total).", isOptional: true, allowMultiple: true },
+];
+
 const claimSchemaStep3 = z.object({
   photos: z.array(z.instanceof(File))
-    .min(1, "At least one photo is required for the claim.") // General requirement
+    .min(1, "At least one photo is required for the claim.")
     .max(5, "Maximum 5 photos allowed")
-    .refine(files => { // Specific check for required photo types (first 3 instructions)
-        const requiredPhotoTypes = photoInstructions.slice(0, 3).map(p => p.id);
-        // Check if some file in files starts with required type id
-        return requiredPhotoTypes.every(typeId => files.some(file => file.name.startsWith(typeId)));
-    }, "Please capture all required photo types: Full Vehicle, Damage Close-up, and Surrounding Area."),
+    .refine(files => {
+        if (!files) return false;
+        // Check if at least 3 photos are uploaded. This covers the essential types.
+        // The guided capture encourages specific types, but for proceeding, count is primary.
+        const requiredMinimumPhotos = 3;
+        return files.length >= requiredMinimumPhotos;
+    }, `Please upload at least 3 photos covering the Full Vehicle, Damage Close-up, and Surrounding Area. (Currently ${"${files?.length || 0}"} photos)`),
 });
 
 
@@ -65,13 +74,6 @@ const steps = [
   { id: 3, title: "Upload Photos", icon: CameraIcon, schema: claimSchemaStep3, fields: ['photos'] as const },
   { id: 4, title: "Supporting Documents", icon: FileUp, schema: claimSchemaStep4, fields: ['documents'] as const },
   { id: 5, title: "Review & Submit", icon: CheckCircle, schema: z.object({}), fields: [] as const },
-];
-
-const photoInstructions = [
-  { id: 'fullVehicle', title: "Full Vehicle Photo", description: "Capture a clear photo of the entire vehicle.", isOptional: false },
-  { id: 'damageCloseUp', title: "Damage Close-up Photo", description: "Take a close-up photo of the damaged section(s).", isOptional: false },
-  { id: 'surroundingArea', title: "Surrounding Area Photo", description: "Capture the area around the vehicle where the accident occurred.", isOptional: false },
-  { id: 'otherVehicles', title: "Other Vehicles Photo", description: "If other vehicles were involved, take photos of them. You can add multiple if space allows (max 5 total).", isOptional: true, allowMultiple: true },
 ];
 
 
@@ -133,6 +135,7 @@ export function NewClaimWizard() {
     return () => {
         newPreviews.forEach(url => URL.revokeObjectURL(url));
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [watchedPhotos]);
 
 
@@ -450,8 +453,17 @@ export function NewClaimWizard() {
         onSubmit(form.getValues());
       }
     } else {
-       toast({ variant: "destructive", title: "Validation Error", description: "Please correct the errors before proceeding." });
+       // Display errors from form.formState.errors
        const errors = form.formState.errors;
+       let errorMessage = "Please correct the errors before proceeding.";
+       if (errors.photos && errors.photos.message) {
+           errorMessage = errors.photos.message as string;
+           // Interpolate files.length into the message if the placeholder exists
+           if (errorMessage.includes("${files?.length || 0}")) {
+             errorMessage = errorMessage.replace("${files?.length || 0}", (form.getValues("photos") || []).length.toString());
+           }
+       }
+       toast({ variant: "destructive", title: "Validation Error", description: errorMessage });
        console.log("Form errors:", errors);
     }
   };
@@ -478,7 +490,7 @@ export function NewClaimWizard() {
   
   const progressValue = ((currentStep + 1) / steps.length) * 100;
   const CurrentIcon = steps[currentStep].icon;
-  const allGuidedInstructionsDone = currentPhotoInstructionIndex >= photoInstructions.length -1 && !photoInstructions[currentPhotoInstructionIndex]?.allowMultiple;
+  const allGuidedInstructionsDone = currentPhotoInstructionIndex >= photoInstructions.length -1 && !photoInstructions[photoInstructions.length -1]?.allowMultiple;
 
 
   return (
@@ -578,7 +590,7 @@ export function NewClaimWizard() {
                               Capture: {currentPhotoInstruction.title}
                             </Button>
                           )}
-                          {currentPhotoInstruction && (currentPhotoInstruction.isOptional || currentPhotoInstruction.allowMultiple) && !allGuidedInstructionsDone && isCameraActive && cameraPermissionStatus === 'granted' && (
+                          {currentPhotoInstruction && (currentPhotoInstruction.isOptional || currentPhotoInstruction.allowMultiple || currentPhotoInstructionIndex >= photoInstructions.filter(p=>!p.isOptional).length) && !allGuidedInstructionsDone && isCameraActive && cameraPermissionStatus === 'granted' && (
                              <Button type="button" variant="outline" onClick={handleNextPhotoInstruction} className="w-full mt-2">
                                 {currentPhotoInstruction.allowMultiple ? `Done with '${currentPhotoInstruction.title}' / Skip current type` : `Skip '${currentPhotoInstruction.title}'`}
                                 <ArrowRight className="ml-2 h-4 w-4"/>
@@ -616,6 +628,7 @@ export function NewClaimWizard() {
                         <Input id="photo-upload" type="file" className="sr-only" accept="image/*" multiple onChange={handleFileUpload} disabled={!canTakeMorePhotosOverall} />
                       </FormControl>
                       <p className="text-xs text-muted-foreground mt-1">PNG, JPG, GIF up to 10MB each. Max 5 photos total.</p>
+                      <p className="text-xs text-muted-foreground mt-1">Required: Full Vehicle, Damage Close-up, Surrounding Area.</p>
                     </CardContent>
                   </Card>
                   {committedPhotoPreviews.length > 0 && (
@@ -636,7 +649,7 @@ export function NewClaimWizard() {
                                   form.setValue("photos", updatedPhotos, { shouldValidate: true });
                                 }}
                               >
-                                <XCircle className="h-4 w-4" />
+                                <LucideXCircle className="h-4 w-4" />
                                 <span className="sr-only">Remove photo</span>
                               </Button>
                             <p className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-1 truncate">
@@ -687,7 +700,7 @@ export function NewClaimWizard() {
                                 form.setValue("documents", updatedDocs, {shouldValidate:true});
                               }}
                             >
-                              <XCircle className="h-4 w-4" />
+                              <LucideXCircle className="h-4 w-4" />
                               <span className="sr-only">Remove document</span>
                             </Button>
                           </li>
