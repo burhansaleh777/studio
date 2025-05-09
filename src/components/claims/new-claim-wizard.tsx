@@ -191,7 +191,7 @@ export function NewClaimWizard() {
         setCurrentPhotoInstructionIndex(0);
         setCapturedPhotoDataUrl(null);
     }
-  }, [currentStep]);
+  }, [currentStep, enableCamera]);
 
 
   useEffect(() => {
@@ -210,6 +210,7 @@ export function NewClaimWizard() {
           videoRef.current.onloadedmetadata = () => {
             setIsCameraActive(true);
             setCameraPermissionStatus('granted');
+            videoRef.current?.play().catch(err => console.error("Error initial play:", err));
           };
         }
       } catch (error) {
@@ -324,18 +325,20 @@ export function NewClaimWizard() {
       
       addFilesToForm([file]);
       setCapturedPhotoDataUrl(null);
+      
+      if (videoRef.current && isCameraActive) {
+        videoRef.current.play().catch(err => console.error("Error trying to play video after use photo:", err));
+      }
   
       const photosAfterAdd = (form.getValues("photos") || []).length;
 
       if (currentPhotoInstruction.allowMultiple) {
         if (photosAfterAdd >= 5) {
             toast({ title: "Photo Limit Reached", description: "You've reached the maximum of 5 photos." });
-             // Advance if last instruction allows multiple and limit is hit
             if (currentPhotoInstructionIndex < photoInstructions.length - 1) {
                  setCurrentPhotoInstructionIndex(prev => prev + 1);
             }
         }
-        // Stay on this instruction, user can add more or click "Done with this type"
       } else {
         if (currentPhotoInstructionIndex < photoInstructions.length - 1) {
           setCurrentPhotoInstructionIndex(prev => prev + 1);
@@ -353,15 +356,19 @@ export function NewClaimWizard() {
   
   const handleRetakePhoto = () => {
     setCapturedPhotoDataUrl(null);
-    // Camera should remain active if enableCamera is true
+    if (videoRef.current && isCameraActive) {
+        videoRef.current.play().catch(err => console.error("Error trying to play video after retake:", err));
+    }
   };
 
   const handleNextPhotoInstruction = () => {
     setCapturedPhotoDataUrl(null); // Clear any pending preview
+    if (videoRef.current && isCameraActive) { // Ensure video plays if it was showing preview
+        videoRef.current.play().catch(err => console.error("Error playing video on next instruction:", err));
+    }
     if (currentPhotoInstructionIndex < photoInstructions.length - 1) {
       setCurrentPhotoInstructionIndex(prev => prev + 1);
     } else {
-      // This means user is on the last instruction (e.g. Other Vehicles) and clicks "Done with this type"
       toast({ title: "Finished with this photo type.", description: "You can proceed to the next step if requirements are met."});
     }
   };
@@ -381,10 +388,8 @@ export function NewClaimWizard() {
        toast({ variant: "destructive", title: "Validation Error", description: "Please correct the errors before proceeding." });
        const errors = form.formState.errors;
        console.log("Form errors:", errors);
-       // Manually show first error if needed, though FormMessage should handle it
        for (const field of currentStepObj.fields) {
          if (errors[field as keyof ClaimFormValues]) {
-           // toast({ variant: "destructive", title: `Error in ${field}`, description: errors[field as keyof ClaimFormValues]?.message });
            break; 
          }
        }
@@ -628,3 +633,4 @@ function ReviewItem({ label, value, preWrap = false }: { label: string; value: s
     </div>
   );
 }
+
