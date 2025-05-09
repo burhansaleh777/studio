@@ -103,7 +103,7 @@ export function NewClaimWizard() {
 
   const form = useForm<ClaimFormValues>({
     resolver: zodResolver(combinedSchema),
-    mode: "onChange", // "onBlur" might be better for performance with complex validation
+    mode: "onChange", 
     defaultValues: {
       vehicleId: "",
       accidentDate: new Date().toISOString().split('T')[0],
@@ -172,28 +172,7 @@ export function NewClaimWizard() {
     return () => speechRecognitionRef.current?.stop();
   }, [form, toast]);
 
-  useEffect(() => {
-    return () => {
-      if (videoRef.current && videoRef.current.srcObject) {
-        const stream = videoRef.current.srcObject as MediaStream;
-        stream.getTracks().forEach(track => track.stop());
-        videoRef.current.srcObject = null;
-        setIsCameraActive(false);
-      }
-    };
-  }, []);
-
-   useEffect(() => {
-    if (currentStep !== 2 && enableCamera) { 
-      setEnableCamera(false); 
-    }
-     if (currentStep === 2 && !enableCamera) { // Reset instruction index if camera disabled then re-enabled
-        setCurrentPhotoInstructionIndex(0);
-        setCapturedPhotoDataUrl(null);
-    }
-  }, [currentStep, enableCamera]);
-
-
+  // Effect to manage camera lifecycle (start/stop)
   useEffect(() => {
     const startCamera = async () => {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -210,6 +189,7 @@ export function NewClaimWizard() {
           videoRef.current.onloadedmetadata = () => {
             setIsCameraActive(true);
             setCameraPermissionStatus('granted');
+            // autoPlay should handle this, but explicit play can be a fallback
             videoRef.current?.play().catch(err => console.error("Error initial play:", err));
           };
         }
@@ -228,15 +208,43 @@ export function NewClaimWizard() {
         videoRef.current.srcObject = null;
       }
       setIsCameraActive(false);
-      setCapturedPhotoDataUrl(null); // Clear any pending preview if camera is turned off
+      setCapturedPhotoDataUrl(null); 
     };
 
-    if (enableCamera && currentStep === 2) { // Only start camera if on photo step
+    if (enableCamera && currentStep === 2) {
       startCamera();
     } else {
       stopCamera();
     }
-  }, [enableCamera, toast, currentStep]);
+
+    // Cleanup function to stop camera when component unmounts or dependencies change leading to stop
+    return () => {
+      stopCamera();
+    };
+  }, [enableCamera, currentStep, toast]); // `toast` is included based on original code, review if necessary
+
+  // Effect to handle playing video when preview is dismissed
+  useEffect(() => {
+    if (!capturedPhotoDataUrl && videoRef.current && isCameraActive && enableCamera && currentStep === 2) {
+      const playPromise = videoRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          console.error("Error attempting to play video in effect (e.g., after preview hidden): ", error);
+        });
+      }
+    }
+  }, [capturedPhotoDataUrl, isCameraActive, enableCamera, currentStep]);
+
+
+   useEffect(() => {
+    if (currentStep !== 2 && enableCamera) { 
+      setEnableCamera(false); 
+    }
+     if (currentStep === 2 && !enableCamera) { 
+        setCurrentPhotoInstructionIndex(0);
+        setCapturedPhotoDataUrl(null);
+    }
+  }, [currentStep, enableCamera]);
 
 
   const requestMicrophonePermission = async () => {
@@ -306,6 +314,7 @@ export function NewClaimWizard() {
     const context = canvas.getContext('2d');
   
     if (context) {
+      // drawImage pauses the video. The useEffect will handle re-playing.
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
       const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
       setCapturedPhotoDataUrl(dataUrl);
@@ -324,12 +333,8 @@ export function NewClaimWizard() {
       const file = new File([blob], fileName, { type: 'image/jpeg' });
       
       addFilesToForm([file]);
-      setCapturedPhotoDataUrl(null);
+      setCapturedPhotoDataUrl(null); // This will trigger the useEffect to play the video
       
-      if (videoRef.current && isCameraActive) {
-        videoRef.current.play().catch(err => console.error("Error trying to play video after use photo:", err));
-      }
-  
       const photosAfterAdd = (form.getValues("photos") || []).length;
 
       if (currentPhotoInstruction.allowMultiple) {
@@ -355,17 +360,11 @@ export function NewClaimWizard() {
   };
   
   const handleRetakePhoto = () => {
-    setCapturedPhotoDataUrl(null);
-    if (videoRef.current && isCameraActive) {
-        videoRef.current.play().catch(err => console.error("Error trying to play video after retake:", err));
-    }
+    setCapturedPhotoDataUrl(null); // This will trigger the useEffect to play the video
   };
 
   const handleNextPhotoInstruction = () => {
-    setCapturedPhotoDataUrl(null); // Clear any pending preview
-    if (videoRef.current && isCameraActive) { // Ensure video plays if it was showing preview
-        videoRef.current.play().catch(err => console.error("Error playing video on next instruction:", err));
-    }
+    setCapturedPhotoDataUrl(null); // Clear preview, useEffect will handle play
     if (currentPhotoInstructionIndex < photoInstructions.length - 1) {
       setCurrentPhotoInstructionIndex(prev => prev + 1);
     } else {
@@ -521,7 +520,7 @@ export function NewClaimWizard() {
                             </Button>
                           )}
                         </>
-                      ) : ( // Photo captured, show preview and Use/Retake buttons
+                      ) : ( 
                         <div className="text-center">
                            <p className="text-sm font-medium mb-2">Preview: {currentPhotoInstruction?.title}</p>
                           <Image src={capturedPhotoDataUrl} alt={`Preview for ${currentPhotoInstruction?.title}`} width={320} height={240} className="rounded-md mx-auto mb-3 max-w-full h-auto object-contain border" />
@@ -569,7 +568,7 @@ export function NewClaimWizard() {
                       </div>
                     </div>
                   )}
-                  <FormMessage className="mt-2" /> {/* For the 'photos' field overall validation */}
+                  <FormMessage className="mt-2" /> 
                 </FormItem>
               )} />
             )}
@@ -633,4 +632,3 @@ function ReviewItem({ label, value, preWrap = false }: { label: string; value: s
     </div>
   );
 }
-
