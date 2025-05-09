@@ -2,7 +2,7 @@
 // @ts-nocheck
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch } from "react-hook-form";
 import * as z from "zod";
@@ -46,8 +46,8 @@ const claimSchemaStep3 = z.object({
     .max(5, "Maximum 5 photos allowed")
     .refine(files => { // Specific check for required photo types (first 3 instructions)
         const requiredPhotoTypes = photoInstructions.slice(0, 3).map(p => p.id);
-        const takenRequiredTypes = new Set(files.map(f => f.name.split('-')[0])); // Assumes file name format `id-timestamp.jpg`
-        return requiredPhotoTypes.every(type => takenRequiredTypes.has(type));
+        // Check if some file in files starts with required type id
+        return requiredPhotoTypes.every(typeId => files.some(file => file.name.startsWith(typeId)));
     }, "Please capture all required photo types: Full Vehicle, Damage Close-up, and Surrounding Area."),
 });
 
@@ -92,6 +92,7 @@ export function NewClaimWizard() {
   const [cameraPermissionStatus, setCameraPermissionStatus] = useState<'idle' | 'pending' | 'granted' | 'denied'>('idle');
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
   
   const [committedPhotoPreviews, setCommittedPhotoPreviews] = useState<string[]>([]); // Previews for photos *added* to the form
 
@@ -124,9 +125,11 @@ export function NewClaimWizard() {
         .filter(file => file instanceof File)
         .map(file => URL.createObjectURL(file as File));
     
+    // Revoke old previews to prevent memory leaks
     committedPhotoPreviews.forEach(url => URL.revokeObjectURL(url));
     setCommittedPhotoPreviews(newPreviews);
 
+    // Cleanup when component unmounts or watchedPhotos changes
     return () => {
         newPreviews.forEach(url => URL.revokeObjectURL(url));
     };
@@ -172,7 +175,17 @@ export function NewClaimWizard() {
     return () => speechRecognitionRef.current?.stop();
   }, [form, toast]);
 
-  // Effect to manage camera lifecycle (start/stop)
+  const stopCurrentStream = useCallback(() => {
+    if (mediaStream) {
+      mediaStream.getTracks().forEach(track => track.stop());
+      setMediaStream(null);
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setIsCameraActive(false);
+  }, [mediaStream]);
+
   useEffect(() => {
     const startCamera = async () => {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -181,15 +194,17 @@ export function NewClaimWizard() {
         setIsCameraActive(false);
         return;
       }
+      
+      stopCurrentStream(); // Stop any existing stream before starting a new one
       setCameraPermissionStatus('pending');
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        setMediaStream(stream);
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
           videoRef.current.onloadedmetadata = () => {
             setIsCameraActive(true);
             setCameraPermissionStatus('granted');
-            // autoPlay should handle this, but explicit play can be a fallback
             videoRef.current?.play().catch(err => console.error("Error initial play:", err));
           };
         }
@@ -201,39 +216,38 @@ export function NewClaimWizard() {
       }
     };
 
-    const stopCamera = () => {
-      if (videoRef.current && videoRef.current.srcObject) {
-        const stream = videoRef.current.srcObject as MediaStream;
-        stream.getTracks().forEach(track => track.stop());
-        videoRef.current.srcObject = null;
-      }
-      setIsCameraActive(false);
-      setCapturedPhotoDataUrl(null); 
-    };
-
     if (enableCamera && currentStep === 2) {
       startCamera();
     } else {
-      stopCamera();
+      stopCurrentStream();
     }
 
-    // Cleanup function to stop camera when component unmounts or dependencies change leading to stop
     return () => {
-      stopCamera();
+      stopCurrentStream();
     };
-  }, [enableCamera, currentStep, toast]); // `toast` is included based on original code, review if necessary
+  }, [enableCamera, currentStep, toast, stopCurrentStream]);
 
-  // Effect to handle playing video when preview is dismissed
+
   useEffect(() => {
-    if (!capturedPhotoDataUrl && videoRef.current && isCameraActive && enableCamera && currentStep === 2) {
-      const playPromise = videoRef.current.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(error => {
-          console.error("Error attempting to play video in effect (e.g., after preview hidden): ", error);
-        });
+    const videoElement = videoRef.current;
+    if (!capturedPhotoDataUrl && videoElement && enableCamera && currentStep === 2) {
+      if (mediaStream) {
+        if (videoElement.srcObject !== mediaStream) {
+          videoElement.srcObject = mediaStream;
+        }
+        if (isCameraActive && cameraPermissionStatus === 'granted' && videoElement.paused) {
+          videoElement.play().catch(error => {
+            console.error("Error attempting to play video: ", error);
+          });
+        }
+      } else if (enableCamera && currentStep === 2 && cameraPermissionStatus !== 'pending') {
+        // If no stream, and camera is enabled, try to restart.
+        // This handles cases where stream might have been lost.
+        // The main useEffect [enableCamera, currentStep] should handle this primarily.
+        // console.warn("No media stream, attempting to re-init camera via main effect trigger.");
       }
     }
-  }, [capturedPhotoDataUrl, isCameraActive, enableCamera, currentStep]);
+  }, [capturedPhotoDataUrl, mediaStream, enableCamera, currentStep, isCameraActive, cameraPermissionStatus]);
 
 
    useEffect(() => {
@@ -314,8 +328,7 @@ export function NewClaimWizard() {
     const context = canvas.getContext('2d');
   
     if (context) {
-      // drawImage pauses the video. The useEffect will handle re-playing.
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      context.drawImage(video, 0, 0, canvas.width, canvas.height); // This might pause the video element
       const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
       setCapturedPhotoDataUrl(dataUrl);
     }
@@ -333,7 +346,7 @@ export function NewClaimWizard() {
       const file = new File([blob], fileName, { type: 'image/jpeg' });
       
       addFilesToForm([file]);
-      setCapturedPhotoDataUrl(null); // This will trigger the useEffect to play the video
+      setCapturedPhotoDataUrl(null); 
       
       const photosAfterAdd = (form.getValues("photos") || []).length;
 
@@ -342,9 +355,12 @@ export function NewClaimWizard() {
             toast({ title: "Photo Limit Reached", description: "You've reached the maximum of 5 photos." });
             if (currentPhotoInstructionIndex < photoInstructions.length - 1) {
                  setCurrentPhotoInstructionIndex(prev => prev + 1);
+            } else {
+                 // Reached end of instructions and limit
             }
         }
-      } else {
+         // If not at limit, user can take more of this type or move on
+      } else { // Not allowMultiple
         if (currentPhotoInstructionIndex < photoInstructions.length - 1) {
           setCurrentPhotoInstructionIndex(prev => prev + 1);
         } else {
@@ -360,15 +376,15 @@ export function NewClaimWizard() {
   };
   
   const handleRetakePhoto = () => {
-    setCapturedPhotoDataUrl(null); // This will trigger the useEffect to play the video
+    setCapturedPhotoDataUrl(null); // Hides preview, video should resume via useEffect
   };
 
   const handleNextPhotoInstruction = () => {
-    setCapturedPhotoDataUrl(null); // Clear preview, useEffect will handle play
+    setCapturedPhotoDataUrl(null); // Clear preview
     if (currentPhotoInstructionIndex < photoInstructions.length - 1) {
       setCurrentPhotoInstructionIndex(prev => prev + 1);
     } else {
-      toast({ title: "Finished with this photo type.", description: "You can proceed to the next step if requirements are met."});
+      toast({ title: "Finished with guided capture.", description: "You can proceed to the next step if requirements are met."});
     }
   };
 
@@ -387,11 +403,6 @@ export function NewClaimWizard() {
        toast({ variant: "destructive", title: "Validation Error", description: "Please correct the errors before proceeding." });
        const errors = form.formState.errors;
        console.log("Form errors:", errors);
-       for (const field of currentStepObj.fields) {
-         if (errors[field as keyof ClaimFormValues]) {
-           break; 
-         }
-       }
     }
   };
 
@@ -407,16 +418,17 @@ export function NewClaimWizard() {
     });
     form.reset();
     setCurrentStep(0);
-    setCommittedPhotoPreviews([]);
+    setCommittedPhotoPreviews([]); // Clear previews
+    if (speechRecognitionRef.current && isRecording) speechRecognitionRef.current.stop();
     setIsAudioInputEnabled(false);
-    setEnableCamera(false);
+    setEnableCamera(false); // This will trigger stopCurrentStream via useEffect
     setCurrentPhotoInstructionIndex(0);
     setCapturedPhotoDataUrl(null);
   }
   
   const progressValue = ((currentStep + 1) / steps.length) * 100;
   const CurrentIcon = steps[currentStep].icon;
-  const allGuidedInstructionsDone = currentPhotoInstructionIndex >= photoInstructions.length;
+  const allGuidedInstructionsDone = currentPhotoInstructionIndex >= photoInstructions.length -1 && !photoInstructions[currentPhotoInstructionIndex]?.allowMultiple;
 
 
   return (
@@ -502,20 +514,22 @@ export function NewClaimWizard() {
                     <Card className="p-4 mb-3 bg-muted/30">
                       {!capturedPhotoDataUrl ? (
                         <>
-                          <video ref={videoRef} className={cn("w-full aspect-video rounded-md bg-black mb-2", { 'hidden': !isCameraActive || cameraPermissionStatus !== 'granted' })} autoPlay muted playsInline />
-                          {cameraPermissionStatus === 'pending' && <div className="flex items-center justify-center h-40"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="ml-2">Initializing camera...</p></div>}
-                          {cameraPermissionStatus === 'denied' && <Alert variant="destructive"><AlertTriangle className="h-4 w-4" /><AlertTitle>Camera Access Denied</AlertTitle><AlertDescription>Please enable camera permissions.</AlertDescription></Alert>}
-                          {cameraPermissionStatus === 'granted' && !isCameraActive && !videoRef.current?.srcObject && <div className="flex items-center justify-center h-40"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="ml-2">Starting camera...</p></div>}
+                          <div className="relative w-full aspect-video rounded-md bg-black mb-2 overflow-hidden">
+                             <video ref={videoRef} className={cn("w-full h-full object-cover", { 'hidden': !isCameraActive || cameraPermissionStatus !== 'granted' })} autoPlay muted playsInline />
+                             {cameraPermissionStatus === 'pending' && !isCameraActive && <div className="absolute inset-0 flex items-center justify-center text-white"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="ml-2">Initializing camera...</p></div>}
+                             {cameraPermissionStatus === 'denied' && <Alert variant="destructive" className="absolute inset-0 m-auto max-w-sm max-h-32"><AlertTriangle className="h-4 w-4" /><AlertTitle>Camera Access Denied</AlertTitle><AlertDescription className="text-xs">Please enable camera permissions.</AlertDescription></Alert>}
+                             {cameraPermissionStatus === 'granted' && !isCameraActive && <div className="absolute inset-0 flex items-center justify-center text-white"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="ml-2">Starting camera...</p></div>}
+                          </div>
                           
-                          {isCameraActive && cameraPermissionStatus === 'granted' && !allGuidedInstructionsDone && currentPhotoInstruction && (
+                          {isCameraActive && cameraPermissionStatus === 'granted' && currentPhotoInstruction && !allGuidedInstructionsDone && (
                             <Button type="button" onClick={handleCaptureAndPreview} className="w-full mt-2" disabled={isProcessingPhoto || !canTakeMorePhotosOverall}>
                               {isProcessingPhoto ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CameraIcon className="mr-2 h-4 w-4" />}
                               Capture: {currentPhotoInstruction.title}
                             </Button>
                           )}
-                          {currentPhotoInstruction && currentPhotoInstruction.allowMultiple && !allGuidedInstructionsDone && (
+                          {currentPhotoInstruction && (currentPhotoInstruction.isOptional || currentPhotoInstruction.allowMultiple) && !allGuidedInstructionsDone && isCameraActive && cameraPermissionStatus === 'granted' && (
                              <Button type="button" variant="outline" onClick={handleNextPhotoInstruction} className="w-full mt-2">
-                                Done with '{currentPhotoInstruction.title}' / Skip
+                                {currentPhotoInstruction.allowMultiple ? `Done with '${currentPhotoInstruction.title}' / Skip current type` : `Skip '${currentPhotoInstruction.title}'`}
                                 <ArrowRight className="ml-2 h-4 w-4"/>
                             </Button>
                           )}
@@ -526,7 +540,7 @@ export function NewClaimWizard() {
                           <Image src={capturedPhotoDataUrl} alt={`Preview for ${currentPhotoInstruction?.title}`} width={320} height={240} className="rounded-md mx-auto mb-3 max-w-full h-auto object-contain border" />
                           <div className="flex justify-center gap-3">
                             <Button type="button" onClick={handleUsePhoto} className="bg-green-600 hover:bg-green-700 text-white" disabled={isProcessingPhoto || !canTakeMorePhotosOverall}>
-                              {isProcessingPhoto && form.getValues("photos").find(p=>p.name.startsWith(currentPhotoInstruction.id)) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
+                              {isProcessingPhoto && form.getValues("photos").find(p=>p.name.startsWith(currentPhotoInstruction?.id || '')) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
                               Use Photo
                             </Button>
                             <Button type="button" variant="outline" onClick={handleRetakePhoto} disabled={isProcessingPhoto}>
@@ -537,7 +551,7 @@ export function NewClaimWizard() {
                       )}
                       <canvas ref={canvasRef} style={{ display: 'none' }} />
                        {!canTakeMorePhotosOverall && totalCommittedPhotos >=5 && <Alert variant="warning" className="mt-3"><AlertTriangle className="h-4 w-4" /><AlertTitle>Photo Limit Reached</AlertTitle><AlertDescription>Maximum 5 photos allowed. You cannot add more.</AlertDescription></Alert>}
-                       {allGuidedInstructionsDone && enableCamera && <Alert className="mt-3"><CheckCircle className="h-4 w-4"/><AlertTitle>Guided Capture Complete</AlertTitle><AlertDescription>All specific photo types covered. You can upload manually if space permits.</AlertDescription></Alert>}
+                       {allGuidedInstructionsDone && enableCamera && <Alert className="mt-3"><CheckCircle className="h-4 w-4"/><AlertTitle>Guided Capture Complete</AlertTitle><AlertDescription>All specific photo types covered or skipped. You can upload manually if space permits.</AlertDescription></Alert>}
                     </Card>
                   )}
                   
@@ -558,8 +572,22 @@ export function NewClaimWizard() {
                       <p className="text-sm font-medium mb-2">Uploaded Photos:</p>
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                         {committedPhotoPreviews.map((src, index) => (
-                          <div key={src} className="relative aspect-square rounded-md overflow-hidden border shadow">
+                          <div key={index} className="relative aspect-square rounded-md overflow-hidden border shadow">
                             <Image src={src} alt={`Preview ${index + 1}`} layout="fill" objectFit="cover" />
+                             <Button 
+                                type="button" 
+                                variant="destructive" 
+                                size="icon" 
+                                className="absolute top-1 right-1 h-6 w-6 opacity-80 hover:opacity-100"
+                                onClick={() => {
+                                  const currentPhotos = form.getValues("photos") || [];
+                                  const updatedPhotos = currentPhotos.filter((_, i) => i !== index);
+                                  form.setValue("photos", updatedPhotos, { shouldValidate: true });
+                                }}
+                              >
+                                <XCircle className="h-4 w-4" />
+                                <span className="sr-only">Remove photo</span>
+                              </Button>
                             <p className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-1 truncate">
                                 {watchedPhotos[index]?.name.split('-')[0] || `Photo ${index+1}`}
                             </p>
@@ -582,14 +610,38 @@ export function NewClaimWizard() {
                       <FileUp className="mx-auto h-12 w-12 text-muted-foreground mb-2" />
                       <FormLabel htmlFor="document-upload" className="text-primary font-semibold cursor-pointer hover:underline">Click to upload or drag and drop</FormLabel>
                       <FormControl><Input id="document-upload" type="file" className="sr-only" accept=".pdf,.doc,.docx,.png,.jpg" multiple 
-                        onChange={(e) => form.setValue("documents", Array.from(e.target.files || []), {shouldValidate: true})}
+                        onChange={(e) => {
+                          const files = Array.from(e.target.files || []);
+                          const currentDocs = form.getValues("documents") || [];
+                          form.setValue("documents", [...currentDocs, ...files], {shouldValidate: true});
+                        }}
                       /></FormControl>
                        <p className="text-xs text-muted-foreground mt-1">PDF, DOC, JPG, etc.</p>
                     </CardContent>
                   </Card>
                   {watchedDocuments && watchedDocuments.length > 0 && (
-                    <div className="mt-2 text-sm text-muted-foreground">
-                      {watchedDocuments.length} document(s) selected: {watchedDocuments.map(f => f.name).join(", ")}
+                    <div className="mt-4 space-y-2">
+                      <p className="text-sm font-medium">Selected Documents:</p>
+                      <ul className="list-disc list-inside text-sm text-muted-foreground">
+                        {watchedDocuments.map((doc, index) => (
+                          <li key={index} className="flex justify-between items-center">
+                            <span>{doc.name} ({(doc.size / 1024).toFixed(1)} KB)</span>
+                            <Button 
+                              type="button" 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-6 w-6 text-destructive"
+                              onClick={() => {
+                                const updatedDocs = watchedDocuments.filter((_, i) => i !== index);
+                                form.setValue("documents", updatedDocs, {shouldValidate:true});
+                              }}
+                            >
+                              <XCircle className="h-4 w-4" />
+                              <span className="sr-only">Remove document</span>
+                            </Button>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   )}
                   <FormMessage />
@@ -632,3 +684,4 @@ function ReviewItem({ label, value, preWrap = false }: { label: string; value: s
     </div>
   );
 }
+
