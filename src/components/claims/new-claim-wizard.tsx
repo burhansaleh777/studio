@@ -1,3 +1,4 @@
+
 // @ts-nocheck
 "use client";
 
@@ -13,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { Camera as CameraIcon, FileUp, CheckCircle, Car, FileTextIcon, Mic, MicOff, StopCircle, Loader2, AlertTriangle } from "lucide-react";
+import { Camera as CameraIcon, FileUp, CheckCircle, Car, FileTextIcon, Mic, MicOff, StopCircle, Loader2, AlertTriangle, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -40,8 +41,16 @@ const claimSchemaStep2 = z.object({
 });
 
 const claimSchemaStep3 = z.object({
-  photos: z.array(z.instanceof(File)).min(1, "At least one photo is required").max(5, "Maximum 5 photos allowed"),
+  photos: z.array(z.instanceof(File))
+    .min(1, "At least one photo is required for the claim.") // General requirement
+    .max(5, "Maximum 5 photos allowed")
+    .refine(files => { // Specific check for required photo types (first 3 instructions)
+        const requiredPhotoTypes = photoInstructions.slice(0, 3).map(p => p.id);
+        const takenRequiredTypes = new Set(files.map(f => f.name.split('-')[0])); // Assumes file name format `id-timestamp.jpg`
+        return requiredPhotoTypes.every(type => takenRequiredTypes.has(type));
+    }, "Please capture all required photo types: Full Vehicle, Damage Close-up, and Surrounding Area."),
 });
+
 
 const claimSchemaStep4 = z.object({
   documents: z.array(z.instanceof(File)).optional(),
@@ -57,6 +66,14 @@ const steps = [
   { id: 4, title: "Supporting Documents", icon: FileUp, schema: claimSchemaStep4, fields: ['documents'] as const },
   { id: 5, title: "Review & Submit", icon: CheckCircle, schema: z.object({}), fields: [] as const },
 ];
+
+const photoInstructions = [
+  { id: 'fullVehicle', title: "Full Vehicle Photo", description: "Capture a clear photo of the entire vehicle.", isOptional: false },
+  { id: 'damageCloseUp', title: "Damage Close-up Photo", description: "Take a close-up photo of the damaged section(s).", isOptional: false },
+  { id: 'surroundingArea', title: "Surrounding Area Photo", description: "Capture the area around the vehicle where the accident occurred.", isOptional: false },
+  { id: 'otherVehicles', title: "Other Vehicles Photo", description: "If other vehicles were involved, take photos of them. You can add multiple if space allows (max 5 total).", isOptional: true, allowMultiple: true },
+];
+
 
 export function NewClaimWizard() {
   const [currentStep, setCurrentStep] = useState(0);
@@ -76,11 +93,17 @@ export function NewClaimWizard() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
-  const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
+  const [committedPhotoPreviews, setCommittedPhotoPreviews] = useState<string[]>([]); // Previews for photos *added* to the form
+
+  // Guided Photo Capture State
+  const [currentPhotoInstructionIndex, setCurrentPhotoInstructionIndex] = useState(0);
+  const [capturedPhotoDataUrl, setCapturedPhotoDataUrl] = useState<string | null>(null); // For temporary preview before "Use Photo"
+  const [isProcessingPhoto, setIsProcessingPhoto] = useState(false);
+
 
   const form = useForm<ClaimFormValues>({
     resolver: zodResolver(combinedSchema),
-    mode: "onChange",
+    mode: "onChange", // "onBlur" might be better for performance with complex validation
     defaultValues: {
       vehicleId: "",
       accidentDate: new Date().toISOString().split('T')[0],
@@ -93,7 +116,7 @@ export function NewClaimWizard() {
   });
   
   const watchedPhotos = form.watch("photos");
-  const watchedDocuments = form.watch("documents"); // For consistency if we want to preview docs
+  const watchedDocuments = form.watch("documents");
 
   useEffect(() => {
     const currentFiles = watchedPhotos || [];
@@ -101,18 +124,15 @@ export function NewClaimWizard() {
         .filter(file => file instanceof File)
         .map(file => URL.createObjectURL(file as File));
     
-    // Revoke old object URLs before setting new ones
-    photoPreviews.forEach(url => URL.revokeObjectURL(url));
-    setPhotoPreviews(newPreviews);
+    committedPhotoPreviews.forEach(url => URL.revokeObjectURL(url));
+    setCommittedPhotoPreviews(newPreviews);
 
-    // Cleanup function for when component unmounts or watchedPhotos changes
     return () => {
         newPreviews.forEach(url => URL.revokeObjectURL(url));
     };
-  }, [watchedPhotos]); // Only re-run if watchedPhotos array reference changes
+  }, [watchedPhotos]);
 
 
-  // Speech Recognition Setup
   useEffect(() => {
     const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognitionAPI) {
@@ -120,7 +140,7 @@ export function NewClaimWizard() {
       const recognition = new SpeechRecognitionAPI();
       recognition.continuous = true;
       recognition.interimResults = true;
-      recognition.lang = 'en-US'; // Or 'sw-TZ' for Swahili if supported
+      recognition.lang = 'en-US';
 
       recognition.onstart = () => setIsRecording(true);
       recognition.onresult = (event: SpeechRecognitionEvent) => {
@@ -152,7 +172,6 @@ export function NewClaimWizard() {
     return () => speechRecognitionRef.current?.stop();
   }, [form, toast]);
 
-  // Camera stream cleanup on unmount or if camera is disabled
   useEffect(() => {
     return () => {
       if (videoRef.current && videoRef.current.srcObject) {
@@ -164,15 +183,17 @@ export function NewClaimWizard() {
     };
   }, []);
 
-  // Stop camera if user navigates away from the photo step
    useEffect(() => {
-    if (currentStep !== 2 && enableCamera) { // Step 2 is "Upload Photos" (0-indexed)
-      setEnableCamera(false); // This will trigger cleanup via the effect below
+    if (currentStep !== 2 && enableCamera) { 
+      setEnableCamera(false); 
     }
-  }, [currentStep, enableCamera]);
+     if (currentStep === 2 && !enableCamera) { // Reset instruction index if camera disabled then re-enabled
+        setCurrentPhotoInstructionIndex(0);
+        setCapturedPhotoDataUrl(null);
+    }
+  }, [currentStep]);
 
 
-  // Effect to handle camera start/stop when `enableCamera` changes
   useEffect(() => {
     const startCamera = async () => {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -186,7 +207,6 @@ export function NewClaimWizard() {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
-          // Wait for video to load metadata to prevent black screen if possible
           videoRef.current.onloadedmetadata = () => {
             setIsCameraActive(true);
             setCameraPermissionStatus('granted');
@@ -207,15 +227,15 @@ export function NewClaimWizard() {
         videoRef.current.srcObject = null;
       }
       setIsCameraActive(false);
-      // Don't reset cameraPermissionStatus here, so user knows if it was denied
+      setCapturedPhotoDataUrl(null); // Clear any pending preview if camera is turned off
     };
 
-    if (enableCamera) {
+    if (enableCamera && currentStep === 2) { // Only start camera if on photo step
       startCamera();
     } else {
       stopCamera();
     }
-  }, [enableCamera, toast]);
+  }, [enableCamera, toast, currentStep]);
 
 
   const requestMicrophonePermission = async () => {
@@ -250,29 +270,22 @@ export function NewClaimWizard() {
     }
   };
 
+  const currentPhotoInstruction = photoInstructions[currentPhotoInstructionIndex];
+  const totalCommittedPhotos = (form.getValues("photos") || []).length;
+  const canTakeMorePhotosOverall = totalCommittedPhotos < 5;
+
   const addFilesToForm = (newFiles: File[]) => {
     const currentFiles: File[] = form.getValues("photos") || [];
     const availableSlots = 5 - currentFiles.length;
 
     if (availableSlots <= 0) {
-      toast({
-        variant: "destructive",
-        title: "Photo Limit Reached",
-        description: "Maximum 5 photos already uploaded. No more photos were added.",
-      });
+      toast({ variant: "destructive", title: "Photo Limit Reached", description: "Maximum 5 photos already uploaded." });
       return;
     }
-
     const filesToActuallyAdd = newFiles.slice(0, availableSlots);
-    const updatedFiles = [...currentFiles, ...filesToActuallyAdd];
-    form.setValue("photos", updatedFiles, { shouldValidate: true });
-
+    form.setValue("photos", [...currentFiles, ...filesToActuallyAdd], { shouldValidate: true });
     if (filesToActuallyAdd.length < newFiles.length) {
-      toast({
-        variant: "destructive",
-        title: "Photo Limit Exceeded",
-        description: `${filesToActuallyAdd.length} photo(s) added. ${newFiles.length - filesToActuallyAdd.length} photo(s) not added as limit is 5.`,
-      });
+      toast({ variant: "warning", title: "Photo Limit Reached", description: `${filesToActuallyAdd.length} photo(s) added. ${newFiles.length - filesToActuallyAdd.length} not added.`});
     }
   };
 
@@ -281,35 +294,82 @@ export function NewClaimWizard() {
     if (files.length > 0) addFilesToForm(files);
   };
   
-  const handleCapturePhoto = () => {
-    if (!videoRef.current || !canvasRef.current || !isCameraActive) return;
-    if ((form.getValues("photos") || []).length >= 5) {
-      toast({ variant: "destructive", title: "Photo Limit Reached", description: "Cannot capture more than 5 photos." });
-      return;
-    }
-
+  const handleCaptureAndPreview = () => {
+    if (!videoRef.current || !canvasRef.current || !isCameraActive || !canTakeMorePhotosOverall || isProcessingPhoto || !currentPhotoInstruction) return;
+    
+    setIsProcessingPhoto(true);
     const video = videoRef.current;
     const canvas = canvasRef.current;
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     const context = canvas.getContext('2d');
+  
     if (context) {
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
-      canvas.toBlob((blob) => {
-        if (blob) {
-          const fileName = `capture-${Date.now()}.jpg`;
-          const file = new File([blob], fileName, { type: 'image/jpeg' });
-          addFilesToForm([file]);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+      setCapturedPhotoDataUrl(dataUrl);
+    }
+    setIsProcessingPhoto(false);
+  };
+
+  const handleUsePhoto = async () => {
+    if (!capturedPhotoDataUrl || !canTakeMorePhotosOverall || !currentPhotoInstruction) return;
+  
+    setIsProcessingPhoto(true);
+    try {
+      const res = await fetch(capturedPhotoDataUrl);
+      const blob = await res.blob();
+      const fileName = `${currentPhotoInstruction.id}-${Date.now()}.jpg`;
+      const file = new File([blob], fileName, { type: 'image/jpeg' });
+      
+      addFilesToForm([file]);
+      setCapturedPhotoDataUrl(null);
+  
+      const photosAfterAdd = (form.getValues("photos") || []).length;
+
+      if (currentPhotoInstruction.allowMultiple) {
+        if (photosAfterAdd >= 5) {
+            toast({ title: "Photo Limit Reached", description: "You've reached the maximum of 5 photos." });
+             // Advance if last instruction allows multiple and limit is hit
+            if (currentPhotoInstructionIndex < photoInstructions.length - 1) {
+                 setCurrentPhotoInstructionIndex(prev => prev + 1);
+            }
         }
-      }, 'image/jpeg', 0.9); // 0.9 quality
+        // Stay on this instruction, user can add more or click "Done with this type"
+      } else {
+        if (currentPhotoInstructionIndex < photoInstructions.length - 1) {
+          setCurrentPhotoInstructionIndex(prev => prev + 1);
+        } else {
+          toast({ title: "All Specific Photo Types Captured", description: "You can proceed or upload more manually if space allows." });
+        }
+      }
+    } catch (error) {
+      console.error("Error processing photo:", error);
+      toast({ variant: "destructive", title: "Error", description: "Could not process the captured photo." });
+    } finally {
+      setIsProcessingPhoto(false);
+    }
+  };
+  
+  const handleRetakePhoto = () => {
+    setCapturedPhotoDataUrl(null);
+    // Camera should remain active if enableCamera is true
+  };
+
+  const handleNextPhotoInstruction = () => {
+    setCapturedPhotoDataUrl(null); // Clear any pending preview
+    if (currentPhotoInstructionIndex < photoInstructions.length - 1) {
+      setCurrentPhotoInstructionIndex(prev => prev + 1);
+    } else {
+      // This means user is on the last instruction (e.g. Other Vehicles) and clicks "Done with this type"
+      toast({ title: "Finished with this photo type.", description: "You can proceed to the next step if requirements are met."});
     }
   };
 
 
   const handleNext = async () => {
-    const currentStepSchema = steps[currentStep].schema;
-    const currentStepFields = steps[currentStep].fields;
-    const isValid = await form.trigger(currentStepFields as any);
+    const currentStepObj = steps[currentStep];
+    const isValid = await form.trigger(currentStepObj.fields as any);
 
     if (isValid) {
       if (currentStep < steps.length - 1) {
@@ -318,13 +378,16 @@ export function NewClaimWizard() {
         onSubmit(form.getValues());
       }
     } else {
-      const values = form.getValues();
-      const result = currentStepSchema.safeParse(values);
-      if (!result.success) {
-        result.error.errors.forEach(err => {
-          form.setError(err.path[0] as keyof ClaimFormValues, { type: "manual", message: err.message });
-        });
-      }
+       toast({ variant: "destructive", title: "Validation Error", description: "Please correct the errors before proceeding." });
+       const errors = form.formState.errors;
+       console.log("Form errors:", errors);
+       // Manually show first error if needed, though FormMessage should handle it
+       for (const field of currentStepObj.fields) {
+         if (errors[field as keyof ClaimFormValues]) {
+           // toast({ variant: "destructive", title: `Error in ${field}`, description: errors[field as keyof ClaimFormValues]?.message });
+           break; 
+         }
+       }
     }
   };
 
@@ -333,21 +396,24 @@ export function NewClaimWizard() {
   };
 
   function onSubmit(data: ClaimFormValues) {
-    console.log("Claim Data:", data); // In real app, send to backend (e.g., using summarizeClaim flow)
+    console.log("Claim Data:", data); 
     toast({
       title: "Claim Submitted Successfully!",
       description: "Your claim is now being processed.", variant: "default",
     });
     form.reset();
     setCurrentStep(0);
-    setPhotoPreviews([]);
+    setCommittedPhotoPreviews([]);
     setIsAudioInputEnabled(false);
     setEnableCamera(false);
-    // No need to reset cameraPermissionStatus, it reflects the browser state
+    setCurrentPhotoInstructionIndex(0);
+    setCapturedPhotoDataUrl(null);
   }
   
   const progressValue = ((currentStep + 1) / steps.length) * 100;
   const CurrentIcon = steps[currentStep].icon;
+  const allGuidedInstructionsDone = currentPhotoInstructionIndex >= photoInstructions.length;
+
 
   return (
     <Card className="w-full max-w-2xl mx-auto shadow-xl">
@@ -362,7 +428,7 @@ export function NewClaimWizard() {
       <CardContent>
         <Form {...form}>
           <form className="space-y-6">
-            {currentStep === 0 && ( /* Select Vehicle */
+            {currentStep === 0 && (
               <FormField control={form.control} name="vehicleId" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Select Vehicle Involved</FormLabel>
@@ -375,7 +441,7 @@ export function NewClaimWizard() {
               )} />
             )}
 
-            {currentStep === 1 && ( /* Accident Details */
+            {currentStep === 1 && (
               <>
                 <FormField control={form.control} name="accidentDate" render={({ field }) => (
                   <FormItem><FormLabel>Date of Accident</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>
@@ -412,70 +478,99 @@ export function NewClaimWizard() {
               </>
             )}
 
-            {currentStep === 2 && ( /* Upload Photos */
-              <FormField control={form.control} name="photos" render={({ field }) => ( // field is not directly used for inputs here
+            {currentStep === 2 && ( 
+              <FormField control={form.control} name="photos" render={() => ( 
                 <FormItem>
-                  <FormLabel>Upload Accident Photos (max 5)</FormLabel>
-                  
+                  <FormLabel>Upload Accident Photos ({totalCommittedPhotos} / 5)</FormLabel>
                   <div className="flex items-center space-x-2 mb-3">
                     <Switch id="camera-toggle" checked={enableCamera} onCheckedChange={setEnableCamera} />
-                    <label htmlFor="camera-toggle" className="text-sm font-medium text-foreground">Use Camera</label>
+                    <label htmlFor="camera-toggle" className="text-sm font-medium text-foreground">Use Camera for Guided Capture</label>
                   </div>
 
+                  {enableCamera && !allGuidedInstructionsDone && currentPhotoInstruction && (
+                    <Card className="mb-4 p-3 bg-primary/5 border-primary/20">
+                      <CardTitle className="text-md mb-1">{currentPhotoInstruction.title}</CardTitle>
+                      <CardDescription className="text-sm">{currentPhotoInstruction.description}</CardDescription>
+                    </Card>
+                  )}
+                  
                   {enableCamera && (
                     <Card className="p-4 mb-3 bg-muted/30">
-                      <video ref={videoRef} className={cn("w-full aspect-video rounded-md bg-black", { 'hidden': !isCameraActive || cameraPermissionStatus !== 'granted' })} autoPlay muted playsInline />
+                      {!capturedPhotoDataUrl ? (
+                        <>
+                          <video ref={videoRef} className={cn("w-full aspect-video rounded-md bg-black mb-2", { 'hidden': !isCameraActive || cameraPermissionStatus !== 'granted' })} autoPlay muted playsInline />
+                          {cameraPermissionStatus === 'pending' && <div className="flex items-center justify-center h-40"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="ml-2">Initializing camera...</p></div>}
+                          {cameraPermissionStatus === 'denied' && <Alert variant="destructive"><AlertTriangle className="h-4 w-4" /><AlertTitle>Camera Access Denied</AlertTitle><AlertDescription>Please enable camera permissions.</AlertDescription></Alert>}
+                          {cameraPermissionStatus === 'granted' && !isCameraActive && !videoRef.current?.srcObject && <div className="flex items-center justify-center h-40"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="ml-2">Starting camera...</p></div>}
+                          
+                          {isCameraActive && cameraPermissionStatus === 'granted' && !allGuidedInstructionsDone && currentPhotoInstruction && (
+                            <Button type="button" onClick={handleCaptureAndPreview} className="w-full mt-2" disabled={isProcessingPhoto || !canTakeMorePhotosOverall}>
+                              {isProcessingPhoto ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CameraIcon className="mr-2 h-4 w-4" />}
+                              Capture: {currentPhotoInstruction.title}
+                            </Button>
+                          )}
+                          {currentPhotoInstruction && currentPhotoInstruction.allowMultiple && !allGuidedInstructionsDone && (
+                             <Button type="button" variant="outline" onClick={handleNextPhotoInstruction} className="w-full mt-2">
+                                Done with '{currentPhotoInstruction.title}' / Skip
+                                <ArrowRight className="ml-2 h-4 w-4"/>
+                            </Button>
+                          )}
+                        </>
+                      ) : ( // Photo captured, show preview and Use/Retake buttons
+                        <div className="text-center">
+                           <p className="text-sm font-medium mb-2">Preview: {currentPhotoInstruction?.title}</p>
+                          <Image src={capturedPhotoDataUrl} alt={`Preview for ${currentPhotoInstruction?.title}`} width={320} height={240} className="rounded-md mx-auto mb-3 max-w-full h-auto object-contain border" />
+                          <div className="flex justify-center gap-3">
+                            <Button type="button" onClick={handleUsePhoto} className="bg-green-600 hover:bg-green-700 text-white" disabled={isProcessingPhoto || !canTakeMorePhotosOverall}>
+                              {isProcessingPhoto && form.getValues("photos").find(p=>p.name.startsWith(currentPhotoInstruction.id)) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
+                              Use Photo
+                            </Button>
+                            <Button type="button" variant="outline" onClick={handleRetakePhoto} disabled={isProcessingPhoto}>
+                              <CameraIcon className="mr-2 h-4 w-4" /> Retake Photo
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                       <canvas ref={canvasRef} style={{ display: 'none' }} />
-                      
-                      {cameraPermissionStatus === 'pending' && (
-                        <div className="flex items-center justify-center h-40"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="ml-2">Initializing camera...</p></div>
-                      )}
-                      {cameraPermissionStatus === 'denied' && (
-                        <Alert variant="destructive" className="mt-2">
-                          <AlertTriangle className="h-4 w-4" />
-                          <AlertTitle>Camera Access Denied</AlertTitle>
-                          <AlertDescription>Please enable camera permissions in your browser settings.</AlertDescription>
-                        </Alert>
-                      )}
-                      {cameraPermissionStatus === 'granted' && !isCameraActive && !videoRef.current?.srcObject && (
-                        <div className="flex items-center justify-center h-40"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="ml-2">Starting camera...</p></div>
-                      )}
-                      {isCameraActive && cameraPermissionStatus === 'granted' && (
-                        <Button type="button" onClick={handleCapturePhoto} className="w-full mt-2" disabled={(form.getValues("photos") || []).length >= 5}>
-                          <CameraIcon className="mr-2 h-4 w-4" /> Capture Photo
-                        </Button>
-                      )}
+                       {!canTakeMorePhotosOverall && totalCommittedPhotos >=5 && <Alert variant="warning" className="mt-3"><AlertTriangle className="h-4 w-4" /><AlertTitle>Photo Limit Reached</AlertTitle><AlertDescription>Maximum 5 photos allowed. You cannot add more.</AlertDescription></Alert>}
+                       {allGuidedInstructionsDone && enableCamera && <Alert className="mt-3"><CheckCircle className="h-4 w-4"/><AlertTitle>Guided Capture Complete</AlertTitle><AlertDescription>All specific photo types covered. You can upload manually if space permits.</AlertDescription></Alert>}
                     </Card>
                   )}
                   
                   <Card className="border-dashed border-2 hover:border-primary transition-colors">
                     <CardContent className="p-6 text-center">
-                      <CameraIcon className="mx-auto h-12 w-12 text-muted-foreground mb-2" />
+                      <FileUp className="mx-auto h-12 w-12 text-muted-foreground mb-2" />
                       <FormLabel htmlFor="photo-upload" className="text-primary font-semibold cursor-pointer hover:underline">
                         Click to upload files or drag and drop
                       </FormLabel>
                       <FormControl>
-                        <Input id="photo-upload" type="file" className="sr-only" accept="image/*" multiple onChange={handleFileUpload} disabled={(form.getValues("photos") || []).length >= 5} />
+                        <Input id="photo-upload" type="file" className="sr-only" accept="image/*" multiple onChange={handleFileUpload} disabled={!canTakeMorePhotosOverall} />
                       </FormControl>
-                      <p className="text-xs text-muted-foreground mt-1">PNG, JPG, GIF up to 10MB each</p>
+                      <p className="text-xs text-muted-foreground mt-1">PNG, JPG, GIF up to 10MB each. Max 5 photos total.</p>
                     </CardContent>
                   </Card>
-                  {photoPreviews.length > 0 && (
-                    <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                      {photoPreviews.map((src, index) => (
-                        <div key={src} className="relative aspect-square rounded-md overflow-hidden border shadow">
-                          <Image src={src} alt={`Preview ${index + 1}`} layout="fill" objectFit="cover" />
-                        </div>
-                      ))}
+                  {committedPhotoPreviews.length > 0 && (
+                    <div className="mt-4">
+                      <p className="text-sm font-medium mb-2">Uploaded Photos:</p>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                        {committedPhotoPreviews.map((src, index) => (
+                          <div key={src} className="relative aspect-square rounded-md overflow-hidden border shadow">
+                            <Image src={src} alt={`Preview ${index + 1}`} layout="fill" objectFit="cover" />
+                            <p className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-1 truncate">
+                                {watchedPhotos[index]?.name.split('-')[0] || `Photo ${index+1}`}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
-                  <FormMessage className="mt-2" />
+                  <FormMessage className="mt-2" /> {/* For the 'photos' field overall validation */}
                 </FormItem>
               )} />
             )}
 
-            {currentStep === 3 && ( /* Supporting Documents */
-               <FormField control={form.control} name="documents" render={({ field }) => ( // field not directly used
+            {currentStep === 3 && ( 
+               <FormField control={form.control} name="documents" render={() => ( 
                 <FormItem>
                   <FormLabel>Upload Supporting Docs (Optional)</FormLabel>
                    <Card className="border-dashed border-2 hover:border-primary transition-colors">
@@ -498,7 +593,7 @@ export function NewClaimWizard() {
               )} />
             )}
 
-            {currentStep === 4 && ( /* Review & Submit */
+            {currentStep === 4 && ( 
               <div className="space-y-3 p-2 rounded-md border bg-muted/20">
                 <h3 className="text-lg font-semibold mb-3 border-b pb-2">Review Your Claim Details</h3>
                 <ReviewItem label="Vehicle" value={userVehicles.find(v => v.id === form.getValues("vehicleId"))?.name || 'N/A'} />
@@ -529,7 +624,7 @@ function ReviewItem({ label, value, preWrap = false }: { label: string; value: s
   return (
     <div className="flex flex-col sm:flex-row py-1">
       <strong className="w-full sm:w-1/3 text-sm text-muted-foreground">{label}:</strong>
-      <span className={`w-full sm:w-2/3 text-sm ${preWrap ? 'whitespace-pre-wrap' : ''}`}>{value}</span>
+      <span className={`w-full sm:w-2/3 text-sm ${preWrap ? 'whitespace-pre-wrap break-words' : ''}`}>{value}</span>
     </div>
   );
 }
