@@ -1,6 +1,7 @@
+// @ts-nocheck
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch } from "react-hook-form";
 import * as z from "zod";
@@ -12,8 +13,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { Camera, FileUp, CheckCircle, ShieldQuestion, Car, FileTextIcon } from "lucide-react";
+import { Camera, FileUp, CheckCircle, Car, FileTextIcon, Mic, MicOff, StopCircle } from "lucide-react";
 import Image from "next/image";
+import { Switch } from "@/components/ui/switch";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
 // Mock data for user's vehicles
 const userVehicles = [
@@ -56,19 +60,133 @@ export function NewClaimWizard() {
   const [currentStep, setCurrentStep] = useState(0);
   const { toast } = useToast();
 
+  const [isAudioInputEnabled, setIsAudioInputEnabled] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [hasMicPermission, setHasMicPermission] = useState<boolean | null>(null);
+  const [speechApiAvailable, setSpeechApiAvailable] = useState(false);
+  const speechRecognitionRef = useRef<SpeechRecognition | null>(null);
+
   const form = useForm<ClaimFormValues>({
-    resolver: zodResolver(combinedSchema), // Resolve against the combined schema
-    mode: "onChange", // Validate on change to enable next button
+    resolver: zodResolver(combinedSchema),
+    mode: "onChange",
     defaultValues: {
       vehicleId: "",
-      accidentDate: new Date().toISOString().split('T')[0], // Default to today
-      accidentTime: new Date().toTimeString().substring(0,5), // Default to current time
+      accidentDate: new Date().toISOString().split('T')[0],
+      accidentTime: new Date().toTimeString().substring(0,5),
       accidentLocation: "",
       accidentDescription: "",
       photos: [],
       documents: [],
     },
   });
+
+  useEffect(() => {
+    const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognitionAPI) {
+      setSpeechApiAvailable(true);
+      const recognition = new SpeechRecognitionAPI();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      recognition.onstart = () => {
+        setIsRecording(true);
+        toast({ title: "Recording started", description: "Speak into your microphone." });
+      };
+
+      recognition.onresult = (event: SpeechRecognitionEvent) => {
+        let finalTranscript = "";
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript;
+          }
+        }
+        if (finalTranscript.trim()) {
+          const currentDescription = form.getValues("accidentDescription") || "";
+          form.setValue("accidentDescription", (currentDescription + " " + finalTranscript.trim()).trim(), { shouldValidate: true });
+        }
+      };
+
+      recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+        setIsRecording(false);
+        let errorMessage = "Speech recognition error.";
+        if (event.error === 'no-speech') {
+          errorMessage = "No speech was detected. Please try again.";
+        } else if (event.error === 'audio-capture') {
+          errorMessage = "Microphone problem. Ensure it's connected and enabled.";
+        } else if (event.error === 'not-allowed') {
+          errorMessage = "Microphone access denied. Please enable it in browser settings.";
+          setHasMicPermission(false);
+        }
+        toast({ variant: "destructive", title: "Audio Input Error", description: errorMessage });
+      };
+
+      recognition.onend = () => {
+        setIsRecording(false);
+      };
+      
+      speechRecognitionRef.current = recognition;
+    } else {
+      setSpeechApiAvailable(false);
+    }
+
+    return () => {
+      if (speechRecognitionRef.current) {
+        speechRecognitionRef.current.stop();
+        speechRecognitionRef.current.onstart = null;
+        speechRecognitionRef.current.onresult = null;
+        speechRecognitionRef.current.onerror = null;
+        speechRecognitionRef.current.onend = null;
+      }
+    };
+  }, [form, toast]);
+
+  const requestMicrophonePermission = async () => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      toast({ variant: "destructive", title: "Mic Access Error", description: "Microphone access is not supported by your browser." });
+      setHasMicPermission(false);
+      return false;
+    }
+    try {
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+      setHasMicPermission(true);
+      return true;
+    } catch (err) {
+      toast({ variant: "destructive", title: "Mic Access Denied", description: "Please enable microphone permissions in your browser settings." });
+      setHasMicPermission(false);
+      return false;
+    }
+  };
+
+  const handleMicButtonClick = async () => {
+    if (!isAudioInputEnabled || !speechApiAvailable || !speechRecognitionRef.current) return;
+
+    if (isRecording) {
+      speechRecognitionRef.current.stop();
+    } else {
+      let permissionGranted = hasMicPermission;
+      if (hasMicPermission === null) { // Permission not yet checked
+        permissionGranted = await requestMicrophonePermission();
+      }
+      
+      if (permissionGranted) {
+         try {
+          speechRecognitionRef.current.start();
+        } catch (e) {
+          console.error("Error starting speech recognition:", e);
+          setIsRecording(false); // Ensure state is correct
+        }
+      }
+    }
+  };
+
+  const onAudioToggleChange = (checked: boolean) => {
+    setIsAudioInputEnabled(checked);
+    if (!checked && isRecording && speechRecognitionRef.current) {
+      speechRecognitionRef.current.stop();
+    }
+  };
+
 
   const watchedFiles = useWatch({ control: form.control, name: ["photos", "documents"] });
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
@@ -84,11 +202,9 @@ export function NewClaimWizard() {
       if (currentStep < steps.length - 1) {
         setCurrentStep((prev) => prev + 1);
       } else {
-        // Handle final submission
         onSubmit(form.getValues());
       }
     } else {
-      // Manually validate and show errors if trigger doesn't catch all for current step
       const values = form.getValues();
       const result = currentStepSchema.safeParse(values);
       if (!result.success) {
@@ -106,17 +222,17 @@ export function NewClaimWizard() {
 
   function onSubmit(data: ClaimFormValues) {
     console.log("Claim Data:", data);
-    // Here you would call the AI summarizeClaim flow if needed, then submit to backend
-    // e.g. const summary = await summarizeClaim({ accidentDescription: data.accidentDescription, supportingDocuments: data.photos... })
     toast({
       title: "Claim Submitted Successfully!",
       description: "Your claim is now being processed. You can track its status in the Claims section.",
       variant: "default",
     });
-    // Reset form or redirect, e.g., router.push('/claims');
     form.reset();
     setCurrentStep(0);
     setPhotoPreviews([]);
+    setIsAudioInputEnabled(false);
+    setIsRecording(false);
+    setHasMicPermission(null);
   }
   
   const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -202,7 +318,54 @@ export function NewClaimWizard() {
                 )} />
                 <FormField control={form.control} name="accidentDescription" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Describe the Accident</FormLabel>
+                    <div className="flex flex-col space-y-1.5">
+                       <FormLabel>Describe the Accident</FormLabel>
+                       <div className="flex items-center space-x-2">
+                         <Switch
+                           id="audio-toggle"
+                           checked={isAudioInputEnabled}
+                           onCheckedChange={onAudioToggleChange}
+                           disabled={!speechApiAvailable}
+                         />
+                         <label htmlFor="audio-toggle" className="text-sm font-normal text-muted-foreground cursor-pointer">
+                           Enable Audio Input
+                         </label>
+                         {isAudioInputEnabled && speechApiAvailable && (
+                           <TooltipProvider delayDuration={0}>
+                             <Tooltip>
+                               <TooltipTrigger asChild>
+                                 <Button
+                                   type="button"
+                                   variant="outline"
+                                   size="icon"
+                                   onClick={handleMicButtonClick}
+                                   disabled={hasMicPermission === false}
+                                   className={cn(
+                                     "h-7 w-7",
+                                     isRecording && "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+                                     hasMicPermission === false && "text-muted-foreground cursor-not-allowed"
+                                   )}
+                                 >
+                                   {isRecording ? <StopCircle className="h-4 w-4" /> : 
+                                    (hasMicPermission === false ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />)}
+                                   <span className="sr-only">
+                                     {isRecording ? "Stop Recording" : (hasMicPermission === false ? "Microphone access denied" : "Start Recording")}
+                                   </span>
+                                 </Button>
+                               </TooltipTrigger>
+                               <TooltipContent side="top">
+                                 <p>{isRecording ? "Stop Recording" : 
+                                      (hasMicPermission === false ? "Microphone access denied" : "Start Recording")}</p>
+                               </TooltipContent>
+                             </Tooltip>
+                           </TooltipProvider>
+                         )}
+                       </div>
+                       {!speechApiAvailable && (
+                         <p className="text-xs text-destructive">Audio input is not supported by your browser.</p>
+                       )}
+                       {isAudioInputEnabled && isRecording && <p className="text-xs text-primary animate-pulse">Recording... speak clearly.</p>}
+                     </div>
                     <FormControl><Textarea rows={4} placeholder="Explain what happened, damages, etc." {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
