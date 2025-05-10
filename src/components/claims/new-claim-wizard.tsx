@@ -55,9 +55,11 @@ const claimSchemaStep3 = z.object({
         if (!files) return false;
         // Check if at least 3 photos are uploaded. This covers the essential types.
         // The guided capture encourages specific types, but for proceeding, count is primary.
-        const requiredMinimumPhotos = 3;
+        const requiredMinimumPhotos = 3; // Full Vehicle, Damage Close-up, Surrounding Area are essential
         return files.length >= requiredMinimumPhotos;
-    }, `Please upload at least 3 photos covering the Full Vehicle, Damage Close-up, and Surrounding Area. (Currently ${"${files?.length || 0}"} photos)`),
+    }, (files) => ({
+        message: `Please upload at least 3 photos covering the Full Vehicle, Damage Close-up, and Surrounding Area. Currently ${files?.length || 0} photos uploaded. The 'Other Vehicles' photo is optional.`
+    })),
 });
 
 
@@ -246,7 +248,7 @@ export function NewClaimWizard() {
 
   useEffect(() => {
     // console.log(`Effect for camera management triggered. EnableCamera: ${enableCamera}, CurrentStep: ${currentStep}`);
-    if (enableCamera && currentStep === 2) {
+    if (enableCamera && currentStep === 2) { // Step 2 is photo upload
       // console.log("Conditions met for starting camera. Calling startCamera().");
       startCamera();
     } else {
@@ -276,9 +278,11 @@ export function NewClaimWizard() {
 
 
    useEffect(() => {
+    // If we navigate away from the photo step, ensure camera is off
     if (currentStep !== 2 && enableCamera) { 
-      setEnableCamera(false); 
+      setEnableCamera(false); // This will trigger stopCurrentStream via its own useEffect
     }
+     // Reset guided capture if camera is toggled off/on or when re-entering step
      if (currentStep === 2 && !enableCamera) { 
         setCurrentPhotoInstructionIndex(0);
         setCapturedPhotoDataUrl(null);
@@ -391,14 +395,13 @@ export function NewClaimWizard() {
       if (currentPhotoInstruction.allowMultiple) {
         if (photosAfterAdd >= 5) {
             toast({ title: "Photo Limit Reached", description: "You've reached the maximum of 5 photos." });
-            if (currentPhotoInstructionIndex < photoInstructions.length - 1) {
+            // If it's the last instruction type and limit reached, user can't take more of this type via guided capture.
+            // They can still use the "Done with this type / Skip" button or proceed.
+             if (currentPhotoInstructionIndex < photoInstructions.length - 1) { // Should not happen if this is the last instruction
                  setCurrentPhotoInstructionIndex(prev => prev + 1);
-            } else {
-                 // Reached end of instructions and limit
-                 // console.log("Reached end of instructions and photo limit.");
-            }
+             }
         }
-         // If not at limit, user can take more of this type or move on
+         // If not at limit, user can take more of this type or move on. Index doesn't change.
       } else { // Not allowMultiple
         if (currentPhotoInstructionIndex < photoInstructions.length - 1) {
           setCurrentPhotoInstructionIndex(prev => prev + 1);
@@ -414,17 +417,25 @@ export function NewClaimWizard() {
     } finally {
       setIsProcessingPhoto(false);
       // console.log("Finished using photo, processing set to false.");
+      // Ensure camera restarts if it was paused and conditions are still met
+      if (isCameraActive && videoRef.current?.paused && enableCamera && currentStep === 2) {
+        videoRef.current.play().catch(e => console.error("Error re-playing video:", e));
+      }
     }
   };
   
   const handleRetakePhoto = () => {
     // console.log("handleRetakePhoto called. Clearing capturedPhotoDataUrl.");
     setCapturedPhotoDataUrl(null); 
-    // Video should resume due to useEffect watching capturedPhotoDataUrl
-    // If camera is not active for some reason, might need to re-trigger startCamera
-    if (!isCameraActive && enableCamera && currentStep === 2) {
+    // Video should resume due to useEffect watching capturedPhotoDataUrl OR
+    // ensure camera restarts if it was paused/stopped.
+    if (enableCamera && currentStep === 2) {
+      if (!isCameraActive) {
         // console.log("Camera not active on retake, trying to restart.");
         startCamera();
+      } else if (videoRef.current?.paused) {
+        videoRef.current.play().catch(e => console.error("Error re-playing video on retake:", e));
+      }
     }
   };
 
@@ -435,16 +446,22 @@ export function NewClaimWizard() {
     } else {
       toast({ title: "Finished with guided capture.", description: "You can proceed to the next step if requirements are met."});
     }
-    // If camera is not active for some reason, might need to re-trigger startCamera
-    if (!isCameraActive && enableCamera && currentStep === 2) {
-        startCamera();
+    // Ensure camera restarts if it was paused/stopped and conditions are still met
+    if (enableCamera && currentStep === 2) {
+        if(!isCameraActive) {
+            startCamera();
+        } else if (videoRef.current?.paused) {
+            videoRef.current.play().catch(e => console.error("Error re-playing video on next instruction:", e));
+        }
     }
   };
 
 
   const handleNext = async () => {
     const currentStepObj = steps[currentStep];
-    const isValid = await form.trigger(currentStepObj.fields as any);
+    // For photo step, trigger validation only if photos field exists in current step's schema
+    const fieldsToValidate = currentStepObj.schema.shape.photos ? ['photos'] : currentStepObj.fields;
+    const isValid = await form.trigger(fieldsToValidate as any);
 
     if (isValid) {
       if (currentStep < steps.length - 1) {
@@ -453,15 +470,11 @@ export function NewClaimWizard() {
         onSubmit(form.getValues());
       }
     } else {
-       // Display errors from form.formState.errors
        const errors = form.formState.errors;
        let errorMessage = "Please correct the errors before proceeding.";
-       if (errors.photos && errors.photos.message) {
+        // Specifically handle the photo error message interpolation
+       if (currentStepObj.schema.shape.photos && errors.photos && errors.photos.message) {
            errorMessage = errors.photos.message as string;
-           // Interpolate files.length into the message if the placeholder exists
-           if (errorMessage.includes("${files?.length || 0}")) {
-             errorMessage = errorMessage.replace("${files?.length || 0}", (form.getValues("photos") || []).length.toString());
-           }
        }
        toast({ variant: "destructive", title: "Validation Error", description: errorMessage });
        console.log("Form errors:", errors);
@@ -490,7 +503,28 @@ export function NewClaimWizard() {
   
   const progressValue = ((currentStep + 1) / steps.length) * 100;
   const CurrentIcon = steps[currentStep].icon;
-  const allGuidedInstructionsDone = currentPhotoInstructionIndex >= photoInstructions.length -1 && !photoInstructions[photoInstructions.length -1]?.allowMultiple;
+  
+  // Check if all non-optional guided instructions are completed or if current instruction is optional
+  const nonOptionalInstructions = photoInstructions.filter(p => !p.isOptional);
+  const allNonOptionalGuidedDone = currentPhotoInstructionIndex >= nonOptionalInstructions.length || 
+                                 (currentPhotoInstruction && currentPhotoInstruction.isOptional);
+  
+  // The "Guided Capture Complete" message should ideally show when all *required* types are done.
+  // And if the user is on an optional step or past all required ones.
+  let isEffectivelyAllGuidedInstructionsDone = false;
+  if (currentPhotoInstruction) {
+      const requiredInstructions = photoInstructions.filter(instr => !instr.isOptional);
+      const lastRequiredInstructionIndex = photoInstructions.indexOf(requiredInstructions[requiredInstructions.length - 1]);
+      if (currentPhotoInstructionIndex > lastRequiredInstructionIndex) { // Past all required instructions
+          isEffectivelyAllGuidedInstructionsDone = true;
+      } else if (currentPhotoInstruction.isOptional && currentPhotoInstructionIndex >= lastRequiredInstructionIndex) { // On an optional instruction that is at or after last required
+          isEffectivelyAllGuidedInstructionsDone = true;
+      } else if (!currentPhotoInstruction.allowMultiple && currentPhotoInstructionIndex === photoInstructions.length - 1 ) { // On the very last instruction and it's not multi-capture
+          isEffectivelyAllGuidedInstructionsDone = true;
+      }
+  } else if (currentPhotoInstructionIndex >= photoInstructions.length) { // Past all instructions
+    isEffectivelyAllGuidedInstructionsDone = true;
+  }
 
 
   return (
@@ -565,7 +599,7 @@ export function NewClaimWizard() {
                     <label htmlFor="camera-toggle" className="text-sm font-medium text-foreground">Use Camera for Guided Capture</label>
                   </div>
 
-                  {enableCamera && !allGuidedInstructionsDone && currentPhotoInstruction && (
+                  {enableCamera && currentPhotoInstruction && !isEffectivelyAllGuidedInstructionsDone && (
                     <Card className="mb-4 p-3 bg-primary/5 border-primary/20">
                       <CardTitle className="text-md mb-1">{currentPhotoInstruction.title}</CardTitle>
                       <CardDescription className="text-sm">{currentPhotoInstruction.description}</CardDescription>
@@ -584,13 +618,13 @@ export function NewClaimWizard() {
                              {cameraPermissionStatus === 'granted' && isCameraActive && !videoRef.current?.videoWidth && <div className="absolute inset-0 flex items-center justify-center text-white"><p>Camera feed loading...</p></div>}
                           </div>
                           
-                          {isCameraActive && cameraPermissionStatus === 'granted' && currentPhotoInstruction && !allGuidedInstructionsDone && (
+                          {isCameraActive && cameraPermissionStatus === 'granted' && currentPhotoInstruction && !isEffectivelyAllGuidedInstructionsDone && (
                             <Button type="button" onClick={handleCaptureAndPreview} className="w-full mt-2" disabled={isProcessingPhoto || !canTakeMorePhotosOverall}>
                               {isProcessingPhoto ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CameraIcon className="mr-2 h-4 w-4" />}
                               Capture: {currentPhotoInstruction.title}
                             </Button>
                           )}
-                          {currentPhotoInstruction && (currentPhotoInstruction.isOptional || currentPhotoInstruction.allowMultiple || currentPhotoInstructionIndex >= photoInstructions.filter(p=>!p.isOptional).length) && !allGuidedInstructionsDone && isCameraActive && cameraPermissionStatus === 'granted' && (
+                          {currentPhotoInstruction && (currentPhotoInstruction.isOptional || currentPhotoInstruction.allowMultiple || currentPhotoInstructionIndex >= photoInstructions.filter(p=>!p.isOptional).length) && !isEffectivelyAllGuidedInstructionsDone && isCameraActive && cameraPermissionStatus === 'granted' && (
                              <Button type="button" variant="outline" onClick={handleNextPhotoInstruction} className="w-full mt-2">
                                 {currentPhotoInstruction.allowMultiple ? `Done with '${currentPhotoInstruction.title}' / Skip current type` : `Skip '${currentPhotoInstruction.title}'`}
                                 <ArrowRight className="ml-2 h-4 w-4"/>
@@ -614,7 +648,7 @@ export function NewClaimWizard() {
                       )}
                       <canvas ref={canvasRef} style={{ display: 'none' }} />
                        {!canTakeMorePhotosOverall && totalCommittedPhotos >=5 && <Alert variant="warning" className="mt-3"><AlertTriangle className="h-4 w-4" /><AlertTitle>Photo Limit Reached</AlertTitle><AlertDescription>Maximum 5 photos allowed. You cannot add more.</AlertDescription></Alert>}
-                       {allGuidedInstructionsDone && enableCamera && <Alert className="mt-3"><CheckCircle className="h-4 w-4"/><AlertTitle>Guided Capture Complete</AlertTitle><AlertDescription>All specific photo types covered or skipped. You can upload manually if space permits.</AlertDescription></Alert>}
+                       {isEffectivelyAllGuidedInstructionsDone && enableCamera && <Alert className="mt-3"><CheckCircle className="h-4 w-4"/><AlertTitle>Guided Capture Complete</AlertTitle><AlertDescription>All photo types covered or skipped. You can upload manually if space permits.</AlertDescription></Alert>}
                     </Card>
                   )}
                   
