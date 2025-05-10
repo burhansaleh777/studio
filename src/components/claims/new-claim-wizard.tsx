@@ -1,4 +1,3 @@
-
 // @ts-nocheck
 "use client";
 
@@ -54,10 +53,28 @@ const claimSchemaStep3 = z.object({
     .refine(files => {
         if (!files) return false;
         const requiredMinimumPhotos = photoInstructions.filter(p => !p.isOptional).length;
-        return files.length >= requiredMinimumPhotos;
-    }, (files) => ({
-        message: `Please upload at least ${photoInstructions.filter(p => !p.isOptional).length} photos covering the required types. Currently ${files?.length || 0} photos uploaded.`
-    })),
+        // Check if at least one photo for each non-optional instruction type is present
+        const uploadedInstructionIds = new Set(files.map(file => file.name.split('-')[0]));
+        const allRequiredUploaded = photoInstructions
+          .filter(p => !p.isOptional)
+          .every(p => uploadedInstructionIds.has(p.id));
+        
+        return files.length >= requiredMinimumPhotos && allRequiredUploaded;
+    }, (files) => {
+        const requiredCount = photoInstructions.filter(p => !p.isOptional).length;
+        let message = `Please upload at least ${requiredCount} photos covering all required types (Full Vehicle, Damage Close-up, Surrounding Area). Currently ${files?.length || 0} photos uploaded.`;
+
+        const uploadedInstructionIds = new Set(files.map(file => file.name.split('-')[0]));
+        const missingRequired = photoInstructions
+            .filter(p => !p.isOptional && !uploadedInstructionIds.has(p.id))
+            .map(p => p.title)
+            .join(', ');
+        
+        if (missingRequired) {
+            message += ` Missing: ${missingRequired}.`;
+        }
+        return { message };
+    })
 });
 
 
@@ -176,69 +193,61 @@ export function NewClaimWizard() {
     return () => speechRecognitionRef.current?.stop();
   }, [form, toast]);
 
+
   const startCamera = useCallback(async () => {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    setCameraPermissionStatus('pending');
+    setIsCameraActive(false); // Reset before attempt
+
+    if (!navigator.mediaDevices?.getUserMedia) {
       toast({ variant: "destructive", title: "Camera Error", description: "Camera not supported by your browser." });
       setCameraPermissionStatus('denied');
-      setIsCameraActive(false);
       return;
     }
+    if (!videoRef.current) {
+        toast({ variant: "destructive", title: "Camera Error", description: "Video element not ready." });
+        setCameraPermissionStatus('denied');
+        return;
+    }
 
-    setIsCameraActive(false); // Reset active state for new attempt
-    setCameraPermissionStatus('pending');
-    
-    // Stop the current mediaStream from the state, if any
-    if (mediaStream) {
-      mediaStream.getTracks().forEach(track => track.stop());
-    }
-    // Clear srcObject from video element
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-    // No need to setMediaStream(null) here, as it will be overwritten or remain null if error
+    const videoElement = videoRef.current;
+    videoElement.onloadedmetadata = null;
+    videoElement.onerror = null;
 
     try {
       const newStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-      setMediaStream(newStream); // Store the new stream
+      setMediaStream(newStream); 
 
-      if (videoRef.current) {
-        const videoElement = videoRef.current;
-        videoElement.onloadedmetadata = null; // Clear previous handlers
-        videoElement.onerror = null;
+      videoElement.srcObject = newStream;
+      
+      videoElement.onloadedmetadata = () => {
+        videoElement.play()
+          .then(() => {
+            setIsCameraActive(true);
+            setCameraPermissionStatus('granted');
+          })
+          .catch(playError => {
+            console.error("Error playing video:", playError);
+            toast({ variant: "destructive", title: "Camera Play Error", description: `Could not start camera: ${playError.message}` });
+            setCameraPermissionStatus('denied');
+            setIsCameraActive(false);
+            newStream.getTracks().forEach(track => track.stop()); 
+            setMediaStream(null); 
+          });
+      };
 
-        videoElement.onloadedmetadata = () => {
-          videoElement.play()
-            .then(() => {
-              setIsCameraActive(true);
-              setCameraPermissionStatus('granted');
-            })
-            .catch(playError => {
-              console.error("Error playing video:", playError);
-              toast({ variant: "destructive", title: "Camera Play Error", description: `Could not start camera: ${playError.message}` });
-              setCameraPermissionStatus('denied');
-              setIsCameraActive(false);
-              newStream.getTracks().forEach(track => track.stop()); // Clean up the new stream
-              setMediaStream(null); // Clear the failed stream from state
-            });
-        };
-
-        videoElement.onerror = (eventError) => { // eventError is an Event, not necessarily an Error object
-          console.error("Video element error:", eventError);
-          toast({ variant: "destructive", title: "Camera Error", description: "Video element encountered an error." });
-          setCameraPermissionStatus('denied');
-          setIsCameraActive(false);
-          newStream.getTracks().forEach(track => track.stop()); // Clean up the new stream
-          setMediaStream(null); // Clear the failed stream from state
-        };
-        
-        videoElement.srcObject = newStream;
-      } else {
-        // Video element not ready, clean up stream
-        newStream.getTracks().forEach(track => track.stop());
-        setMediaStream(null); // Clear the stream from state
-        setCameraPermissionStatus('denied'); 
-        toast({variant: "destructive", title: "Internal Error", description: "Video component not available."});
+      videoElement.onerror = (eventError) => { 
+        console.error("Video element error:", eventError);
+        toast({ variant: "destructive", title: "Camera Error", description: "Video element encountered an error." });
+        setCameraPermissionStatus('denied');
+        setIsCameraActive(false);
+        newStream.getTracks().forEach(track => track.stop()); 
+        setMediaStream(null); 
+      };
+      
+      if (videoElement.readyState >= videoElement.HAVE_METADATA) {
+           videoElement.dispatchEvent(new Event('loadedmetadata'));
       }
+
     } catch (accessError) {
       console.error('Error accessing camera:', accessError);
       let description = 'Could not access camera.';
@@ -257,16 +266,17 @@ export function NewClaimWizard() {
       toast({ variant: 'destructive', title: 'Camera Access Error', description });
       setCameraPermissionStatus('denied');
       setIsCameraActive(false);
-      setMediaStream(null); // Ensure mediaStream is cleared from state
+      setMediaStream(null); 
     }
-  }, [toast, mediaStream]);
+  }, [toast, setMediaStream, setIsCameraActive, setCameraPermissionStatus]);
 
-  // Main effect for camera lifecycle management
+
   useEffect(() => {
     if (enableCamera && currentStep === 2) {
       startCamera();
-    } else {
-      // If camera is not enabled or step is not photo upload step, clean up.
+    }
+
+    return () => {
       if (mediaStream) {
         mediaStream.getTracks().forEach(track => track.stop());
         setMediaStream(null);
@@ -275,23 +285,13 @@ export function NewClaimWizard() {
         videoRef.current.srcObject = null;
       }
       setIsCameraActive(false);
-      // Reset permission status only if it wasn't explicitly denied.
-      // If it was denied, user needs to re-enable manually.
       if (cameraPermissionStatus !== 'denied') {
         setCameraPermissionStatus('idle');
       }
-    }
-
-    // Cleanup function for when the component unmounts or these dependencies change significantly
-    return () => {
-      if (mediaStream) {
-        mediaStream.getTracks().forEach(track => track.stop());
-        // No setMediaStream(null) here as the component might be unmounting,
-        // and state updates during unmount can be problematic.
-        // The stream is stopped, which is the critical part.
-      }
+      setCapturedPhotoDataUrl(null); 
     };
-  }, [enableCamera, currentStep, startCamera, mediaStream, cameraPermissionStatus]); // cameraPermissionStatus added to re-evaluate if it changes to denied.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enableCamera, currentStep, startCamera]); // startCamera is stable due to its own useCallback deps
 
   useEffect(() => {
     const videoElement = videoRef.current;
@@ -432,9 +432,9 @@ export function NewClaimWizard() {
   const handleRetakePhoto = () => {
     setCapturedPhotoDataUrl(null); 
     if (enableCamera && currentStep === 2) {
-      if (!isCameraActive) {
+      if (!isCameraActive) { // If camera wasn't active, try to start it
         startCamera();
-      } else if (videoRef.current?.paused) {
+      } else if (videoRef.current?.paused) { // If it was active but paused (e.g. after capture)
         videoRef.current.play().catch(e => console.error("Error re-playing video on retake:", e));
       }
     }
@@ -447,7 +447,7 @@ export function NewClaimWizard() {
     } else {
       toast({ title: "Finished with guided capture.", description: "You can proceed to the next step if requirements are met."});
     }
-    if (enableCamera && currentStep === 2) {
+    if (enableCamera && currentStep === 2) { // Ensure camera is ready for the next instruction
         if(!isCameraActive) {
             startCamera();
         } else if (videoRef.current?.paused) {
@@ -459,7 +459,11 @@ export function NewClaimWizard() {
 
   const handleNext = async () => {
     const currentStepObj = steps[currentStep];
-    const fieldsToValidate = currentStepObj.schema.shape.photos ? ['photos'] : currentStepObj.fields;
+    // For step 3 (photos), explicitly validate only the 'photos' field using its schema.
+    // For other steps, validate all fields defined in their respective schemas.
+    const fieldsToValidate = currentStepObj.id === 3 ? ['photos'] : currentStepObj.fields;
+    
+    // Trigger validation
     const isValid = await form.trigger(fieldsToValidate as any);
 
     if (isValid) {
@@ -471,8 +475,15 @@ export function NewClaimWizard() {
     } else {
        const errors = form.formState.errors;
        let errorMessage = "Please correct the errors before proceeding.";
-       if (currentStepObj.schema.shape.photos && errors.photos && errors.photos.message) {
+       
+       if (currentStepObj.id === 3 && errors.photos && errors.photos.message) {
            errorMessage = errors.photos.message as string;
+       } else if (fieldsToValidate && fieldsToValidate.length > 0) {
+            // Construct a more general error message if specific photo message isn't applicable
+            const fieldErrorKeys = Object.keys(errors).filter(key => fieldsToValidate.includes(key as any));
+            if (fieldErrorKeys.length > 0) {
+                errorMessage = `Please correct errors in: ${fieldErrorKeys.join(', ')}.`;
+            }
        }
        toast({ variant: "destructive", title: "Validation Error", description: errorMessage });
     }
@@ -601,11 +612,12 @@ export function NewClaimWizard() {
                       {!capturedPhotoDataUrl ? (
                         <>
                           <div className="relative w-full aspect-video rounded-md bg-black mb-2 overflow-hidden">
-                             <video ref={videoRef} className={cn("w-full h-full object-cover", { 'hidden': cameraPermissionStatus !== 'granted' || !isCameraActive })} autoPlay muted playsInline />
-                             {cameraPermissionStatus === 'pending' && <div className="absolute inset-0 flex items-center justify-center text-white"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="ml-2">Initializing camera...</p></div>}
+                             {/* Video element is always rendered if camera UI is active, overlays handle status display */}
+                             <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
+                             {cameraPermissionStatus === 'pending' && <Alert className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 text-white pointer-events-none"><Loader2 className="h-8 w-8 animate-spin text-primary" /><AlertDescription className="mt-2">Initializing camera...</AlertDescription></Alert>}
                              {cameraPermissionStatus === 'denied' && <Alert variant="destructive" className="absolute inset-0 m-auto max-w-sm max-h-40 flex flex-col items-center justify-center"><AlertTriangle className="h-5 w-5 mb-1" /><AlertTitle className="text-sm">Camera Access Denied</AlertTitle><AlertDescription className="text-xs text-center">Please enable camera permissions in your browser settings.</AlertDescription></Alert>}
-                             {cameraPermissionStatus === 'granted' && !isCameraActive && <div className="absolute inset-0 flex items-center justify-center text-white"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="ml-2">Starting camera...</p></div>}
-                             {cameraPermissionStatus === 'granted' && isCameraActive && !videoRef.current?.videoWidth && <div className="absolute inset-0 flex items-center justify-center text-white"><p>Camera feed loading...</p></div>}
+                             {cameraPermissionStatus === 'granted' && !isCameraActive && <Alert className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 text-white pointer-events-none"><Loader2 className="h-8 w-8 animate-spin text-primary" /><AlertDescription className="mt-2">Starting camera...</AlertDescription></Alert>}
+                             {cameraPermissionStatus === 'granted' && isCameraActive && !videoRef.current?.videoWidth && <Alert className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 text-white pointer-events-none"><AlertDescription>Camera feed loading...</AlertDescription></Alert>}
                           </div>
                           
                           {isCameraActive && cameraPermissionStatus === 'granted' && currentPhotoInstruction && !isEffectivelyAllGuidedInstructionsDone && (
