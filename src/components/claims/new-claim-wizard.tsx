@@ -1,3 +1,4 @@
+
 // @ts-nocheck
 "use client";
 
@@ -106,7 +107,7 @@ export function NewClaimWizard() {
 
   // Camera Input State
   const [enableCamera, setEnableCamera] = useState(false);
-  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [isCameraActive, setIsCameraActive] = useState(isCameraActive);
   const [cameraPermissionStatus, setCameraPermissionStatus] = useState<'idle' | 'pending' | 'granted' | 'denied'>('idle');
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -194,17 +195,17 @@ export function NewClaimWizard() {
 
   const startCamera = useCallback(async () => {
     setCameraPermissionStatus('pending');
-    setIsCameraActive(false); // Reset before attempt
+    setIsCameraActive(false); 
 
     // Stop any existing stream held by the ref
     if (mediaStreamRef.current) {
       mediaStreamRef.current.getTracks().forEach(track => track.stop());
       mediaStreamRef.current = null;
     }
-    if (videoRef.current) { // Detach from video element and reset
+    if (videoRef.current) { 
         videoRef.current.srcObject = null;
         videoRef.current.pause();
-        videoRef.current.currentTime = 0; // Resets video frame
+        videoRef.current.load(); 
     }
 
     if (!navigator.mediaDevices?.getUserMedia) {
@@ -219,16 +220,15 @@ export function NewClaimWizard() {
     }
 
     const videoElement = videoRef.current;
-    // Reset listeners to prevent multiple handlers if startCamera is called again
     videoElement.onloadedmetadata = null; 
     videoElement.onerror = null;
 
     try {
       const newStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-      mediaStreamRef.current = newStream; // Store in ref
-      videoElement.srcObject = newStream; // Assign stream
+      mediaStreamRef.current = newStream; 
+      videoElement.srcObject = newStream; 
 
-      videoElement.onloadedmetadata = () => { // Define what happens when metadata loads
+      videoElement.onloadedmetadata = () => { 
           const playPromise = videoElement.play();
           if (playPromise !== undefined) {
               playPromise.then(() => {
@@ -239,11 +239,10 @@ export function NewClaimWizard() {
                   toast({ variant: "destructive", title: "Camera Play Error", description: `Could not start camera: ${playError.message}` });
                   setCameraPermissionStatus('denied');
                   setIsCameraActive(false);
-                  newStream.getTracks().forEach(track => track.stop()); // Stop the new stream on error
-                  mediaStreamRef.current = null; // Clear ref
+                  if (newStream) newStream.getTracks().forEach(track => track.stop()); 
+                  mediaStreamRef.current = null; 
               });
           } else {
-              // For browsers that don't return a promise from play()
               setIsCameraActive(true); 
               setCameraPermissionStatus('granted');
           }
@@ -260,7 +259,6 @@ export function NewClaimWizard() {
         }
       };
       
-      // Trigger onloadedmetadata if already loaded (e.g. if stream was quick)
       if (videoElement.readyState >= videoElement.HAVE_METADATA) {
           videoElement.dispatchEvent(new Event('loadedmetadata'));
       }
@@ -283,45 +281,39 @@ export function NewClaimWizard() {
       toast({ variant: 'destructive', title: 'Camera Access Error', description });
       setCameraPermissionStatus('denied');
       setIsCameraActive(false);
-      mediaStreamRef.current = null; // Ensure ref is cleared on error
+      mediaStreamRef.current = null; 
     }
   }, [toast, setIsCameraActive, setCameraPermissionStatus]);
 
 
   useEffect(() => {
     if (enableCamera && currentStep === 2) {
-      if (!capturedPhotoDataUrl) { // Only start/restart if not showing a preview
+      if (!capturedPhotoDataUrl) { 
         startCamera();
       }
     }
 
-    return () => { // Cleanup function
+    return () => { 
       if (mediaStreamRef.current) {
         mediaStreamRef.current.getTracks().forEach(track => track.stop());
         mediaStreamRef.current = null;
       }
       if (videoRef.current) {
         videoRef.current.srcObject = null;
-        videoRef.current.pause(); // Ensure video is paused on cleanup
+        videoRef.current.pause(); 
       }
       setIsCameraActive(false);
-      if (cameraPermissionStatus !== 'denied') { // Don't reset if denied, so user sees message
+      if (cameraPermissionStatus !== 'denied') { 
         setCameraPermissionStatus('idle');
       }
-      // Do not clear capturedPhotoDataUrl here, it might be needed if user navigates back and forth
-      // setCapturedPhotoDataUrl(null); 
     };
-  // startCamera is memoized. cameraPermissionStatus is included to re-evaluate if permission changes externally (rare).
   }, [enableCamera, currentStep, startCamera, capturedPhotoDataUrl, cameraPermissionStatus]); 
 
   useEffect(() => {
-    // This effect ensures that if the user switches away from the claim step or disables the camera,
-    // the photo preview is cleared.
     if (currentStep !== 2 || !enableCamera) { 
       setCapturedPhotoDataUrl(null);
     }
-    // Reset photo instruction index if moving off or re-entering camera step without camera enabled
-    if (currentStep === 2 && !enableCamera) { 
+    if (currentStep !== 2 || !enableCamera) { 
         setCurrentPhotoInstructionIndex(0);
     }
   }, [currentStep, enableCamera]);
@@ -414,7 +406,6 @@ export function NewClaimWizard() {
       const file = new File([blob], fileName, { type: 'image/jpeg' });
       
       addFilesToForm([file]);
-      // setCapturedPhotoDataUrl(null) is now handled by useEffect when this causes a state change that re-triggers camera
       
       const photosAfterAdd = (form.getValues("photos") || []).length;
 
@@ -425,7 +416,6 @@ export function NewClaimWizard() {
                  setCurrentPhotoInstructionIndex(prev => prev + 1);
              }
         }
-        // For multiple, allow taking more of the same type, so don't auto-advance index unless limit reached
       } else { 
         if (currentPhotoInstructionIndex < photoInstructions.length - 1) {
           setCurrentPhotoInstructionIndex(prev => prev + 1);
@@ -438,17 +428,15 @@ export function NewClaimWizard() {
       toast({ variant: "destructive", title: "Error", description: "Could not process the captured photo." });
     } finally {
       setIsProcessingPhoto(false);
-      setCapturedPhotoDataUrl(null); // Crucial: This will trigger the useEffect to call startCamera for the next frame/instruction
+      setCapturedPhotoDataUrl(null); 
     }
   };
   
   const handleRetakePhoto = () => {
-    // Setting capturedPhotoDataUrl to null will trigger the main useEffect to call startCamera
     setCapturedPhotoDataUrl(null); 
   };
 
   const handleNextPhotoInstruction = () => {
-    // Setting capturedPhotoDataUrl to null will trigger the main useEffect to call startCamera
     setCapturedPhotoDataUrl(null); 
     if (currentPhotoInstructionIndex < photoInstructions.length - 1) {
       setCurrentPhotoInstructionIndex(prev => prev + 1);
@@ -609,7 +597,7 @@ export function NewClaimWizard() {
                       {!capturedPhotoDataUrl ? (
                         <>
                           <div className="relative w-full aspect-video rounded-md bg-black mb-2 overflow-hidden">
-                             <video ref={videoRef} className="w-full h-full object-cover" playsInline /> {/* autoPlay and muted removed to be controlled by JS */}
+                             <video ref={videoRef} className="w-full h-full object-cover" playsInline muted />
                              {cameraPermissionStatus === 'pending' && <Alert className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 text-white pointer-events-none"><Loader2 className="h-8 w-8 animate-spin text-primary" /><AlertDescription className="mt-2">Initializing camera...</AlertDescription></Alert>}
                              {cameraPermissionStatus === 'denied' && <Alert variant="destructive" className="absolute inset-0 m-auto max-w-sm max-h-40 flex flex-col items-center justify-center"><AlertTriangle className="h-5 w-5 mb-1" /><AlertTitle className="text-sm">Camera Access Denied</AlertTitle><AlertDescription className="text-xs text-center">Please enable camera permissions in your browser settings.</AlertDescription></Alert>}
                              {cameraPermissionStatus === 'granted' && !isCameraActive && <Alert className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 text-white pointer-events-none"><Loader2 className="h-8 w-8 animate-spin text-primary" /><AlertDescription className="mt-2">Starting camera...</AlertDescription></Alert>}
@@ -780,3 +768,4 @@ function ReviewItem({ label, value, preWrap = false }: { label: string; value: s
     </div>
   );
 }
+
