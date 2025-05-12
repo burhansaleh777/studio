@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { Camera as CameraIcon, FileUp, CheckCircle, Car, FileTextIcon, Mic, MicOff, StopCircle, Loader2, AlertTriangle, ArrowRight, XCircle as LucideXCircle } from "lucide-react";
+import { Camera as CameraIcon, FileUp, CheckCircle, Car, FileTextIcon, Mic, MicOff, StopCircle, Loader2, AlertTriangle, ArrowRight, LucideXCircle, RefreshCcw } from "lucide-react";
 import Image from "next/image";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -40,56 +40,38 @@ const claimSchemaStep2 = z.object({
   accidentDescription: z.string().min(20, "Please describe the accident in detail (min 20 characters)"),
 });
 
+const MAX_PHOTOS = 4;
+
 const photoInstructions = [
   { id: 'fullVehicle', title: "Full Vehicle Photo", description: "Capture a clear photo of the entire vehicle.", isOptional: false },
   { id: 'damageCloseUp', title: "Damage Close-up Photo", description: "Take a close-up photo of the damaged section(s).", isOptional: false },
   { id: 'surroundingArea', title: "Surrounding Area Photo", description: "Capture the area around the vehicle where the accident occurred.", isOptional: false },
-  { id: 'otherVehicles', title: "Other Vehicles Photo", description: "If other vehicles were involved, take photos of them. You can add multiple if space allows (max 5 total).", isOptional: false, allowMultiple: true },
+  { id: 'otherVehicles', title: "Other Vehicles Photo", description: "If other vehicles were involved, take photos of them as well.", isOptional: false }, // Changed to non-optional for 4 photo requirement.
 ];
+
 
 const claimSchemaStep3 = z.object({
   photos: z.array(z.instanceof(File))
-    .min(1, "At least one photo is required for the claim.")
-    .max(5, "Maximum 5 photos allowed")
+    .min(photoInstructions.filter(p => !p.isOptional).length, `Please upload at least ${photoInstructions.filter(p => !p.isOptional).length} photos covering all required types.`)
+    .max(MAX_PHOTOS, `Maximum ${MAX_PHOTOS} photos allowed.`)
     .refine(files => {
         if (!files) return false;
-        const requiredMinimumPhotos = photoInstructions.filter(p => !p.isOptional && !p.allowMultiple).length;
-        const requiredMultiplePhotosExist = photoInstructions.some(p => !p.isOptional && p.allowMultiple);
-        
-        let minPhotosNeeded = requiredMinimumPhotos;
-        if (requiredMultiplePhotosExist) minPhotosNeeded +=1; // Need at least one for the "allowMultiple" category
-
         const uploadedInstructionIds = new Set(files.map(file => file.name.split('-')[0]));
         
-        const allRequiredSingleUploaded = photoInstructions
-          .filter(p => !p.isOptional && !p.allowMultiple)
+        const allRequiredUploaded = photoInstructions
+          .filter(p => !p.isOptional)
           .every(p => uploadedInstructionIds.has(p.id));
-
-        const anyRequiredMultipleUploaded = photoInstructions
-          .filter(p => !p.isOptional && p.allowMultiple)
-          .some(p => uploadedInstructionIds.has(p.id));
-
-        // If there's any "allowMultiple" required type, at least one must be present.
-        const multipleRequirementMet = requiredMultiplePhotosExist ? anyRequiredMultipleUploaded : true;
         
-        return files.length >= minPhotosNeeded && allRequiredSingleUploaded && multipleRequirementMet;
+        return files.length >= photoInstructions.filter(p => !p.isOptional).length && allRequiredUploaded;
     }, (files) => {
         const allRequiredPhotoInstructions = photoInstructions.filter(p => !p.isOptional);
-        
-        // Calculate the minimum number of distinct required photo types.
-        // For "allowMultiple", we count it as 1 distinct type needed.
-        const distinctRequiredTypes = new Set(allRequiredPhotoInstructions.map(p => p.id)).size;
-
-        const requiredPhotoTitles = allRequiredPhotoInstructions.map(p => p.title).join(', ');
-
-        let message = `Please upload at least ${distinctRequiredTypes} photos covering all required types (${requiredPhotoTitles}). Currently ${files?.length || 0} photos uploaded.`;
-
         const uploadedInstructionIds = new Set(files.map(file => file.name.split('-')[0]));
         const missingRequiredTitles = allRequiredPhotoInstructions
             .filter(p => !uploadedInstructionIds.has(p.id))
             .map(p => p.title)
             .join(', ');
         
+        let message = `Please upload ${allRequiredPhotoInstructions.length} photos covering all required types: ${allRequiredPhotoInstructions.map(p => p.title).join(', ')}. Currently ${files?.length || 0} photos uploaded.`;
         if (missingRequiredTitles) {
             message += ` Missing: ${missingRequiredTitles}.`;
         }
@@ -222,7 +204,7 @@ export function NewClaimWizard() {
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
-    setIsCameraActive(false);
+    setIsCameraActive(false); // Ensure camera is marked as inactive
   }, []);
 
 
@@ -238,8 +220,7 @@ export function NewClaimWizard() {
     }
 
     setCameraPermissionStatus('pending');
-    setIsCameraActive(false);
-    stopCurrentStream(); 
+    stopCurrentStream(); // Always stop existing stream before starting a new one
 
     try {
         const newStream = await navigator.mediaDevices.getUserMedia({
@@ -255,16 +236,15 @@ export function NewClaimWizard() {
         if (videoRef.current) {
             videoRef.current.srcObject = newStream;
             // Use a promise for onloadedmetadata to ensure it plays after metadata is loaded
-            await new Promise((resolve, reject) => {
-              if(!videoRef.current) { // Check if videoRef still exists
+            await new Promise<void>((resolve, reject) => { // Changed to Promise<void>
+              if(!videoRef.current) { 
                 reject(new Error("Video element became null before metadata loaded."));
                 return;
               }
-              videoRef.current.onloadedmetadata = resolve;
-              videoRef.current.onerror = reject; // Handle potential errors during loading
-               // Handle cases where metadata might already be loaded (e.g., rapid restarts)
+              videoRef.current.onloadedmetadata = () => resolve(); // Resolve with no value
+              videoRef.current.onerror = reject; 
               if (videoRef.current.readyState >= HTMLMediaElement.HAVE_METADATA) {
-                resolve(true); // Already loaded
+                resolve(); // Already loaded
               }
             });
 
@@ -272,7 +252,7 @@ export function NewClaimWizard() {
               throw new Error("Video element became null after metadata loaded but before play.");
             }
             await videoRef.current.play();
-            setIsCameraActive(true);
+            setIsCameraActive(true); // Moved here to ensure it's set after play()
             setCameraPermissionStatus('granted');
         }
     } catch (accessError) {
@@ -292,33 +272,32 @@ export function NewClaimWizard() {
         }
         toast({ variant: 'destructive', title: 'Camera Access Error', description });
         setCameraPermissionStatus('denied');
-        stopCurrentStream();
+        stopCurrentStream(); // Ensure stream is stopped on error
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [toast, facingMode, stopCurrentStream]); // Removed videoRef from deps as it's a ref
+  }, [toast, facingMode, stopCurrentStream]); 
 
   useEffect(() => {
-    if (enableCamera && currentStep === 2 && !capturedPhotoDataUrl) {
+    if (enableCamera && currentStep === 2 && !capturedPhotoDataUrl) { // Only start if no photo is being previewed
         startCamera();
-    } else {
+    } else if (!enableCamera || currentStep !== 2 || capturedPhotoDataUrl) { // Stop if camera disabled, wrong step, or photo preview
         stopCurrentStream();
-         if (cameraPermissionStatus !== 'denied' && cameraPermissionStatus !== 'pending') {
+         if (cameraPermissionStatus !== 'denied' && cameraPermissionStatus !== 'pending') { // Avoid resetting if denied or pending
              setCameraPermissionStatus('idle'); 
          }
     }
-    return () => {
-        stopCurrentStream();
-    };
+    // No return cleanup needed here as stopCurrentStream is called when conditions change.
+    // Cleanup for unmount is handled by the main component unmount useEffect for speechRec.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enableCamera, currentStep, capturedPhotoDataUrl, facingMode]); 
-  // startCamera and stopCurrentStream are stable due to useCallback.
+  }, [enableCamera, currentStep, capturedPhotoDataUrl, startCamera, stopCurrentStream]); // Added startCamera, stopCurrentStream
+
 
   useEffect(() => {
+    // This effect specifically handles resetting the photo preview and instruction index
+    // when moving away from the photo step or disabling the camera.
     if (currentStep !== 2 || !enableCamera) { 
       setCapturedPhotoDataUrl(null);
-    }
-    if (currentStep !== 2 || !enableCamera) { 
-        setCurrentPhotoInstructionIndex(0);
+      setCurrentPhotoInstructionIndex(0); // Reset instruction index
     }
   }, [currentStep, enableCamera]);
 
@@ -357,18 +336,18 @@ export function NewClaimWizard() {
 
   const currentPhotoInstruction = photoInstructions[currentPhotoInstructionIndex];
   const totalCommittedPhotos = (form.getValues("photos") || []).length;
-  const canTakeMorePhotosOverall = totalCommittedPhotos < 5;
+  const canTakeMorePhotosOverall = totalCommittedPhotos < MAX_PHOTOS;
 
   const addFilesToForm = (newFiles: File[]) => {
     const currentFiles: File[] = form.getValues("photos") || [];
-    const availableSlots = 5 - currentFiles.length;
+    const availableSlots = MAX_PHOTOS - currentFiles.length;
 
     if (availableSlots <= 0) {
-      toast({ variant: "destructive", title: "Photo Limit Reached", description: "Maximum 5 photos already uploaded." });
+      toast({ variant: "destructive", title: "Photo Limit Reached", description: `Maximum ${MAX_PHOTOS} photos already uploaded.` });
       return;
     }
     const filesToActuallyAdd = newFiles.slice(0, availableSlots);
-    form.setValue("photos", [...currentFiles, ...filesToActuallyAdd], { shouldValidate: true });
+    form.setValue("photos", [...currentFiles, ...filesToActuallyAdd], { shouldValidate: true, shouldDirty: true });
     if (filesToActuallyAdd.length < newFiles.length) {
       toast({ variant: "warning", title: "Photo Limit Reached", description: `${filesToActuallyAdd.length} photo(s) added. ${newFiles.length - filesToActuallyAdd.length} not added.`});
     }
@@ -381,13 +360,17 @@ export function NewClaimWizard() {
   
   const handleCaptureAndPreview = () => {
     if (!videoRef.current || !canvasRef.current || !isCameraActive || !canTakeMorePhotosOverall || isProcessingPhoto || !currentPhotoInstruction) {
-        if(!isCameraActive) console.warn("Camera not active, cannot capture.");
+        if(!isCameraActive && enableCamera) console.warn("Camera not active, cannot capture.");
+        if(!canTakeMorePhotosOverall) toast({variant: "warning", title:"Limit Reached", description: `Max ${MAX_PHOTOS} photos.`});
         return;
     }
     
     setIsProcessingPhoto(true);
     const video = videoRef.current;
     const canvas = canvasRef.current;
+
+    // Ensure canvas matches video's current dimensions
+    // These might change if the stream restarts or device orientation changes
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     const context = canvas.getContext('2d');
@@ -396,6 +379,7 @@ export function NewClaimWizard() {
       context.drawImage(video, 0, 0, canvas.width, canvas.height); 
       const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
       setCapturedPhotoDataUrl(dataUrl);
+      // Do not stop stream here, user might want to retake
     }
     setIsProcessingPhoto(false);
   };
@@ -407,46 +391,44 @@ export function NewClaimWizard() {
     try {
       const res = await fetch(capturedPhotoDataUrl);
       const blob = await res.blob();
+      // Ensure unique file name if multiple photos are taken for the same instruction type (though current logic moves to next instruction)
       const fileName = `${currentPhotoInstruction.id}-${Date.now()}.jpg`;
       const file = new File([blob], fileName, { type: 'image/jpeg' });
       
       addFilesToForm([file]);
       
-      const photosAfterAdd = (form.getValues("photos") || []).length;
+      setCapturedPhotoDataUrl(null); // Clear preview to re-enable camera for next shot
 
-      if (currentPhotoInstruction.allowMultiple) {
-        if (photosAfterAdd >= 5) {
-            toast({ title: "Photo Limit Reached", description: "You've reached the maximum of 5 photos." });
-             if (currentPhotoInstructionIndex < photoInstructions.length - 1) { 
-                 setCurrentPhotoInstructionIndex(prev => prev + 1);
-             }
-        }
-      } else { 
-        if (currentPhotoInstructionIndex < photoInstructions.length - 1) {
-          setCurrentPhotoInstructionIndex(prev => prev + 1);
-        } else {
-          toast({ title: "All Specific Photo Types Captured", description: "You can proceed or upload more manually if space allows." });
-        }
+      const photosAfterAdd = (form.getValues("photos") || []).length;
+      if (photosAfterAdd >= MAX_PHOTOS) {
+         toast({ title: "Photo Limit Reached", description: `You've reached the maximum of ${MAX_PHOTOS} photos.` });
+         setEnableCamera(false); // Optionally disable camera if limit reached
+      } else if (currentPhotoInstructionIndex < photoInstructions.length - 1) {
+        setCurrentPhotoInstructionIndex(prev => prev + 1);
+      } else {
+        toast({ title: "All Photo Types Captured", description: "You can proceed or upload more manually if space allows." });
+        setEnableCamera(false); // All guided photos taken
       }
     } catch (error) {
       console.error("Error processing photo:", error);
       toast({ variant: "destructive", title: "Error", description: "Could not process the captured photo." });
     } finally {
       setIsProcessingPhoto(false);
-      setCapturedPhotoDataUrl(null); 
+      // Camera will restart via useEffect if conditions are met (enableCamera, currentStep, !capturedPhotoDataUrl)
     }
   };
   
   const handleRetakePhoto = () => {
-    setCapturedPhotoDataUrl(null); 
+    setCapturedPhotoDataUrl(null); // Clear preview, camera will restart via useEffect
   };
 
-  const handleNextPhotoInstruction = () => {
+  const handleNextPhotoInstruction = () => { // Used for skipping optional photos
     setCapturedPhotoDataUrl(null); 
     if (currentPhotoInstructionIndex < photoInstructions.length - 1) {
       setCurrentPhotoInstructionIndex(prev => prev + 1);
     } else {
       toast({ title: "Finished with guided capture.", description: "You can proceed to the next step if requirements are met."});
+       setEnableCamera(false); // No more instructions
     }
   };
 
@@ -466,8 +448,13 @@ export function NewClaimWizard() {
        const errors = form.formState.errors;
        let errorMessage = "Please correct the errors before proceeding.";
        
-       if (currentStepObj.id === 3 && errors.photos && errors.photos.message) {
-           errorMessage = errors.photos.message as string;
+       if (currentStepObj.id === 3 && errors.photos) {
+           if (typeof errors.photos.message === 'string') {
+             errorMessage = errors.photos.message;
+           } else if (Array.isArray(errors.photos) && errors.photos[0] && typeof errors.photos[0].message === 'string') {
+             // Handle array of errors if Zod returns that for array fields
+             errorMessage = errors.photos[0].message;
+           }
        } else if (fieldsToValidate && fieldsToValidate.length > 0) {
             const fieldErrorKeys = Object.keys(errors).filter(key => fieldsToValidate.includes(key as any));
             if (fieldErrorKeys.length > 0) {
@@ -496,25 +483,13 @@ export function NewClaimWizard() {
     setEnableCamera(false); 
     setCurrentPhotoInstructionIndex(0);
     setCapturedPhotoDataUrl(null);
+    stopCurrentStream(); // Ensure camera is off after submission
   }
   
   const progressValue = ((currentStep + 1) / steps.length) * 100;
   const CurrentIcon = steps[currentStep].icon;
   
-  let isEffectivelyAllGuidedInstructionsDone = false;
-  if (currentPhotoInstruction) {
-      const requiredInstructions = photoInstructions.filter(instr => !instr.isOptional);
-      const lastRequiredInstructionIndex = photoInstructions.indexOf(requiredInstructions[requiredInstructions.length - 1]);
-      if (currentPhotoInstructionIndex > lastRequiredInstructionIndex) { 
-          isEffectivelyAllGuidedInstructionsDone = true;
-      } else if (currentPhotoInstruction.isOptional && currentPhotoInstructionIndex >= lastRequiredInstructionIndex) { 
-          isEffectivelyAllGuidedInstructionsDone = true;
-      } else if (!currentPhotoInstruction.allowMultiple && currentPhotoInstructionIndex === photoInstructions.length - 1 ) { 
-          isEffectivelyAllGuidedInstructionsDone = true;
-      }
-  } else if (currentPhotoInstructionIndex >= photoInstructions.length) { 
-    isEffectivelyAllGuidedInstructionsDone = true;
-  }
+  let isEffectivelyAllGuidedInstructionsDone = currentPhotoInstructionIndex >= photoInstructions.length;
 
 
   return (
@@ -583,7 +558,7 @@ export function NewClaimWizard() {
             {currentStep === 2 && ( 
               <FormField control={form.control} name="photos" render={() => ( 
                 <FormItem>
-                  <FormLabel>Upload Accident Photos ({totalCommittedPhotos} / 5)</FormLabel>
+                  <FormLabel>Upload Accident Photos ({totalCommittedPhotos} / {MAX_PHOTOS})</FormLabel>
                   <div className="flex items-center space-x-2 mb-3">
                     <Switch id="camera-toggle" checked={enableCamera} onCheckedChange={setEnableCamera} />
                     <label htmlFor="camera-toggle" className="text-sm font-medium text-foreground">Use Camera for Guided Capture</label>
@@ -617,9 +592,9 @@ export function NewClaimWizard() {
                             )}
                           </div>
 
-                          {currentPhotoInstruction && (currentPhotoInstruction.isOptional || currentPhotoInstruction.allowMultiple || currentPhotoInstructionIndex >= photoInstructions.filter(p=>!p.isOptional).length) && !isEffectivelyAllGuidedInstructionsDone && isCameraActive && cameraPermissionStatus === 'granted' && (
+                          {currentPhotoInstruction && (currentPhotoInstruction.isOptional || currentPhotoInstructionIndex >= photoInstructions.filter(p=>!p.isOptional).length) && !isEffectivelyAllGuidedInstructionsDone && isCameraActive && cameraPermissionStatus === 'granted' && (
                              <Button type="button" variant="outline" onClick={handleNextPhotoInstruction} className="w-full mt-2">
-                                {currentPhotoInstruction.allowMultiple ? `Done with '${currentPhotoInstruction.title}' / Skip current type` : `Skip '${currentPhotoInstruction.title}'`}
+                                Skip '{currentPhotoInstruction.title}'
                                 <ArrowRight className="ml-2 h-4 w-4"/>
                             </Button>
                           )}
@@ -640,7 +615,7 @@ export function NewClaimWizard() {
                         </div>
                       )}
                       <canvas ref={canvasRef} style={{ display: 'none' }} />
-                       {!canTakeMorePhotosOverall && totalCommittedPhotos >=5 && <Alert variant="warning" className="mt-3"><AlertTriangle className="h-4 w-4" /><AlertTitle>Photo Limit Reached</AlertTitle><AlertDescription>Maximum 5 photos allowed. You cannot add more.</AlertDescription></Alert>}
+                       {!canTakeMorePhotosOverall && totalCommittedPhotos >= MAX_PHOTOS && <Alert variant="warning" className="mt-3"><AlertTriangle className="h-4 w-4" /><AlertTitle>Photo Limit Reached</AlertTitle><AlertDescription>Maximum {MAX_PHOTOS} photos allowed. You cannot add more.</AlertDescription></Alert>}
                        {isEffectivelyAllGuidedInstructionsDone && enableCamera && <Alert className="mt-3"><CheckCircle className="h-4 w-4"/><AlertTitle>Guided Capture Complete</AlertTitle><AlertDescription>All photo types covered or skipped. You can upload manually if space permits.</AlertDescription></Alert>}
                     </Card>
                   )}
@@ -654,7 +629,7 @@ export function NewClaimWizard() {
                       <FormControl>
                         <Input id="photo-upload" type="file" className="sr-only" accept="image/*" multiple onChange={handleFileUpload} disabled={!canTakeMorePhotosOverall} />
                       </FormControl>
-                      <p className="text-xs text-muted-foreground mt-1">PNG, JPG, GIF up to 10MB each. Max 5 photos total.</p>
+                      <p className="text-xs text-muted-foreground mt-1">PNG, JPG, GIF up to 10MB each. Max {MAX_PHOTOS} photos total.</p>
                       <p className="text-xs text-muted-foreground mt-1">
                          Required: {photoInstructions.filter(p => !p.isOptional).map(p => p.title).join(', ')}.
                       </p>
@@ -675,7 +650,7 @@ export function NewClaimWizard() {
                                 onClick={() => {
                                   const currentPhotos = form.getValues("photos") || [];
                                   const updatedPhotos = currentPhotos.filter((_, i) => i !== index);
-                                  form.setValue("photos", updatedPhotos, { shouldValidate: true });
+                                  form.setValue("photos", updatedPhotos, { shouldValidate: true, shouldDirty: true });
                                 }}
                               >
                                 <LucideXCircle className="h-4 w-4" />
@@ -706,7 +681,7 @@ export function NewClaimWizard() {
                         onChange={(e) => {
                           const files = Array.from(e.target.files || []);
                           const currentDocs = form.getValues("documents") || [];
-                          form.setValue("documents", [...currentDocs, ...files], {shouldValidate: true});
+                          form.setValue("documents", [...currentDocs, ...files], {shouldValidate: true, shouldDirty: true});
                         }}
                       /></FormControl>
                        <p className="text-xs text-muted-foreground mt-1">PDF, DOC, JPG, etc.</p>
@@ -726,7 +701,7 @@ export function NewClaimWizard() {
                               className="h-6 w-6 text-destructive"
                               onClick={() => {
                                 const updatedDocs = watchedDocuments.filter((_, i) => i !== index);
-                                form.setValue("documents", updatedDocs, {shouldValidate:true});
+                                form.setValue("documents", updatedDocs, {shouldValidate:true, shouldDirty: true});
                               }}
                             >
                               <LucideXCircle className="h-4 w-4" />
