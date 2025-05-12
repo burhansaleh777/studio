@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { Camera as CameraIcon, FileUp, CheckCircle, Car, FileTextIcon, Mic, MicOff, StopCircle, Loader2, AlertTriangle, ArrowRight, XCircle as LucideXCircle, RefreshCcw } from "lucide-react";
+import { Camera as CameraIcon, FileUp, CheckCircle, Car, FileTextIcon, Mic, MicOff, StopCircle, Loader2, AlertTriangle, ArrowRight, XCircle as LucideXCircle } from "lucide-react";
 import Image from "next/image";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -44,7 +44,7 @@ const photoInstructions = [
   { id: 'fullVehicle', title: "Full Vehicle Photo", description: "Capture a clear photo of the entire vehicle.", isOptional: false },
   { id: 'damageCloseUp', title: "Damage Close-up Photo", description: "Take a close-up photo of the damaged section(s).", isOptional: false },
   { id: 'surroundingArea', title: "Surrounding Area Photo", description: "Capture the area around the vehicle where the accident occurred.", isOptional: false },
-  { id: 'otherVehicles', title: "Other Vehicles Photo", description: "If other vehicles were involved, take photos of them. You can add multiple if space allows (max 5 total).", isOptional: false, allowMultiple: true }, // Changed isOptional to false
+  { id: 'otherVehicles', title: "Other Vehicles Photo", description: "If other vehicles were involved, take photos of them. You can add multiple if space allows (max 5 total).", isOptional: false, allowMultiple: true },
 ];
 
 const claimSchemaStep3 = z.object({
@@ -53,19 +53,36 @@ const claimSchemaStep3 = z.object({
     .max(5, "Maximum 5 photos allowed")
     .refine(files => {
         if (!files) return false;
-        const requiredMinimumPhotos = photoInstructions.filter(p => !p.isOptional).length;
-        const uploadedInstructionIds = new Set(files.map(file => file.name.split('-')[0]));
-        const allRequiredUploaded = photoInstructions
-          .filter(p => !p.isOptional)
-          .every(p => uploadedInstructionIds.has(p.id));
+        const requiredMinimumPhotos = photoInstructions.filter(p => !p.isOptional && !p.allowMultiple).length;
+        const requiredMultiplePhotosExist = photoInstructions.some(p => !p.isOptional && p.allowMultiple);
         
-        return files.length >= requiredMinimumPhotos && allRequiredUploaded;
+        let minPhotosNeeded = requiredMinimumPhotos;
+        if (requiredMultiplePhotosExist) minPhotosNeeded +=1; // Need at least one for the "allowMultiple" category
+
+        const uploadedInstructionIds = new Set(files.map(file => file.name.split('-')[0]));
+        
+        const allRequiredSingleUploaded = photoInstructions
+          .filter(p => !p.isOptional && !p.allowMultiple)
+          .every(p => uploadedInstructionIds.has(p.id));
+
+        const anyRequiredMultipleUploaded = photoInstructions
+          .filter(p => !p.isOptional && p.allowMultiple)
+          .some(p => uploadedInstructionIds.has(p.id));
+
+        // If there's any "allowMultiple" required type, at least one must be present.
+        const multipleRequirementMet = requiredMultiplePhotosExist ? anyRequiredMultipleUploaded : true;
+        
+        return files.length >= minPhotosNeeded && allRequiredSingleUploaded && multipleRequirementMet;
     }, (files) => {
         const allRequiredPhotoInstructions = photoInstructions.filter(p => !p.isOptional);
-        const requiredCount = allRequiredPhotoInstructions.length;
+        
+        // Calculate the minimum number of distinct required photo types.
+        // For "allowMultiple", we count it as 1 distinct type needed.
+        const distinctRequiredTypes = new Set(allRequiredPhotoInstructions.map(p => p.id)).size;
+
         const requiredPhotoTitles = allRequiredPhotoInstructions.map(p => p.title).join(', ');
 
-        let message = `Please upload at least ${requiredCount} photos covering all required types (${requiredPhotoTitles}). Currently ${files?.length || 0} photos uploaded.`;
+        let message = `Please upload at least ${distinctRequiredTypes} photos covering all required types (${requiredPhotoTitles}). Currently ${files?.length || 0} photos uploaded.`;
 
         const uploadedInstructionIds = new Set(files.map(file => file.name.split('-')[0]));
         const missingRequiredTitles = allRequiredPhotoInstructions
@@ -110,7 +127,7 @@ export function NewClaimWizard() {
 
   // Camera Input State
   const [enableCamera, setEnableCamera] = useState(false);
-  const [isCameraActive, setIsCameraActive] = useState(false); // Initialized to false
+  const [isCameraActive, setIsCameraActive] = useState(false); 
   const [cameraPermissionStatus, setCameraPermissionStatus] = useState<'idle' | 'pending' | 'granted' | 'denied'>('idle');
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -204,10 +221,8 @@ export function NewClaimWizard() {
     }
     if (videoRef.current) {
       videoRef.current.srcObject = null;
-      // videoRef.current.pause(); // Not strictly necessary if srcObject is null
-      // videoRef.current.load(); // Not strictly necessary if srcObject is null
     }
-    setIsCameraActive(false); // Explicitly set camera to inactive
+    setIsCameraActive(false);
   }, []);
 
 
@@ -219,13 +234,12 @@ export function NewClaimWizard() {
     }
     if (!videoRef.current) {
         toast({ variant: "destructive", title: "Camera Error", description: "Video element not ready." });
-        // Consider if setting to 'denied' is appropriate or if it should wait
         return;
     }
 
     setCameraPermissionStatus('pending');
-    setIsCameraActive(false); // Reset active state
-    stopCurrentStream(); // Ensure previous stream is stopped
+    setIsCameraActive(false);
+    stopCurrentStream(); 
 
     try {
         const newStream = await navigator.mediaDevices.getUserMedia({
@@ -240,21 +254,26 @@ export function NewClaimWizard() {
 
         if (videoRef.current) {
             videoRef.current.srcObject = newStream;
-            videoRef.current.onloadedmetadata = () => {
-                videoRef.current?.play().then(() => {
-                    setIsCameraActive(true);
-                    setCameraPermissionStatus('granted');
-                }).catch(playError => {
-                    console.error("Error playing video:", playError);
-                    toast({ variant: "destructive", title: "Camera Play Error", description: `Could not start camera: ${playError.message}` });
-                    setCameraPermissionStatus('denied');
-                    stopCurrentStream();
-                });
-            };
-             // Handle cases where metadata might already be loaded (e.g., rapid restarts)
-            if (videoRef.current.readyState >= HTMLMediaElement.HAVE_METADATA) {
-                 videoRef.current.dispatchEvent(new Event('loadedmetadata'));
+            // Use a promise for onloadedmetadata to ensure it plays after metadata is loaded
+            await new Promise((resolve, reject) => {
+              if(!videoRef.current) { // Check if videoRef still exists
+                reject(new Error("Video element became null before metadata loaded."));
+                return;
+              }
+              videoRef.current.onloadedmetadata = resolve;
+              videoRef.current.onerror = reject; // Handle potential errors during loading
+               // Handle cases where metadata might already be loaded (e.g., rapid restarts)
+              if (videoRef.current.readyState >= HTMLMediaElement.HAVE_METADATA) {
+                resolve(true); // Already loaded
+              }
+            });
+
+            if(!videoRef.current) {
+              throw new Error("Video element became null after metadata loaded but before play.");
             }
+            await videoRef.current.play();
+            setIsCameraActive(true);
+            setCameraPermissionStatus('granted');
         }
     } catch (accessError) {
         console.error('Error accessing camera:', accessError);
@@ -275,26 +294,24 @@ export function NewClaimWizard() {
         setCameraPermissionStatus('denied');
         stopCurrentStream();
     }
-  }, [toast, facingMode, stopCurrentStream]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [toast, facingMode, stopCurrentStream]); // Removed videoRef from deps as it's a ref
 
-  // Effect for managing camera start/stop based on dependencies
   useEffect(() => {
     if (enableCamera && currentStep === 2 && !capturedPhotoDataUrl) {
         startCamera();
     } else {
         stopCurrentStream();
          if (cameraPermissionStatus !== 'denied' && cameraPermissionStatus !== 'pending') {
-             setCameraPermissionStatus('idle'); // Reset if not actively denied or pending
+             setCameraPermissionStatus('idle'); 
          }
     }
-    // Cleanup function for when component unmounts or dependencies change significantly
     return () => {
         stopCurrentStream();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enableCamera, currentStep, capturedPhotoDataUrl, facingMode, startCamera, stopCurrentStream]);
-  // Note: `facingMode` is added to re-trigger camera start if it changes.
-  // `startCamera` and `stopCurrentStream` are stable due to useCallback.
+  }, [enableCamera, currentStep, capturedPhotoDataUrl, facingMode]); 
+  // startCamera and stopCurrentStream are stable due to useCallback.
 
   useEffect(() => {
     if (currentStep !== 2 || !enableCamera) { 
@@ -379,9 +396,6 @@ export function NewClaimWizard() {
       context.drawImage(video, 0, 0, canvas.width, canvas.height); 
       const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
       setCapturedPhotoDataUrl(dataUrl);
-      // Stop stream only after capture for preview, not for the whole video element
-      // This was changed to rely on the useEffect for start/stop stream management.
-      // stopCurrentStream(); 
     }
     setIsProcessingPhoto(false);
   };
@@ -420,32 +434,21 @@ export function NewClaimWizard() {
     } finally {
       setIsProcessingPhoto(false);
       setCapturedPhotoDataUrl(null); 
-      // The main useEffect for camera start/stop will handle restarting the camera
-      // based on `capturedPhotoDataUrl` becoming null.
     }
   };
   
   const handleRetakePhoto = () => {
     setCapturedPhotoDataUrl(null); 
-    // The main useEffect for camera start/stop will handle restarting the camera.
   };
 
   const handleNextPhotoInstruction = () => {
     setCapturedPhotoDataUrl(null); 
     if (currentPhotoInstructionIndex < photoInstructions.length - 1) {
       setCurrentPhotoInstructionIndex(prev => prev + 1);
-      // The main useEffect will handle camera restart if needed.
     } else {
       toast({ title: "Finished with guided capture.", description: "You can proceed to the next step if requirements are met."});
-      // The main useEffect will handle stopping the camera.
     }
   };
-
-  const switchCameraFacingMode = () => {
-    setFacingMode(prevMode => prevMode === 'user' ? 'environment' : 'user');
-    // The useEffect hook for facingMode change will handle restarting the camera
-  };
-
 
   const handleNext = async () => {
     const currentStepObj = steps[currentStep];
@@ -493,7 +496,6 @@ export function NewClaimWizard() {
     setEnableCamera(false); 
     setCurrentPhotoInstructionIndex(0);
     setCapturedPhotoDataUrl(null);
-    // stopCurrentStream(); // Will be handled by useEffect
   }
   
   const progressValue = ((currentStep + 1) / steps.length) * 100;
@@ -613,9 +615,6 @@ export function NewClaimWizard() {
                                 Capture
                                 </Button>
                             )}
-                             <Button type="button" onClick={switchCameraFacingMode} variant="outline" className="flex-1 min-w-[120px]"  disabled={isProcessingPhoto}>
-                                <RefreshCcw className="mr-2 h-4 w-4" /> Switch Cam
-                            </Button>
                           </div>
 
                           {currentPhotoInstruction && (currentPhotoInstruction.isOptional || currentPhotoInstruction.allowMultiple || currentPhotoInstructionIndex >= photoInstructions.filter(p=>!p.isOptional).length) && !isEffectivelyAllGuidedInstructionsDone && isCameraActive && cameraPermissionStatus === 'granted' && (
