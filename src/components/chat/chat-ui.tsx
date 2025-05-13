@@ -8,7 +8,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Send, MessageSquare, Loader2, Bot, User } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { BimaSureLogo } from "@/components/shared/bima-sure-logo"; // Assuming you have this for a nicer bot avatar
 
 interface Message {
   id: string;
@@ -35,7 +34,7 @@ export function ChatUi() {
     setMessages([
       {
         id: crypto.randomUUID(),
-        text: "Hello! I'm the BimaSure AI assistant. How can I help you with your insurance questions today?",
+        text: "Hello! I'm the BimaSmart AI assistant. How can I help you with your insurance questions today?",
         sender: "bot",
         timestamp: new Date(),
       }
@@ -99,7 +98,7 @@ export function ChatUi() {
     <div className="flex flex-col h-[calc(100vh-11rem)] md:h-[calc(100vh-4rem)] bg-card shadow-lg rounded-lg overflow-hidden"> {/* Adjust height based on header/nav */}
       <header className="p-4 border-b flex items-center space-x-3 bg-primary/5">
         <MessageSquare className="h-6 w-6 text-primary" />
-        <h2 className="text-lg font-semibold text-primary">BimaSure AI Support</h2>
+        <h2 className="text-lg font-semibold text-primary">BimaSmart AI Support</h2>
       </header>
 
       <ScrollArea className="flex-grow p-4 space-y-4" ref={scrollAreaRef}>

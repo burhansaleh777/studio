@@ -1,18 +1,18 @@
 import type { SVGProps } from 'react';
 
-export function BimaSureLogo({ className, ...props }: SVGProps<SVGSVGElement> & { className?: string }) {
+export function BimaSmartLogo({ className, ...props }: SVGProps<SVGSVGElement> & { className?: string }) {
   return (
     <svg
-      width="150"
+      width="160" // Adjusted width for potentially longer text
       height="40"
-      viewBox="0 0 150 40"
+      viewBox="0 0 160 40"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       {...props}
-      aria-label="BimaSure Logo"
+      aria-label="BimaSmart Logo"
     >
-      <rect width="150" height="40" rx="8" fill="hsl(var(--primary))" />
+      <rect width="160" height="40" rx="8" fill="hsl(var(--primary))" />
       <text
         x="50%"
         y="50%"
@@ -23,7 +23,7 @@ export function BimaSureLogo({ className, ...props }: SVGProps<SVGSVGElement> & 
         fontWeight="bold"
         fill="hsl(var(--primary-foreground))"
       >
-        BimaSure
+        BimaSmart
       </text>
     </svg>
   );

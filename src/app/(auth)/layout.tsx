@@ -1,4 +1,4 @@
-import { BimaSureLogo } from "@/components/shared/bima-sure-logo";
+import { BimaSmartLogo } from "@/components/shared/bima-smart-logo";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,7 @@ export default function AuthLayout({
         </Button>
       </div>
       <Link href="/" className="mb-8">
-        <BimaSureLogo className="h-12 w-auto" />
+        <BimaSmartLogo className="h-12 w-auto" />
       </Link>
       <main className="w-full max-w-md">{children}</main>
     </div>
