@@ -67,7 +67,7 @@ export default function DashboardPage() {
             <div className="flex justify-between items-center mb-3">
               <h2 className="text-lg font-semibold">{t('dashboard.myPolicies')}</h2>
               <Button variant="outline" size="sm" asChild>
-                <Link href="/policies">{t('common.viewAll')}</Link>
+                <Link href="/policies"><span>{t('common.viewAll')}</span></Link>
               </Button>
             </div>
             {policies.length > 0 ? (
@@ -81,7 +81,7 @@ export default function DashboardPage() {
                 <CardContent>
                   <p className="text-muted-foreground">{t('dashboard.noPolicies')}</p>
                   <Button className="mt-4" asChild>
-                    <Link href="/quotes">{t('dashboard.getQuote')}</Link>
+                    <Link href="/quotes"><span>{t('dashboard.getQuote')}</span></Link>
                   </Button>
                 </CardContent>
               </Card>
@@ -94,7 +94,7 @@ export default function DashboardPage() {
               <h2 className="text-lg font-semibold">{t('dashboard.myVehicles')}</h2>
               <Button variant="ghost" size="sm" asChild>
                 <Link href="/profile#vehicles" className="flex items-center">
-                  <PlusCircle className="h-4 w-4 mr-1" /> {t('dashboard.addVehicle')}
+                  <PlusCircle className="h-4 w-4 mr-1" /> <span>{t('dashboard.addVehicle')}</span>
                 </Link>
               </Button>
             </div>
@@ -109,7 +109,7 @@ export default function DashboardPage() {
                 <CardContent>
                   <p className="text-muted-foreground">{t('dashboard.noVehicles')}</p>
                   <Button className="mt-4" asChild>
-                    <Link href="/profile#vehicles">{t('dashboard.addYourVehicle')}</Link>
+                    <Link href="/profile#vehicles"><span>{t('dashboard.addYourVehicle')}</span></Link>
                   </Button>
                 </CardContent>
               </Card>
@@ -170,7 +170,7 @@ function QuickActionCard({ href, icon: Icon, label }: { href: string, icon: Reac
 }
 
 function PolicyCard({ policy }: { policy: (typeof policies)[0] }) {
-  const { t } = useLanguage(); // Added for any internal text, if needed
+  const { t } = useLanguage(); 
   return (
     <Card className="shadow-md hover:shadow-lg transition-shadow">
       <CardHeader>
@@ -178,13 +178,13 @@ function PolicyCard({ policy }: { policy: (typeof policies)[0] }) {
         <CardDescription>Policy: {policy.policyNumber}</CardDescription>
       </CardHeader>
       <CardContent>
-        <p className="text-sm">Expires: <span className="font-medium">{policy.expiryDate}</span></p>
+        <p className="text-sm">{t('common.expires')}: <span className="font-medium">{policy.expiryDate}</span></p>
         <p className="text-sm">Status: <span className={`font-medium ${policy.status === "Active" ? "text-green-600" : "text-red-600"}`}>{policy.status}</span></p>
       </CardContent>
       <CardFooter>
         <Button variant="link" className="p-0 h-auto text-primary" asChild>
           <Link href={`/policies/${policy.id}`}>
-            <span>{t('common.viewAll')} Details</span>
+            <span>{t('common.viewDetails')}</span>
           </Link>
         </Button>
       </CardFooter>

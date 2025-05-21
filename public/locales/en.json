@@ -1,44 +1,10 @@
 
 {
-  "common": {
-    "loading": "Loading...",
-    "back": "Back",
-    "viewAll": "View All",
-    "submit": "Submit",
-    "notifications": "Notifications",
-    "save": "Save",
-    "cancel": "Cancel",
-    "edit": "Edit",
-    "delete": "Delete",
-    "yes": "Yes",
-    "no": "No"
-  },
-  "pageHeader": {
-    "welcome": "Welcome, {{name}}!",
-    "profile": "My Profile",
-    "claims": "Your Claims",
-    "newClaim": "Submit a New Claim",
-    "chat": "AI Support Chat",
-    "payments": "Payments",
-    "dashboard": "Dashboard"
-  },
   "splashScreen": {
     "loading": "Loading..."
   },
-  "dashboard": {
-    "quickActions": "Quick Actions",
-    "startClaim": "Start Claim",
-    "getQuote": "Get Quote",
-    "makePayment": "Make Payment",
-    "supportChat": "Support Chat",
-    "myPolicies": "My Policies",
-    "myVehicles": "My Vehicles",
-    "addVehicle": "Add Vehicle",
-    "recentClaims": "Recent Claims",
-    "noPolicies": "You have no active policies.",
-    "noVehicles": "No vehicles added yet.",
-    "addYourVehicle": "Add Your Vehicle",
-    "noRecentClaims": "No recent claim activity."
+  "pageHeader": {
+    "welcome": "Welcome, {{name}}!"
   },
   "bottomNav": {
     "dashboard": "Dashboard",
@@ -47,33 +13,31 @@
     "payments": "Payments",
     "profile": "Profile"
   },
-  "languageToggle": {
-    "switchToSwahili": "Switch to Swahili",
-    "switchToEnglish": "Switch to English",
-    "currentLanguage": "Current language: English"
-  },
-  "claimsPage": {
-    "newClaimButton": "New Claim",
-    "statusUnderReview": "Under Review",
-    "statusSettled": "Settled",
-    "statusRejected": "Rejected",
+  "common": {
+    "notifications": "Notifications",
+    "viewAll": "View All",
+    "viewDetails": "View Details",
+    "edit": "Edit",
     "submitted": "Submitted",
-    "claimNo": "Claim #",
-    "policyNo": "Policy",
-    "timelineStep1": "Submitted",
-    "timelineStep2": "Under Review",
-    "timelineStep3": "Decision Made",
-    "timelineStep3Settled": "Settled/Finalized",
-    "noClaimsFoundTitle": "No Claims Found",
-    "noClaimsFoundDesc": "You haven't submitted any claims yet. If you need to, you can start a new claim.",
-    "submitFirstClaim": "Submit Your First Claim"
+    "expires": "Expires"
   },
-  "newClaimPage": {
-    "selectVehicle": "Select Vehicle",
-    "accidentDetails": "Accident Details",
-    "uploadPhotos": "Upload Photos",
-    "supportingDocs": "Supporting Documents",
-    "reviewSubmit": "Review & Submit",
-    "stepDescription": "Step {{currentStep}} of {{totalSteps}}. Fill accurately."
+  "dashboard": {
+    "quickActions": "Quick Actions",
+    "startClaim": "Start Claim",
+    "getQuote": "Get Quote",
+    "makePayment": "Make Payment",
+    "supportChat": "Support Chat",
+    "myPolicies": "My Policies",
+    "noPolicies": "You currently have no active policies.",
+    "myVehicles": "My Vehicles",
+    "addVehicle": "Add Vehicle",
+    "noVehicles": "You have not added any vehicles yet.",
+    "addYourVehicle": "Add Your Vehicle",
+    "recentClaims": "Recent Claims Activity",
+    "noRecentClaims": "No recent claims activity to show."
+  },
+  "languageToggle": {
+    "switchToSwahili": "Badilisha iwe Kiswahili",
+    "switchToEnglish": "Switch to English"
   }
 }
