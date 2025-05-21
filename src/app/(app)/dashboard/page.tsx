@@ -26,8 +26,8 @@ const recentClaims = [
 ];
 
 const vehicles = [
-  { id: "V1", name: "Toyota IST", model: "2010", plate: "T123 ABC", imageUrl:"https://picsum.photos/seed/toyotaist/100/70" },
-  { id: "V2", name: "Nissan March", model: "2012", plate: "T456 XYZ", imageUrl:"https://picsum.photos/seed/nissanmarch/100/70"  },
+  { id: "V1", name: "Toyota IST", model: "2010", plate: "T123 ABC", imageUrl:"https://placehold.co/100x70.png" },
+  { id: "V2", name: "Nissan March", model: "2012", plate: "T456 XYZ", imageUrl:"https://placehold.co/100x70.png"  },
 ];
 
 
@@ -183,7 +183,9 @@ function PolicyCard({ policy }: { policy: (typeof policies)[0] }) {
       </CardContent>
       <CardFooter>
         <Button variant="link" className="p-0 h-auto text-primary" asChild>
-          <Link href={`/policies/${policy.id}`}>{t('common.viewAll')} Details</Link> {/* Example of using t here */}
+          <Link href={`/policies/${policy.id}`}>
+            <span>{t('common.viewAll')} Details</span>
+          </Link>
         </Button>
       </CardFooter>
     </Card>
@@ -207,10 +209,13 @@ function VehicleCard({ vehicle }: { vehicle: (typeof vehicles)[0] }) {
           <CardTitle className="text-lg">{vehicle.name}</CardTitle>
           <CardDescription>{vehicle.model} - {vehicle.plate}</CardDescription>
            <Button variant="link" size="sm" className="p-0 h-auto text-primary mt-1" asChild>
-            <Link href={`/profile#vehicle-${vehicle.id}`}>{t('common.edit')}</Link>
+            <Link href={`/profile#vehicle-${vehicle.id}`}>
+              <span>{t('common.edit')}</span>
+            </Link>
           </Button>
         </div>
       </div>
     </Card>
   );
 }
+
