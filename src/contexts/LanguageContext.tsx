@@ -12,7 +12,7 @@ interface LanguageContextType {
   setLanguage: (language: Language) => void;
   t: (key: string, params?: Record<string, string | number>) => string;
   translations: Translations;
-  isLoading: boolean; // To indicate if a language switch is in progress
+  isLoading: boolean; // To indicate if a language switch or initial load is in progress
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -42,8 +42,8 @@ async function loadTranslations(lang: Language): Promise<Translations> {
 export const LanguageProvider: React.FC<PropsWithChildren> = ({ children }) => {
   const [language, setLanguageState] = useState<Language>('en');
   const [translations, setTranslations] = useState<Translations>({});
-  const [contextIsLoading, setContextIsLoading] = useState(true); // For language switches
-  const [initialTranslationsLoaded, setInitialTranslationsLoaded] = useState(false); // For initial app load
+  const [contextIsLoading, setContextIsLoading] = useState(true); 
+  const [initialTranslationsLoaded, setInitialTranslationsLoaded] = useState(false);
 
   useEffect(() => {
     const storedLang = localStorage.getItem('appLanguage') as Language | null;
@@ -52,23 +52,31 @@ export const LanguageProvider: React.FC<PropsWithChildren> = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    setContextIsLoading(true);
+    let active = true;
+    setContextIsLoading(true); 
+
     loadTranslations(language).then(loadedTranslations => {
-      setTranslations(loadedTranslations);
-      if (!initialTranslationsLoaded) {
-        setInitialTranslationsLoaded(true);
+      if (active) {
+        setTranslations(loadedTranslations);
       }
     }).catch((error) => {
       console.error("Failed to load translations in LanguageProvider effect:", error);
-      if (!initialTranslationsLoaded) {
-        // If initial load fails, still mark as loaded to allow app to render
-        // t() will then fallback to keys if translations object is empty.
-        setInitialTranslationsLoaded(true);
+      if (active) {
+        setTranslations({}); // Set to empty on error to avoid using stale translations
       }
     }).finally(() => {
-      setContextIsLoading(false);
+      if (active) {
+        setContextIsLoading(false);
+        // Only set initialTranslationsLoaded to true once, after the first attempt
+        // (success or failure) to load translations is complete and contextIsLoading is false.
+        if (!initialTranslationsLoaded) {
+          setInitialTranslationsLoaded(true);
+        }
+      }
     });
-  }, [language]); // initialTranslationsLoaded is not a dependency here
+
+    return () => { active = false; }; // Cleanup function to prevent state updates on unmounted component
+  }, [language]); // Effect runs when language changes. initialTranslationsLoaded is not a dependency here.
 
   const setLanguage = useCallback((lang: Language) => {
     localStorage.setItem('appLanguage', lang);
@@ -76,9 +84,6 @@ export const LanguageProvider: React.FC<PropsWithChildren> = ({ children }) => {
   }, []);
 
   const t = useCallback((key: string, params?: Record<string, string | number>): string => {
-    // If initialTranslationsLoaded is false, LanguageProvider returns null, so this t()
-    // shouldn't be called by SplashScreen yet. If somehow called, returning key is fallback.
-    // Once initialTranslationsLoaded is true, `translations` should be available (or empty on error).
     const keys = key.split('.');
     let value: any = translations;
     try {
@@ -99,11 +104,11 @@ export const LanguageProvider: React.FC<PropsWithChildren> = ({ children }) => {
       });
     }
     return typeof value === 'string' ? value : key;
-  }, [translations]); // Depends only on translations object changing
+  }, [translations]); // Depends only on the translations object
 
   if (!initialTranslationsLoaded) {
-    // Prevents children (AppLoader -> SplashScreen) from rendering and calling t()
-    // before the first set of translations has been attempted.
+    // Prevents children from rendering and calling t()
+    // before the first set of translations has been attempted and context states updated.
     return null;
   }
   
