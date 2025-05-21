@@ -55,6 +55,8 @@ export const LanguageProvider: React.FC<PropsWithChildren> = ({ children }) => {
     loadTranslations(language).then(loadedTranslations => {
       setTranslations(loadedTranslations);
       setIsLoading(false);
+    }).catch(() => {
+      setIsLoading(false); // Ensure loading is false even on error
     });
   }, [language]);
 
@@ -64,10 +66,17 @@ export const LanguageProvider: React.FC<PropsWithChildren> = ({ children }) => {
   }, []);
 
   const t = useCallback((key: string, params?: Record<string, string | number>): string => {
-    if (isLoading) return key; // Return key or a loading indicator string
+    // If isLoading is true AND translations are still empty (initial load scenario before splash hides)
+    if (isLoading && Object.keys(translations).length === 0) {
+      // This state means it's the very initial load and translations haven't been fetched yet.
+      // The SplashScreen should be visible during this time. Returning keys is acceptable.
+      return key;
+    }
 
+    // If not in the absolute initial loading phase (i.e., translations object is populated, 
+    // even if with old language data during a switch, or if isLoading is false), proceed to translate.
     const keys = key.split('.');
-    let value = translations;
+    let value: any = translations; 
     try {
       for (const k of keys) {
         if (value && typeof value === 'object' && k in value) {
@@ -90,13 +99,7 @@ export const LanguageProvider: React.FC<PropsWithChildren> = ({ children }) => {
     }
     return typeof value === 'string' ? value : key;
   }, [translations, isLoading]);
-
-  if (isLoading && Object.keys(translations).length === 0) {
-    // Still loading initial translations, potentially show a minimal loader or nothing
-    // to avoid flicker, or return a version of 't' that always returns keys.
-    // For now, children will render and 't' will return keys.
-  }
-
+  
   return (
     <LanguageContext.Provider value={{ language, setLanguage, t, translations }}>
       {children}
