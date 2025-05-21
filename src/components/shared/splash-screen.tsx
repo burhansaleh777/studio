@@ -1,6 +1,6 @@
 // src/components/shared/splash-screen.tsx
 "use client";
-import { BimaSmartLogo } from "./bima-smart-logo";
+import { BimaSmartLogo } from "@/components/shared/bima-smart-logo";
 import { useEffect } from "react";
 
 interface SplashScreenProps {
@@ -22,7 +22,7 @@ export function SplashScreen({ onFinished }: SplashScreenProps) {
         <BimaSmartLogo className="h-20 w-auto md:h-24" />
       </div>
       <p className="mt-6 text-lg font-medium text-primary animate-fadeIn">
-        Loading BimaSmart...
+        Loading...
       </p>
     </div>
   );
