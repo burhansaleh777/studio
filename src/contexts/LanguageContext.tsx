@@ -11,7 +11,8 @@ interface LanguageContextType {
   language: Language;
   setLanguage: (language: Language) => void;
   t: (key: string, params?: Record<string, string | number>) => string;
-  translations: Translations; // Expose translations if needed directly, though 't' is preferred
+  translations: Translations;
+  isLoading: boolean; // To indicate if a language switch is in progress
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -21,7 +22,6 @@ async function loadTranslations(lang: Language): Promise<Translations> {
     const response = await fetch(`/locales/${lang}.json`);
     if (!response.ok) {
       console.error(`Failed to load ${lang}.json: ${response.statusText}`);
-      // Fallback to English if current language fails, or empty if English also fails
       if (lang !== 'en') {
         const fallbackResponse = await fetch(`/locales/en.json`);
         if (fallbackResponse.ok) return await fallbackResponse.json();
@@ -40,9 +40,10 @@ async function loadTranslations(lang: Language): Promise<Translations> {
 }
 
 export const LanguageProvider: React.FC<PropsWithChildren> = ({ children }) => {
-  const [language, setLanguageState] = useState<Language>('en'); // Default to English
+  const [language, setLanguageState] = useState<Language>('en');
   const [translations, setTranslations] = useState<Translations>({});
-  const [isLoading, setIsLoading] = useState(true);
+  const [contextIsLoading, setContextIsLoading] = useState(true); // For language switches
+  const [initialTranslationsLoaded, setInitialTranslationsLoaded] = useState(false); // For initial app load
 
   useEffect(() => {
     const storedLang = localStorage.getItem('appLanguage') as Language | null;
@@ -51,14 +52,23 @@ export const LanguageProvider: React.FC<PropsWithChildren> = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    setIsLoading(true);
+    setContextIsLoading(true);
     loadTranslations(language).then(loadedTranslations => {
       setTranslations(loadedTranslations);
-      setIsLoading(false);
-    }).catch(() => {
-      setIsLoading(false); // Ensure loading is false even on error
+      if (!initialTranslationsLoaded) {
+        setInitialTranslationsLoaded(true);
+      }
+    }).catch((error) => {
+      console.error("Failed to load translations in LanguageProvider effect:", error);
+      if (!initialTranslationsLoaded) {
+        // If initial load fails, still mark as loaded to allow app to render
+        // t() will then fallback to keys if translations object is empty.
+        setInitialTranslationsLoaded(true);
+      }
+    }).finally(() => {
+      setContextIsLoading(false);
     });
-  }, [language]);
+  }, [language]); // initialTranslationsLoaded is not a dependency here
 
   const setLanguage = useCallback((lang: Language) => {
     localStorage.setItem('appLanguage', lang);
@@ -66,42 +76,39 @@ export const LanguageProvider: React.FC<PropsWithChildren> = ({ children }) => {
   }, []);
 
   const t = useCallback((key: string, params?: Record<string, string | number>): string => {
-    // If isLoading is true AND translations are still empty (initial load scenario before splash hides)
-    if (isLoading && Object.keys(translations).length === 0) {
-      // This state means it's the very initial load and translations haven't been fetched yet.
-      // The SplashScreen should be visible during this time. Returning keys is acceptable.
-      return key;
-    }
-
-    // If not in the absolute initial loading phase (i.e., translations object is populated, 
-    // even if with old language data during a switch, or if isLoading is false), proceed to translate.
+    // If initialTranslationsLoaded is false, LanguageProvider returns null, so this t()
+    // shouldn't be called by SplashScreen yet. If somehow called, returning key is fallback.
+    // Once initialTranslationsLoaded is true, `translations` should be available (or empty on error).
     const keys = key.split('.');
-    let value: any = translations; 
+    let value: any = translations;
     try {
       for (const k of keys) {
         if (value && typeof value === 'object' && k in value) {
           value = value[k];
         } else {
-          // console.warn(`Translation key not found: ${key}`);
-          return key; // Return key if not found
+          return key; // Key not found
         }
       }
     } catch (e) {
-    //   console.warn(`Error accessing translation key: ${key}`, e);
-      return key;
+      return key; // Error accessing key
     }
-
 
     if (typeof value === 'string' && params) {
       return value.replace(/\{\{(\w+)\}\}/g, (_, paramName) => {
-        return params[paramName]?.toString() || `{{${paramName}}}`; // Keep placeholder if param not found
+        return params[paramName]?.toString() || `{{${paramName}}}`;
       });
     }
     return typeof value === 'string' ? value : key;
-  }, [translations, isLoading]);
+  }, [translations]); // Depends only on translations object changing
+
+  if (!initialTranslationsLoaded) {
+    // Prevents children (AppLoader -> SplashScreen) from rendering and calling t()
+    // before the first set of translations has been attempted.
+    return null;
+  }
   
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t, translations }}>
+    <LanguageContext.Provider value={{ language, setLanguage, t, translations, isLoading: contextIsLoading }}>
       {children}
     </LanguageContext.Provider>
   );
