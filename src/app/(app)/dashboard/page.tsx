@@ -1,10 +1,14 @@
+
+"use client"; // Make this a client component to use the language hook for the title
+
 import { PageHeader } from "@/components/layout/page-header";
 import { PageContainer } from "@/components/shared/page-container";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Bell, Car, FilePlus2, FileText, MessageSquare, PlusCircle, ShieldCheck, CreditCard } from "lucide-react";
+import { Bell, Car, FilePlus2, ShieldCheck, CreditCard, MessageSquare, PlusCircle } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { useLanguage } from "@/contexts/LanguageContext"; // Added import
 
 // Mock data - replace with actual data fetching
 const user = {
@@ -28,11 +32,13 @@ const vehicles = [
 
 
 export default function DashboardPage() {
+  const { t } = useLanguage(); // Added useLanguage hook
+
   return (
     <>
-      <PageHeader title={`Welcome, ${user.name}!`}>
+      <PageHeader title={t('pageHeader.welcome', { name: user.name })}>
         <Button variant="ghost" size="icon" asChild>
-          <Link href="/notifications" aria-label="Notifications">
+          <Link href="/notifications" aria-label={t('common.notifications')}>
             <Bell className="h-5 w-5" />
             {user.notificationsCount > 0 && (
               <span className="absolute top-1 right-1 flex h-2 w-2">
@@ -47,21 +53,21 @@ export default function DashboardPage() {
         <div className="grid gap-6">
           {/* Quick Actions */}
           <section>
-            <h2 className="text-lg font-semibold mb-3">Quick Actions</h2>
+            <h2 className="text-lg font-semibold mb-3">{t('dashboard.quickActions')}</h2>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <QuickActionCard href="/claims/new" icon={FilePlus2} label="Start Claim" />
-              <QuickActionCard href="/quotes" icon={ShieldCheck} label="Get Quote" />
-              <QuickActionCard href="/payments" icon={CreditCard} label="Make Payment" />
-              <QuickActionCard href="/chat" icon={MessageSquare} label="Support Chat" />
+              <QuickActionCard href="/claims/new" icon={FilePlus2} label={t('dashboard.startClaim')} />
+              <QuickActionCard href="/quotes" icon={ShieldCheck} label={t('dashboard.getQuote')} />
+              <QuickActionCard href="/payments" icon={CreditCard} label={t('dashboard.makePayment')} />
+              <QuickActionCard href="/chat" icon={MessageSquare} label={t('dashboard.supportChat')} />
             </div>
           </section>
 
           {/* My Policies */}
           <section>
             <div className="flex justify-between items-center mb-3">
-              <h2 className="text-lg font-semibold">My Policies</h2>
+              <h2 className="text-lg font-semibold">{t('dashboard.myPolicies')}</h2>
               <Button variant="outline" size="sm" asChild>
-                <Link href="/policies">View All</Link>
+                <Link href="/policies">{t('common.viewAll')}</Link>
               </Button>
             </div>
             {policies.length > 0 ? (
@@ -73,9 +79,9 @@ export default function DashboardPage() {
             ) : (
               <Card className="text-center py-8">
                 <CardContent>
-                  <p className="text-muted-foreground">You have no active policies.</p>
+                  <p className="text-muted-foreground">{t('dashboard.noPolicies')}</p>
                   <Button className="mt-4" asChild>
-                    <Link href="/quotes">Get a Quote</Link>
+                    <Link href="/quotes">{t('dashboard.getQuote')}</Link>
                   </Button>
                 </CardContent>
               </Card>
@@ -85,10 +91,10 @@ export default function DashboardPage() {
           {/* My Vehicles */}
            <section>
             <div className="flex justify-between items-center mb-3">
-              <h2 className="text-lg font-semibold">My Vehicles</h2>
+              <h2 className="text-lg font-semibold">{t('dashboard.myVehicles')}</h2>
               <Button variant="ghost" size="sm" asChild>
                 <Link href="/profile#vehicles" className="flex items-center">
-                  <PlusCircle className="h-4 w-4 mr-1" /> Add Vehicle
+                  <PlusCircle className="h-4 w-4 mr-1" /> {t('dashboard.addVehicle')}
                 </Link>
               </Button>
             </div>
@@ -101,19 +107,18 @@ export default function DashboardPage() {
             ) : (
               <Card className="text-center py-8">
                 <CardContent>
-                  <p className="text-muted-foreground">No vehicles added yet.</p>
+                  <p className="text-muted-foreground">{t('dashboard.noVehicles')}</p>
                   <Button className="mt-4" asChild>
-                    <Link href="/profile#vehicles">Add Your Vehicle</Link>
+                    <Link href="/profile#vehicles">{t('dashboard.addYourVehicle')}</Link>
                   </Button>
                 </CardContent>
               </Card>
             )}
           </section>
 
-
           {/* Recent Claims Activity */}
           <section>
-            <h2 className="text-lg font-semibold mb-3">Recent Claims</h2>
+            <h2 className="text-lg font-semibold mb-3">{t('dashboard.recentClaims')}</h2>
              {recentClaims.length > 0 ? (
               <div className="space-y-3">
                 {recentClaims.map(claim => (
@@ -121,13 +126,13 @@ export default function DashboardPage() {
                     <CardContent className="p-4 flex justify-between items-center">
                       <div>
                         <p className="font-medium">{claim.vehicleName}</p>
-                        <p className="text-sm text-muted-foreground">Submitted: {claim.date}</p>
+                        <p className="text-sm text-muted-foreground">{t('common.submitted')}: {claim.date}</p>
                       </div>
                       <span className={`px-2 py-1 text-xs rounded-full ${
                         claim.status === "Under Review" ? "bg-yellow-100 text-yellow-700" : 
                         claim.status === "Settled" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"
                       }`}>
-                        {claim.status}
+                        {claim.status} 
                       </span>
                     </CardContent>
                   </Card>
@@ -136,7 +141,7 @@ export default function DashboardPage() {
             ) : (
               <Card className="text-center py-8">
                 <CardContent>
-                  <p className="text-muted-foreground">No recent claim activity.</p>
+                  <p className="text-muted-foreground">{t('dashboard.noRecentClaims')}</p>
                 </CardContent>
               </Card>
             )}
@@ -147,6 +152,10 @@ export default function DashboardPage() {
   );
 }
 
+// QuickActionCard and PolicyCard need to be client components or receive 't' as prop if they use translations.
+// For simplicity, if they contain static text or text passed via props, they might not need immediate changes.
+// If their internal labels need translation, they'd also need `useLanguage`.
+// For now, label is passed as prop to QuickActionCard, so it's translated at the parent.
 function QuickActionCard({ href, icon: Icon, label }: { href: string, icon: React.ElementType, label: string }) {
   return (
     <Link href={href} className="block">
@@ -161,6 +170,7 @@ function QuickActionCard({ href, icon: Icon, label }: { href: string, icon: Reac
 }
 
 function PolicyCard({ policy }: { policy: (typeof policies)[0] }) {
+  const { t } = useLanguage(); // Added for any internal text, if needed
   return (
     <Card className="shadow-md hover:shadow-lg transition-shadow">
       <CardHeader>
@@ -173,7 +183,7 @@ function PolicyCard({ policy }: { policy: (typeof policies)[0] }) {
       </CardContent>
       <CardFooter>
         <Button variant="link" className="p-0 h-auto text-primary" asChild>
-          <Link href={`/policies/${policy.id}`}>View Details</Link>
+          <Link href={`/policies/${policy.id}`}>{t('common.viewAll')} Details</Link> {/* Example of using t here */}
         </Button>
       </CardFooter>
     </Card>
@@ -181,6 +191,7 @@ function PolicyCard({ policy }: { policy: (typeof policies)[0] }) {
 }
 
 function VehicleCard({ vehicle }: { vehicle: (typeof vehicles)[0] }) {
+   const { t } = useLanguage();
   return (
     <Card className="shadow-md hover:shadow-lg transition-shadow overflow-hidden">
        <div className="flex items-center p-4">
@@ -196,7 +207,7 @@ function VehicleCard({ vehicle }: { vehicle: (typeof vehicles)[0] }) {
           <CardTitle className="text-lg">{vehicle.name}</CardTitle>
           <CardDescription>{vehicle.model} - {vehicle.plate}</CardDescription>
            <Button variant="link" size="sm" className="p-0 h-auto text-primary mt-1" asChild>
-            <Link href={`/profile#vehicle-${vehicle.id}`}>Manage</Link>
+            <Link href={`/profile#vehicle-${vehicle.id}`}>{t('common.edit')}</Link>
           </Button>
         </div>
       </div>

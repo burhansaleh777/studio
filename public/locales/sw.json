@@ -1,0 +1,79 @@
+
+{
+  "common": {
+    "loading": "Inapakia...",
+    "back": "Rudi Nyuma",
+    "viewAll": "Tazama Zote",
+    "submit": "Wasilisha",
+    "notifications": "Arifa",
+    "save": "Hifadhi",
+    "cancel": "Ghairi",
+    "edit": "Hariri",
+    "delete": "Futa",
+    "yes": "Ndio",
+    "no": "Hapana"
+  },
+  "pageHeader": {
+    "welcome": "Karibu, {{name}}!",
+    "profile": "Wasifu Wangu",
+    "claims": "Madai Yako",
+    "newClaim": "Wasilisha Dai Jipya",
+    "chat": "Soga ya Usaidizi (AI)",
+    "payments": "Malipo",
+    "dashboard": "Dashibodi"
+  },
+  "splashScreen": {
+    "loading": "Inapakia..."
+  },
+  "dashboard": {
+    "quickActions": "Vitendo vya Haraka",
+    "startClaim": "Anzisha Dai",
+    "getQuote": "Pata Nukuu",
+    "makePayment": "Fanya Malipo",
+    "supportChat": "Soga ya Usaidizi",
+    "myPolicies": "Bima Zangu",
+    "myVehicles": "Magari Yangu",
+    "addVehicle": "Ongeza Gari",
+    "recentClaims": "Madai ya Hivi Karibuni",
+    "noPolicies": "Huna bima yoyote inayotumika.",
+    "noVehicles": "Bado hujaongeza magari.",
+    "addYourVehicle": "Ongeza Gari Lako",
+    "noRecentClaims": "Hakuna shughuli za madai za hivi karibuni."
+  },
+  "bottomNav": {
+    "dashboard": "Dashibodi",
+    "claims": "Madai",
+    "chat": "Soga",
+    "payments": "Malipo",
+    "profile": "Wasifu"
+  },
+  "languageToggle": {
+    "switchToSwahili": "Badilisha iwe Kiswahili",
+    "switchToEnglish": "Badilisha iwe Kiingereza",
+    "currentLanguage": "Lugha ya sasa: Kiswahili"
+  },
+  "claimsPage": {
+    "newClaimButton": "Dai Jipya",
+    "statusUnderReview": "Linachunguzwa",
+    "statusSettled": "Limelipwa",
+    "statusRejected": "Limekataliwa",
+    "submitted": "Limewasilishwa",
+    "claimNo": "Dai #",
+    "policyNo": "Bima",
+    "timelineStep1": "Limewasilishwa",
+    "timelineStep2": "Linachunguzwa",
+    "timelineStep3": "Uamuzi Umefanywa",
+    "timelineStep3Settled": "Limelipwa/Limekamilika",
+    "noClaimsFoundTitle": "Hakuna Madai Yaliyopatikana",
+    "noClaimsFoundDesc": "Bado hujawasilisha madai yoyote. Ikiwa unahitaji, unaweza kuanzisha dai jipya.",
+    "submitFirstClaim": "Wasilisha Dai Lako la Kwanza"
+  },
+  "newClaimPage": {
+    "selectVehicle": "Chagua Gari",
+    "accidentDetails": "Maelezo ya Ajali",
+    "uploadPhotos": "Pakia Picha",
+    "supportingDocs": "Nyaraka za Usaidizi",
+    "reviewSubmit": "Hakiki na Uwasilishe",
+    "stepDescription": "Hatua ya {{currentStep}} kati ya {{totalSteps}}. Jaza kwa usahihi."
+  }
+}

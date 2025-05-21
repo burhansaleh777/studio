@@ -1,8 +1,10 @@
+
 import type {Metadata} from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { AppLoader } from '@/components/layout/app-loader';
+import { LanguageProvider } from '@/contexts/LanguageContext'; // Added import
 
 const inter = Inter({
   subsets: ['latin'],
@@ -22,10 +24,12 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`}>
-        <AppLoader>
-          {children}
-        </AppLoader>
-        <Toaster />
+        <LanguageProvider> {/* Added LanguageProvider */}
+          <AppLoader>
+            {children}
+          </AppLoader>
+          <Toaster />
+        </LanguageProvider>
       </body>
     </html>
   );

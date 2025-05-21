@@ -1,13 +1,17 @@
+
 // src/components/shared/splash-screen.tsx
 "use client";
 import { BimaSmartLogo } from "@/components/shared/bima-smart-logo";
 import { useEffect } from "react";
+import { useLanguage } from "@/contexts/LanguageContext"; // Added import
 
 interface SplashScreenProps {
   onFinished: () => void;
 }
 
 export function SplashScreen({ onFinished }: SplashScreenProps) {
+  const { t } = useLanguage(); // Added useLanguage hook
+
   useEffect(() => {
     const timer = setTimeout(() => {
       onFinished();
@@ -22,7 +26,7 @@ export function SplashScreen({ onFinished }: SplashScreenProps) {
         <BimaSmartLogo className="h-20 w-auto md:h-24" />
       </div>
       <p className="mt-6 text-lg font-medium text-primary animate-fadeIn">
-        Loading...
+        {t('splashScreen.loading')}
       </p>
     </div>
   );

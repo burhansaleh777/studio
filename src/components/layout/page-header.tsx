@@ -1,6 +1,8 @@
+
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { LanguageToggle } from "./language-toggle"; // Added import
 
 interface PageHeaderProps {
   title: string;
@@ -21,7 +23,10 @@ export function PageHeader({ title, backHref, children }: PageHeaderProps) {
           </Button>
         )}
         <h1 className="text-xl font-semibold flex-1 truncate">{title}</h1>
-        {children && <div className="ml-auto flex items-center space-x-2">{children}</div>}
+        <div className="ml-auto flex items-center space-x-1"> {/* Adjusted space for toggle */}
+          <LanguageToggle />
+          {children}
+        </div>
       </div>
     </header>
   );
