@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { BimaSmartLogo } from "@/components/shared/bima-smart-logo";
+import { BimaHubLogo } from "@/components/shared/bima-hub-logo";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -7,12 +7,12 @@ export default function WelcomePage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-primary/10 via-background to-background p-4">
       <div className="w-full max-w-md text-center">
-        <BimaSmartLogo className="mx-auto mb-8 h-16 w-auto" />
+        <BimaHubLogo className="mx-auto mb-8 h-16 w-auto" />
         
         <Card className="shadow-xl">
           <CardHeader>
             <h1 className="text-3xl font-bold tracking-tight text-foreground">
-              Welcome to BimaSmart
+              Welcome to Bima Hub
             </h1>
             <p className="text-muted-foreground mt-2">
               Your trusted partner for insurance in Tanzania.
@@ -37,7 +37,7 @@ export default function WelcomePage() {
             </div>
           </CardContent>
           <CardFooter className="flex-col items-center text-xs text-muted-foreground">
-            <p>&copy; {new Date().getFullYear()} BimaSmart. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} Bima Hub. All rights reserved.</p>
             <p>Secure and Reliable Insurance Solutions.</p>
           </CardFooter>
         </Card>

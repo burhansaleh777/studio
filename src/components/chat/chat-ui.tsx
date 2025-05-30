@@ -34,7 +34,7 @@ export function ChatUi() {
     setMessages([
       {
         id: crypto.randomUUID(),
-        text: "Hello! I'm the BimaSmart AI assistant. How can I help you with your insurance questions today?",
+        text: "Hello! I'm the Bima Hub AI assistant. How can I help you with your insurance questions today?",
         sender: "bot",
         timestamp: new Date(),
       }
@@ -98,7 +98,7 @@ export function ChatUi() {
     <div className="flex flex-col h-[calc(100vh-11rem)] md:h-[calc(100vh-4rem)] bg-card shadow-lg rounded-lg overflow-hidden"> {/* Adjust height based on header/nav */}
       <header className="p-4 border-b flex items-center space-x-3 bg-primary/5">
         <MessageSquare className="h-6 w-6 text-primary" />
-        <h2 className="text-lg font-semibold text-primary">BimaSmart AI Support</h2>
+        <h2 className="text-lg font-semibold text-primary">Bima Hub AI Support</h2>
       </header>
 
       <ScrollArea className="flex-grow p-4 space-y-4" ref={scrollAreaRef}>

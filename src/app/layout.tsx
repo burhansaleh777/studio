@@ -12,7 +12,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'BimaSmart',
+  title: 'Bima Hub',
   description: 'Modern Insurance for Tanzania',
 };
 

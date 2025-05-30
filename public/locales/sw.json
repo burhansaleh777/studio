@@ -1,18 +1,4 @@
-
 {
-  "splashScreen": {
-    "loading": "Inapakia..."
-  },
-  "pageHeader": {
-    "welcome": "Karibu, {{name}}!"
-  },
-  "bottomNav": {
-    "dashboard": "Dashibodi",
-    "claims": "Madai",
-    "chat": "Gumzo",
-    "payments": "Malipo",
-    "profile": "Wasifu"
-  },
   "common": {
     "notifications": "Arifa",
     "viewAll": "Tazama Zote",
@@ -21,23 +7,36 @@
     "submitted": "Imewasilishwa",
     "expires": "Tarehe ya kumalizika"
   },
+  "splashScreen": {
+    "loading": "Inapakia Bima Hub..."
+  },
+  "pageHeader": {
+    "welcome": "Karibu, {{name}}"
+  },
   "dashboard": {
-    "quickActions": "Njia za Haraka",
-    "startClaim": "Anzisha Dai",
+    "quickActions": "Matendo ya Haraka",
+    "startClaim": "Dai Mpya",
     "getQuote": "Pata Nukuu",
     "makePayment": "Fanya Malipo",
-    "supportChat": "Msaada Gumzo",
-    "myPolicies": "Sera Zangu",
-    "noPolicies": "Kwa sasa huna sera zinazotumika.",
+    "supportChat": "Chati ya AI",
+    "myPolicies": "Bima Zangu",
+    "noPolicies": "Hakuna bima zinazotumika.",
     "myVehicles": "Magari Yangu",
     "addVehicle": "Ongeza Gari",
-    "noVehicles": "Bado hujaongeza magari yoyote.",
+    "noVehicles": "Hakuna magari yaliyosajiliwa.",
     "addYourVehicle": "Ongeza Gari Lako",
     "recentClaims": "Shughuli za Madai za Hivi Karibuni",
-    "noRecentClaims": "Hakuna shughuli za madai za hivi karibuni za kuonyesha."
+    "noRecentClaims": "Hakuna shughuli za madai za hivi karibuni."
+  },
+  "bottomNav": {
+    "dashboard": "Dashibodi",
+    "claims": "Madai",
+    "chat": "Chati",
+    "payments": "Malipo",
+    "profile": "Wasifu"
   },
   "languageToggle": {
-    "switchToSwahili": "Badilisha iwe Kiswahili",
+    "switchToSwahili": "Badilisha kwenda Kiswahili",
     "switchToEnglish": "Switch to English"
   }
 }
