@@ -1,9 +1,11 @@
 
+"use client"; // Added this directive
+
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { LanguageToggle } from "./language-toggle"; 
-import { useLanguage } from "@/contexts/LanguageContext"; // Added import
+import { useLanguage } from "@/contexts/LanguageContext"; 
 
 interface PageHeaderProps {
   title: string;
@@ -12,7 +14,7 @@ interface PageHeaderProps {
 }
 
 export function PageHeader({ title, backHref, children }: PageHeaderProps) {
-  const { t } = useLanguage(); // Added import
+  const { t } = useLanguage(); 
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -34,4 +36,3 @@ export function PageHeader({ title, backHref, children }: PageHeaderProps) {
     </header>
   );
 }
-
