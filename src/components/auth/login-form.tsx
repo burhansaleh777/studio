@@ -1,10 +1,11 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import Link from "next/link";
-import { useRouter } from "next/navigation"; // Corrected import
+import { useRouter } from "next/navigation"; 
 
 import { Button } from "@/components/ui/button";
 import {
@@ -20,10 +21,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff } from "lucide-react";
 import React from "react";
+import { useLanguage } from "@/contexts/LanguageContext"; // Added import
 
 const loginSchema = z.object({
-  emailOrPhone: z.string().min(1, "Email or phone number is required"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  emailOrPhone: z.string().min(1, "Email or phone number is required"), // Zod messages not translated in this step
+  password: z.string().min(6, "Password must be at least 6 characters"), // Zod messages not translated in this step
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -31,6 +33,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 export function LoginForm() {
   const router = useRouter();
   const { toast } = useToast();
+  const { t } = useLanguage(); // Added import
   const [showPassword, setShowPassword] = React.useState(false);
 
   const form = useForm<LoginFormValues>({
@@ -45,8 +48,8 @@ export function LoginForm() {
     // Simulate API call
     console.log(data);
     toast({
-      title: "Login Submitted",
-      description: "In a real app, this would log you in.",
+      title: t('auth.toast.loginSubmittedTitle'),
+      description: t('auth.toast.loginSubmittedDescription'),
     });
     // Redirect to dashboard on successful login (simulated)
     router.push("/dashboard");
@@ -55,8 +58,8 @@ export function LoginForm() {
   return (
     <Card className="shadow-xl">
       <CardHeader>
-        <CardTitle className="text-2xl font-bold">Login to BimaSure</CardTitle>
-        <CardDescription>Access your insurance dashboard.</CardDescription>
+        <CardTitle className="text-2xl font-bold">{t('auth.loginToBimaHub')}</CardTitle>
+        <CardDescription>{t('auth.accessDashboard')}</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -66,9 +69,9 @@ export function LoginForm() {
               name="emailOrPhone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email or Phone Number</FormLabel>
+                  <FormLabel>{t('auth.emailOrPhoneLabel')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., user@example.com or 07XXXXXXXX" {...field} />
+                    <Input placeholder={t('auth.emailOrPhonePlaceholder')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -79,12 +82,12 @@ export function LoginForm() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Password</FormLabel>
+                  <FormLabel>{t('auth.passwordLabel')}</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Input 
                         type={showPassword ? "text" : "password"} 
-                        placeholder="••••••••" 
+                        placeholder={t('auth.passwordPlaceholder')}
                         {...field} 
                       />
                       <Button 
@@ -93,6 +96,7 @@ export function LoginForm() {
                         size="icon" 
                         className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
                         onClick={() => setShowPassword(!showPassword)}
+                        aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
                       >
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </Button>
@@ -103,19 +107,19 @@ export function LoginForm() {
               )}
             />
             <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
-              Login
+              {t('auth.loginButton')}
             </Button>
           </form>
         </Form>
       </CardContent>
       <CardFooter className="flex-col items-center space-y-2">
         <Link href="#" className="text-sm text-primary hover:underline">
-            Forgot Password?
+            {t('auth.forgotPasswordLink')}
         </Link>
         <p className="text-sm text-muted-foreground">
-          Don&apos;t have an account?{" "}
+          {t('auth.noAccountPrompt')}{" "}
           <Link href="/register" className="font-semibold text-primary hover:underline">
-            Register here
+            {t('auth.registerHereLink')}
           </Link>
         </p>
       </CardFooter>

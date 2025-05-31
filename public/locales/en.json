@@ -1,32 +1,18 @@
+
 {
   "common": {
     "notifications": "Notifications",
     "viewAll": "View All",
     "viewDetails": "View Details",
-    "edit": "Edit",
     "submitted": "Submitted",
-    "expires": "Expires"
+    "expires": "Expires",
+    "edit": "Edit"
   },
   "splashScreen": {
     "loading": "Loading Bima Hub..."
   },
   "pageHeader": {
-    "welcome": "Welcome, {{name}}"
-  },
-  "dashboard": {
-    "quickActions": "Quick Actions",
-    "startClaim": "New Claim",
-    "getQuote": "Get Quote",
-    "makePayment": "Make Payment",
-    "supportChat": "AI Chat",
-    "myPolicies": "My Policies",
-    "noPolicies": "No active policies found.",
-    "myVehicles": "My Vehicles",
-    "addVehicle": "Add Vehicle",
-    "noVehicles": "No vehicles registered yet.",
-    "addYourVehicle": "Add Your Vehicle",
-    "recentClaims": "Recent Claims Activity",
-    "noRecentClaims": "No recent claims activity."
+    "welcome": "Karibu, {{name}}!"
   },
   "bottomNav": {
     "dashboard": "Dashboard",
@@ -38,5 +24,64 @@
   "languageToggle": {
     "switchToSwahili": "Badilisha kwenda Kiswahili",
     "switchToEnglish": "Switch to English"
+  },
+  "dashboard": {
+    "quickActions": "Quick Actions",
+    "startClaim": "Start Claim",
+    "getQuote": "Get Quote",
+    "makePayment": "Make Payment",
+    "supportChat": "Support Chat",
+    "myPolicies": "My Policies",
+    "noPolicies": "You don't have any active policies yet.",
+    "myVehicles": "My Vehicles",
+    "addVehicle": "Add Vehicle",
+    "noVehicles": "You haven't added any vehicles yet.",
+    "addYourVehicle": "Add Your Vehicle",
+    "recentClaims": "Recent Claims Activity",
+    "noRecentClaims": "No recent claims found."
+  },
+  "welcome": {
+    "title": "Welcome to Bima Hub",
+    "subtitle": "Your trusted partner for insurance in Tanzania.",
+    "promoImageAlt": "Promotional image for Bima Hub",
+    "loginButton": "Login",
+    "registerButton": "Register",
+    "rightsReserved": "All rights reserved.",
+    "tagline": "Secure and Reliable Insurance Solutions."
+  },
+  "auth": {
+    "loginToBimaHub": "Login to Bima Hub",
+    "accessDashboard": "Access your insurance dashboard.",
+    "emailOrPhoneLabel": "Email or Phone Number",
+    "emailOrPhonePlaceholder": "e.g., user@example.com or 07XXXXXXXX",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "••••••••",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "loginButton": "Login",
+    "forgotPasswordLink": "Forgot Password?",
+    "noAccountPrompt": "Don't have an account?",
+    "registerHereLink": "Register here",
+    "createAccountTitle": "Create an Account",
+    "joinBimaHub": "Join Bima Hub today for seamless insurance management.",
+    "fullNameLabel": "Full Name",
+    "fullNamePlaceholder": "e.g., Juma Hamisi",
+    "emailLabel": "Email Address",
+    "emailPlaceholder": "e.g., juma.hamisi@example.com",
+    "phoneLabel": "Phone Number",
+    "phonePlaceholder": "e.g., 0712345678",
+    "confirmPasswordLabel": "Confirm Password",
+    "agreeToTermsCheckboxLabel": "Agree to terms and conditions checkbox",
+    "agreeToTermsPrefix": "I agree to the",
+    "termsAndConditionsLink": "Terms and Conditions",
+    "registerButton": "Register",
+    "alreadyHaveAccountPrompt": "Already have an account?",
+    "loginHereLink": "Login here",
+    "toast": {
+      "loginSubmittedTitle": "Login Attempted",
+      "loginSubmittedDescription": "If successful, you will be redirected shortly.",
+      "registrationSubmittedTitle": "Registration Submitted",
+      "registrationSubmittedDescription": "Please check your email/phone for OTP verification (simulated)."
+    }
   }
 }

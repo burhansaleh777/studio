@@ -1,10 +1,11 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import Link from "next/link";
-import { useRouter } from "next/navigation"; // Corrected import
+import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -21,17 +22,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { useToast } from "@/hooks/use-toast";
 import React from "react";
 import { Eye, EyeOff } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext"; // Added import
 
 
 const registerSchema = z.object({
-  fullName: z.string().min(1, "Full name is required"),
-  email: z.string().email("Invalid email address"),
-  phone: z.string().min(10, "Phone number must be at least 10 digits").regex(/^\+?[0-9\s-()]*$/, "Invalid phone number format"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  confirmPassword: z.string().min(6, "Confirm password must be at least 6 characters"),
-  agreeToTerms: z.boolean().refine(val => val === true, { message: "You must agree to the terms and conditions" }),
+  fullName: z.string().min(1, "Full name is required"), // Zod messages not translated in this step
+  email: z.string().email("Invalid email address"), // Zod messages not translated in this step
+  phone: z.string().min(10, "Phone number must be at least 10 digits").regex(/^\+?[0-9\s-()]*$/, "Invalid phone number format"), // Zod messages not translated in this step
+  password: z.string().min(6, "Password must be at least 6 characters"), // Zod messages not translated in this step
+  confirmPassword: z.string().min(6, "Confirm password must be at least 6 characters"), // Zod messages not translated in this step
+  agreeToTerms: z.boolean().refine(val => val === true, { message: "You must agree to the terms and conditions" }), // Zod messages not translated in this step
 }).refine(data => data.password === data.confirmPassword, {
-  message: "Passwords do not match",
+  message: "Passwords do not match", // Zod messages not translated in this step
   path: ["confirmPassword"],
 });
 
@@ -40,6 +42,7 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 export function RegisterForm() {
   const router = useRouter();
   const { toast } = useToast();
+  const { t } = useLanguage(); // Added import
   const [showPassword, setShowPassword] = React.useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
 
@@ -58,19 +61,17 @@ export function RegisterForm() {
   function onSubmit(data: RegisterFormValues) {
     console.log(data);
     toast({
-      title: "Registration Submitted",
-      description: "Please check your email/phone for OTP verification.",
+      title: t('auth.toast.registrationSubmittedTitle'),
+      description: t('auth.toast.registrationSubmittedDescription'),
     });
-    // Redirect to OTP or login page (simulated)
-    // For now, redirect to login after "successful" registration
     router.push("/login"); 
   }
 
   return (
     <Card className="shadow-xl">
       <CardHeader>
-        <CardTitle className="text-2xl font-bold">Create an Account</CardTitle>
-        <CardDescription>Join BimaSure today for seamless insurance management.</CardDescription>
+        <CardTitle className="text-2xl font-bold">{t('auth.createAccountTitle')}</CardTitle>
+        <CardDescription>{t('auth.joinBimaHub')}</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -80,9 +81,9 @@ export function RegisterForm() {
               name="fullName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Full Name</FormLabel>
+                  <FormLabel>{t('auth.fullNameLabel')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Juma Hamisi" {...field} />
+                    <Input placeholder={t('auth.fullNamePlaceholder')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -93,9 +94,9 @@ export function RegisterForm() {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email Address</FormLabel>
+                  <FormLabel>{t('auth.emailLabel')}</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="e.g., juma.hamisi@example.com" {...field} />
+                    <Input type="email" placeholder={t('auth.emailPlaceholder')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -106,9 +107,9 @@ export function RegisterForm() {
               name="phone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Phone Number</FormLabel>
+                  <FormLabel>{t('auth.phoneLabel')}</FormLabel>
                   <FormControl>
-                    <Input type="tel" placeholder="e.g., 0712345678" {...field} />
+                    <Input type="tel" placeholder={t('auth.phonePlaceholder')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -119,12 +120,12 @@ export function RegisterForm() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Password</FormLabel>
+                  <FormLabel>{t('auth.passwordLabel')}</FormLabel>
                   <FormControl>
                      <div className="relative">
                       <Input 
                         type={showPassword ? "text" : "password"} 
-                        placeholder="••••••••" 
+                        placeholder={t('auth.passwordPlaceholder')}
                         {...field} 
                       />
                       <Button 
@@ -133,6 +134,7 @@ export function RegisterForm() {
                         size="icon" 
                         className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
                         onClick={() => setShowPassword(!showPassword)}
+                        aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
                       >
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </Button>
@@ -147,12 +149,12 @@ export function RegisterForm() {
               name="confirmPassword"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Confirm Password</FormLabel>
+                  <FormLabel>{t('auth.confirmPasswordLabel')}</FormLabel>
                   <FormControl>
                     <div className="relative">
                         <Input 
                           type={showConfirmPassword ? "text" : "password"} 
-                          placeholder="••••••••" 
+                          placeholder={t('auth.passwordPlaceholder')}
                           {...field} 
                         />
                         <Button 
@@ -161,6 +163,7 @@ export function RegisterForm() {
                           size="icon" 
                           className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
                           onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          aria-label={showConfirmPassword ? t('auth.hidePassword') : t('auth.showPassword')}
                         >
                           {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </Button>
@@ -179,13 +182,14 @@ export function RegisterForm() {
                     <Checkbox
                       checked={field.value}
                       onCheckedChange={field.onChange}
+                      aria-label={t('auth.agreeToTermsCheckboxLabel')}
                     />
                   </FormControl>
                   <div className="space-y-1 leading-none">
                     <FormLabel>
-                      I agree to the{" "}
+                      {t('auth.agreeToTermsPrefix')}{" "}
                       <Link href="/terms" className="text-primary hover:underline">
-                        Terms and Conditions
+                        {t('auth.termsAndConditionsLink')}
                       </Link>
                     </FormLabel>
                     <FormMessage />
@@ -194,16 +198,16 @@ export function RegisterForm() {
               )}
             />
             <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
-              Register
+              {t('auth.registerButton')}
             </Button>
           </form>
         </Form>
       </CardContent>
       <CardFooter className="justify-center">
         <p className="text-sm text-muted-foreground">
-          Already have an account?{" "}
+          {t('auth.alreadyHaveAccountPrompt')}{" "}
           <Link href="/login" className="font-semibold text-primary hover:underline">
-            Login here
+            {t('auth.loginHereLink')}
           </Link>
         </p>
       </CardFooter>

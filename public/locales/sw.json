@@ -1,42 +1,87 @@
+
 {
   "common": {
-    "notifications": "Arifa",
+    "notifications": "Taarifa",
     "viewAll": "Tazama Zote",
     "viewDetails": "Tazama Taarifa Zote",
-    "edit": "Hariri",
     "submitted": "Imewasilishwa",
-    "expires": "Tarehe ya kumalizika"
+    "expires": "Tarehe ya kumalizika",
+    "edit": "Hariri"
   },
   "splashScreen": {
     "loading": "Inapakia Bima Hub..."
   },
   "pageHeader": {
-    "welcome": "Karibu, {{name}}"
-  },
-  "dashboard": {
-    "quickActions": "Matendo ya Haraka",
-    "startClaim": "Dai Mpya",
-    "getQuote": "Pata Nukuu",
-    "makePayment": "Fanya Malipo",
-    "supportChat": "Chati ya AI",
-    "myPolicies": "Bima Zangu",
-    "noPolicies": "Hakuna bima zinazotumika.",
-    "myVehicles": "Magari Yangu",
-    "addVehicle": "Ongeza Gari",
-    "noVehicles": "Hakuna magari yaliyosajiliwa.",
-    "addYourVehicle": "Ongeza Gari Lako",
-    "recentClaims": "Shughuli za Madai za Hivi Karibuni",
-    "noRecentClaims": "Hakuna shughuli za madai za hivi karibuni."
+    "welcome": "Karibu, {{name}}!"
   },
   "bottomNav": {
     "dashboard": "Dashibodi",
     "claims": "Madai",
-    "chat": "Chati",
+    "chat": "Gumzo",
     "payments": "Malipo",
     "profile": "Wasifu"
   },
   "languageToggle": {
     "switchToSwahili": "Badilisha kwenda Kiswahili",
     "switchToEnglish": "Switch to English"
+  },
+  "dashboard": {
+    "quickActions": "Njia za Haraka",
+    "startClaim": "Anzisha Dai",
+    "getQuote": "Pata Makadirio",
+    "makePayment": "Fanya Malipo",
+    "supportChat": "Msaada wa Gumzo",
+    "myPolicies": "Bima Zangu",
+    "noPolicies": "Huna bima yoyote hai kwa sasa.",
+    "myVehicles": "Magari Yangu",
+    "addVehicle": "Ongeza Gari",
+    "noVehicles": "Bado hujaongeza gari lolote.",
+    "addYourVehicle": "Ongeza Gari Lako",
+    "recentClaims": "Madai ya Hivi Karibuni",
+    "noRecentClaims": "Hakuna madai ya hivi karibuni."
+  },
+  "welcome": {
+    "title": "Karibu Bima Hub",
+    "subtitle": "Mshirika wako mwaminifu wa bima Tanzania.",
+    "promoImageAlt": "Picha ya matangazo ya Bima Hub",
+    "loginButton": "Ingia",
+    "registerButton": "Jisajili",
+    "rightsReserved": "Haki zote zimehifadhiwa.",
+    "tagline": "Suluhisho Salama na za Kuaminika za Bima."
+  },
+  "auth": {
+    "loginToBimaHub": "Ingia Bima Hub",
+    "accessDashboard": "Fikia dashibodi yako ya bima.",
+    "emailOrPhoneLabel": "Barua Pepe au Namba ya Simu",
+    "emailOrPhonePlaceholder": "k.m., mtumiaji@mfano.com au 07XXXXXXXX",
+    "passwordLabel": "Nenosiri",
+    "passwordPlaceholder": "••••••••",
+    "showPassword": "Onyesha nenosiri",
+    "hidePassword": "Ficha nenosiri",
+    "loginButton": "Ingia",
+    "forgotPasswordLink": "Umesahau Nenosiri?",
+    "noAccountPrompt": "Huna akaunti?",
+    "registerHereLink": "Jisajili hapa",
+    "createAccountTitle": "Fungua Akaunti",
+    "joinBimaHub": "Jiunge na Bima Hub leo kwa usimamizi rahisi wa bima.",
+    "fullNameLabel": "Jina Kamili",
+    "fullNamePlaceholder": "k.m., Juma Hamisi",
+    "emailLabel": "Anwani ya Barua Pepe",
+    "emailPlaceholder": "k.m., juma.hamisi@mfano.com",
+    "phoneLabel": "Namba ya Simu",
+    "phonePlaceholder": "k.m., 0712345678",
+    "confirmPasswordLabel": "Thibitisha Nenosiri",
+    "agreeToTermsCheckboxLabel": "Checkbox ya kukubali vigezo na masharti",
+    "agreeToTermsPrefix": "Ninakubaliana na",
+    "termsAndConditionsLink": "Vigezo na Masharti",
+    "registerButton": "Jisajili",
+    "alreadyHaveAccountPrompt": "Tayari una akaunti?",
+    "loginHereLink": "Ingia hapa",
+    "toast": {
+      "loginSubmittedTitle": "Jaribio la Kuingia Limefanywa",
+      "loginSubmittedDescription": "Kama limefanikiwa, utaelekezwa hivi punde.",
+      "registrationSubmittedTitle": "Usajili Umewasilishwa",
+      "registrationSubmittedDescription": "Tafadhali angalia barua pepe/simu yako kwa uthibitishaji wa OTP (imeigwa)."
+    }
   }
 }

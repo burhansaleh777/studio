@@ -1,26 +1,31 @@
 
+"use client";
+
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Image from "next/image";
+import { useLanguage } from "@/contexts/LanguageContext"; // Added import
 
 export default function WelcomePage() {
+  const { t } = useLanguage(); // Added useLanguage hook
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-primary/10 via-background to-background p-4">
       <div className="w-full max-w-md text-center">
         
-        <Card className="shadow-xl mt-8"> {/* Added mt-8 for spacing since logo is removed */}
+        <Card className="shadow-xl mt-8">
           <CardHeader>
             <h1 className="text-3xl font-bold tracking-tight text-foreground">
-              Welcome to Bima Hub
+              {t('welcome.title')}
             </h1>
             <p className="text-muted-foreground mt-2">
-              Your trusted partner for insurance in Tanzania.
+              {t('welcome.subtitle')}
             </p>
           </CardHeader>
           <CardContent className="space-y-6">
             <Image 
               src="https://i.ibb.co/xtfGKkLL/BIMA-HUB-18.png" 
-              alt="Promotional image for Bima Hub" 
+              alt={t('welcome.promoImageAlt')}
               width={400} 
               height={200} 
               className="rounded-lg object-cover mx-auto"
@@ -28,16 +33,16 @@ export default function WelcomePage() {
             />
             <div className="space-y-4">
               <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" size="lg">
-                <Link href="/login">Login</Link>
+                <Link href="/login">{t('welcome.loginButton')}</Link>
               </Button>
               <Button asChild variant="outline" className="w-full" size="lg">
-                <Link href="/register">Register</Link>
+                <Link href="/register">{t('welcome.registerButton')}</Link>
               </Button>
             </div>
           </CardContent>
           <CardFooter className="flex-col items-center text-xs text-muted-foreground">
-            <p>&copy; {new Date().getFullYear()} Bima Hub. All rights reserved.</p>
-            <p>Secure and Reliable Insurance Solutions.</p>
+            <p>&copy; {new Date().getFullYear()} Bima Hub. {t('welcome.rightsReserved')}</p>
+            <p>{t('welcome.tagline')}</p>
           </CardFooter>
         </Card>
       </div>
@@ -65,4 +70,3 @@ const CardContent = ({ className, ...props }: React.HTMLAttributes<HTMLDivElemen
 const CardFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div className={`flex items-center p-6 pt-0 ${className || ''}`} {...props} />
 );
-
