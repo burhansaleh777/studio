@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { BimaHubLogo } from "@/components/shared/bima-hub-logo";
 import Link from "next/link";
@@ -20,7 +21,7 @@ export default function WelcomePage() {
           </CardHeader>
           <CardContent className="space-y-6">
             <Image 
-              src="https://placehold.co/400x200.png" 
+              src="https://i.ibb.co/xtfGKkLL/BIMA-HUB-18.png" 
               alt="Promotional image for Bima Hub" 
               width={400} 
               height={200} 
@@ -66,3 +67,4 @@ const CardContent = ({ className, ...props }: React.HTMLAttributes<HTMLDivElemen
 const CardFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div className={`flex items-center p-6 pt-0 ${className || ''}`} {...props} />
 );
+
