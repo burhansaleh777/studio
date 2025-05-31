@@ -20,6 +20,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 
 // Mock data for user's vehicles
@@ -43,10 +44,10 @@ const claimSchemaStep2 = z.object({
 const MAX_PHOTOS = 4;
 
 const photoInstructions = [
-  { id: 'fullVehicle', title: "Full Vehicle Photo", description: "Capture a clear photo of the entire vehicle.", isOptional: false },
-  { id: 'damageCloseUp', title: "Damage Close-up Photo", description: "Take a close-up photo of the damaged section(s).", isOptional: false },
-  { id: 'surroundingArea', title: "Surrounding Area Photo", description: "Capture the area around the vehicle where the accident occurred.", isOptional: false },
-  { id: 'otherVehicles', title: "Other Vehicles Photo", description: "If other vehicles were involved, take photos of them as well.", isOptional: false }, // Changed to non-optional for 4 photo requirement.
+  { id: 'fullVehicle', titleKey: "newClaimWizard.photoInstructions.fullVehicle.title", descriptionKey: "newClaimWizard.photoInstructions.fullVehicle.description", isOptional: false },
+  { id: 'damageCloseUp', titleKey: "newClaimWizard.photoInstructions.damageCloseUp.title", descriptionKey: "newClaimWizard.photoInstructions.damageCloseUp.description", isOptional: false },
+  { id: 'surroundingArea', titleKey: "newClaimWizard.photoInstructions.surroundingArea.title", descriptionKey: "newClaimWizard.photoInstructions.surroundingArea.description", isOptional: false },
+  { id: 'otherVehicles', titleKey: "newClaimWizard.photoInstructions.otherVehicles.title", descriptionKey: "newClaimWizard.photoInstructions.otherVehicles.description", isOptional: false },
 ];
 
 
@@ -68,13 +69,13 @@ const claimSchemaStep3 = z.object({
         const uploadedInstructionIds = new Set(files.map(file => file.name.split('-')[0]));
         const missingRequiredTitles = allRequiredPhotoInstructions
             .filter(p => !uploadedInstructionIds.has(p.id))
-            .map(p => p.title)
+            .map(p => p.titleKey) // Will be translated later
             .join(', ');
         
-        let message = `Please upload ${allRequiredPhotoInstructions.length} photos covering all required types: ${allRequiredPhotoInstructions.map(p => p.title).join(', ')}. Currently ${files?.length || 0} photos uploaded.`;
-        if (missingRequiredTitles) {
-            message += ` Missing: ${missingRequiredTitles}.`;
-        }
+        // This message itself would ideally be translated if it's user-facing often.
+        // For now, focusing on the titles.
+        let message = `Please upload ${allRequiredPhotoInstructions.length} photos covering all required types. Missing: ${missingRequiredTitles}. Currently ${files?.length || 0} photos uploaded.`;
+        
         return { message };
     })
 });
@@ -87,27 +88,26 @@ const claimSchemaStep4 = z.object({
 const combinedSchema = claimSchemaStep1.merge(claimSchemaStep2).merge(claimSchemaStep3).merge(claimSchemaStep4);
 type ClaimFormValues = z.infer<typeof combinedSchema>;
 
-const steps = [
-  { id: 1, title: "Select Vehicle", icon: Car, schema: claimSchemaStep1, fields: ['vehicleId'] as const },
-  { id: 2, title: "Accident Details", icon: FileTextIcon, schema: claimSchemaStep2, fields: ['accidentDate', 'accidentTime', 'accidentLocation', 'accidentDescription'] as const },
-  { id: 3, title: "Upload Photos", icon: CameraIcon, schema: claimSchemaStep3, fields: ['photos'] as const },
-  { id: 4, title: "Supporting Documents", icon: FileUp, schema: claimSchemaStep4, fields: ['documents'] as const },
-  { id: 5, title: "Review & Submit", icon: CheckCircle, schema: z.object({}), fields: [] as const },
+const stepsConfig = [
+  { id: 1, titleKey: "newClaimWizard.steps.selectVehicle.title", icon: Car, schema: claimSchemaStep1, fields: ['vehicleId'] as const },
+  { id: 2, titleKey: "newClaimWizard.steps.accidentDetails.title", icon: FileTextIcon, schema: claimSchemaStep2, fields: ['accidentDate', 'accidentTime', 'accidentLocation', 'accidentDescription'] as const },
+  { id: 3, titleKey: "newClaimWizard.steps.uploadPhotos.title", icon: CameraIcon, schema: claimSchemaStep3, fields: ['photos'] as const },
+  { id: 4, titleKey: "newClaimWizard.steps.supportingDocuments.title", icon: FileUp, schema: claimSchemaStep4, fields: ['documents'] as const },
+  { id: 5, titleKey: "newClaimWizard.steps.reviewSubmit.title", icon: CheckCircle, schema: z.object({}), fields: [] as const },
 ];
 
 
 export function NewClaimWizard() {
   const [currentStep, setCurrentStep] = useState(0);
   const { toast } = useToast();
+  const { t } = useLanguage();
 
-  // Audio Input State
   const [isAudioInputEnabled, setIsAudioInputEnabled] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [hasMicPermission, setHasMicPermission] = useState<boolean | null>(null);
   const [speechApiAvailable, setSpeechApiAvailable] = useState(false);
   const speechRecognitionRef = useRef<SpeechRecognition | null>(null);
 
-  // Camera Input State
   const [enableCamera, setEnableCamera] = useState(false);
   const [isCameraActive, setIsCameraActive] = useState(false); 
   const [cameraPermissionStatus, setCameraPermissionStatus] = useState<'idle' | 'pending' | 'granted' | 'denied'>('idle');
@@ -118,7 +118,6 @@ export function NewClaimWizard() {
   
   const [committedPhotoPreviews, setCommittedPhotoPreviews] = useState<string[]>([]);
 
-  // Guided Photo Capture State
   const [currentPhotoInstructionIndex, setCurrentPhotoInstructionIndex] = useState(0);
   const [capturedPhotoDataUrl, setCapturedPhotoDataUrl] = useState<string | null>(null);
   const [isProcessingPhoto, setIsProcessingPhoto] = useState(false);
@@ -140,6 +139,12 @@ export function NewClaimWizard() {
   
   const watchedPhotos = form.watch("photos");
   const watchedDocuments = form.watch("documents");
+
+  const translatedPhotoInstructions = photoInstructions.map(instr => ({
+    ...instr,
+    title: t(instr.titleKey),
+    description: t(instr.descriptionKey)
+  }));
 
   useEffect(() => {
     const currentFiles = watchedPhotos || [];
@@ -164,7 +169,7 @@ export function NewClaimWizard() {
       const recognition = new SpeechRecognitionAPI();
       recognition.continuous = true;
       recognition.interimResults = true;
-      recognition.lang = 'en-US';
+      recognition.lang = 'en-US'; // This could be dynamic based on app language context
 
       recognition.onstart = () => setIsRecording(true);
       recognition.onresult = (event: SpeechRecognitionEvent) => {
@@ -179,14 +184,14 @@ export function NewClaimWizard() {
       };
       recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
         setIsRecording(false);
-        let msg = "Speech recognition error.";
-        if (event.error === 'no-speech') msg = "No speech detected.";
-        else if (event.error === 'audio-capture') msg = "Microphone problem.";
+        let msgKey = "newClaimWizard.audioError.generic";
+        if (event.error === 'no-speech') msgKey = "newClaimWizard.audioError.noSpeech";
+        else if (event.error === 'audio-capture') msgKey = "newClaimWizard.audioError.micProblem";
         else if (event.error === 'not-allowed') {
-          msg = "Microphone access denied.";
+          msgKey = "newClaimWizard.audioError.micDenied";
           setHasMicPermission(false);
         }
-        toast({ variant: "destructive", title: "Audio Error", description: msg });
+        toast({ variant: "destructive", title: t("newClaimWizard.audioError.title"), description: t(msgKey) });
       };
       recognition.onend = () => setIsRecording(false);
       speechRecognitionRef.current = recognition;
@@ -194,7 +199,7 @@ export function NewClaimWizard() {
       setSpeechApiAvailable(false);
     }
     return () => speechRecognitionRef.current?.stop();
-  }, [form, toast]);
+  }, [form, toast, t]);
 
   const stopCurrentStream = useCallback(() => {
     if (mediaStreamRef.current) {
@@ -204,23 +209,23 @@ export function NewClaimWizard() {
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
-    setIsCameraActive(false); // Ensure camera is marked as inactive
+    setIsCameraActive(false);
   }, []);
 
 
   const startCamera = useCallback(async () => {
     if (!navigator.mediaDevices?.getUserMedia) {
-        toast({ variant: "destructive", title: "Camera Error", description: "Camera not supported by your browser." });
+        toast({ variant: "destructive", title: t("newClaimWizard.cameraError.title"), description: t("newClaimWizard.cameraError.notSupported") });
         setCameraPermissionStatus('denied');
         return;
     }
     if (!videoRef.current) {
-        toast({ variant: "destructive", title: "Camera Error", description: "Video element not ready." });
+        toast({ variant: "destructive", title: t("newClaimWizard.cameraError.title"), description: t("newClaimWizard.cameraError.videoElementNotReady") });
         return;
     }
 
     setCameraPermissionStatus('pending');
-    stopCurrentStream(); // Always stop existing stream before starting a new one
+    stopCurrentStream();
 
     try {
         const newStream = await navigator.mediaDevices.getUserMedia({
@@ -235,16 +240,15 @@ export function NewClaimWizard() {
 
         if (videoRef.current) {
             videoRef.current.srcObject = newStream;
-            // Use a promise for onloadedmetadata to ensure it plays after metadata is loaded
-            await new Promise<void>((resolve, reject) => { // Changed to Promise<void>
+            await new Promise<void>((resolve, reject) => {
               if(!videoRef.current) { 
                 reject(new Error("Video element became null before metadata loaded."));
                 return;
               }
-              videoRef.current.onloadedmetadata = () => resolve(); // Resolve with no value
+              videoRef.current.onloadedmetadata = () => resolve();
               videoRef.current.onerror = reject; 
               if (videoRef.current.readyState >= HTMLMediaElement.HAVE_METADATA) {
-                resolve(); // Already loaded
+                resolve();
               }
             });
 
@@ -252,66 +256,59 @@ export function NewClaimWizard() {
               throw new Error("Video element became null after metadata loaded but before play.");
             }
             await videoRef.current.play();
-            setIsCameraActive(true); // Moved here to ensure it's set after play()
+            setIsCameraActive(true);
             setCameraPermissionStatus('granted');
         }
     } catch (accessError) {
         console.error('Error accessing camera:', accessError);
-        let description = 'Could not access camera.';
+        let descriptionKey = 'newClaimWizard.cameraError.couldNotAccess';
         if (accessError instanceof DOMException) {
-            description = `${accessError.name}: ${accessError.message}`;
             if (accessError.name === 'NotAllowedError' || accessError.name === 'PermissionDeniedError') {
-                description = 'Camera permission denied. Please enable it in browser settings.';
+                descriptionKey = 'newClaimWizard.cameraError.permissionDenied';
             } else if (accessError.name === 'NotFoundError' || accessError.name === 'DevicesNotFoundError') {
-                description = 'No camera found. Ensure a camera is connected and enabled.';
+                descriptionKey = 'newClaimWizard.cameraError.noCameraFound';
             } else if (accessError.name === 'NotReadableError' || accessError.name === 'TrackStartError') {
-                description = 'Camera is in use or busy. Try closing other apps using the camera.';
+                descriptionKey = 'newClaimWizard.cameraError.cameraInUse';
             }
-        } else if (accessError instanceof Error) {
-            description = accessError.message;
         }
-        toast({ variant: 'destructive', title: 'Camera Access Error', description });
+        toast({ variant: 'destructive', title: t('newClaimWizard.cameraError.accessErrorTitle'), description: t(descriptionKey, { errorName: (accessError as Error).name, errorMessage: (accessError as Error).message }) });
         setCameraPermissionStatus('denied');
-        stopCurrentStream(); // Ensure stream is stopped on error
+        stopCurrentStream();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [toast, facingMode, stopCurrentStream]); 
+  }, [toast, facingMode, stopCurrentStream, t]); 
 
   useEffect(() => {
-    if (enableCamera && currentStep === 2 && !capturedPhotoDataUrl) { // Only start if no photo is being previewed
+    if (enableCamera && currentStep === 2 && !capturedPhotoDataUrl) {
         startCamera();
-    } else if (!enableCamera || currentStep !== 2 || capturedPhotoDataUrl) { // Stop if camera disabled, wrong step, or photo preview
+    } else if (!enableCamera || currentStep !== 2 || capturedPhotoDataUrl) {
         stopCurrentStream();
-         if (cameraPermissionStatus !== 'denied' && cameraPermissionStatus !== 'pending') { // Avoid resetting if denied or pending
+         if (cameraPermissionStatus !== 'denied' && cameraPermissionStatus !== 'pending') {
              setCameraPermissionStatus('idle'); 
          }
     }
-    // No return cleanup needed here as stopCurrentStream is called when conditions change.
-    // Cleanup for unmount is handled by the main component unmount useEffect for speechRec.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enableCamera, currentStep, capturedPhotoDataUrl, startCamera, stopCurrentStream]); // Added startCamera, stopCurrentStream
+  }, [enableCamera, currentStep, capturedPhotoDataUrl, startCamera, stopCurrentStream]);
 
 
   useEffect(() => {
-    // This effect specifically handles resetting the photo preview and instruction index
-    // when moving away from the photo step or disabling the camera.
     if (currentStep !== 2 || !enableCamera) { 
       setCapturedPhotoDataUrl(null);
-      setCurrentPhotoInstructionIndex(0); // Reset instruction index
+      setCurrentPhotoInstructionIndex(0);
     }
   }, [currentStep, enableCamera]);
 
 
   const requestMicrophonePermission = async () => {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      toast({ variant: "destructive", title: "Mic Access Error", description: "Mic access not supported by browser." });
+      toast({ variant: "destructive", title: t("newClaimWizard.micError.title"), description: t("newClaimWizard.micError.notSupported") });
       setHasMicPermission(false); return false;
     }
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true });
       setHasMicPermission(true); return true;
     } catch (err) {
-      toast({ variant: "destructive", title: "Mic Access Denied", description: "Enable microphone permissions." });
+      toast({ variant: "destructive", title: t("newClaimWizard.micError.accessDeniedTitle"), description: t("newClaimWizard.micError.accessDeniedDescription") });
       setHasMicPermission(false); return false;
     }
   };
@@ -334,7 +331,7 @@ export function NewClaimWizard() {
     }
   };
 
-  const currentPhotoInstruction = photoInstructions[currentPhotoInstructionIndex];
+  const currentPhotoInstruction = translatedPhotoInstructions[currentPhotoInstructionIndex];
   const totalCommittedPhotos = (form.getValues("photos") || []).length;
   const canTakeMorePhotosOverall = totalCommittedPhotos < MAX_PHOTOS;
 
@@ -343,13 +340,13 @@ export function NewClaimWizard() {
     const availableSlots = MAX_PHOTOS - currentFiles.length;
 
     if (availableSlots <= 0) {
-      toast({ variant: "destructive", title: "Photo Limit Reached", description: `Maximum ${MAX_PHOTOS} photos already uploaded.` });
+      toast({ variant: "destructive", title: t("newClaimWizard.photoError.limitReachedTitle"), description: t("newClaimWizard.photoError.limitReachedDescription", { maxPhotos: MAX_PHOTOS }) });
       return;
     }
     const filesToActuallyAdd = newFiles.slice(0, availableSlots);
     form.setValue("photos", [...currentFiles, ...filesToActuallyAdd], { shouldValidate: true, shouldDirty: true });
     if (filesToActuallyAdd.length < newFiles.length) {
-      toast({ variant: "warning", title: "Photo Limit Reached", description: `${filesToActuallyAdd.length} photo(s) added. ${newFiles.length - filesToActuallyAdd.length} not added.`});
+      toast({ variant: "warning", title: t("newClaimWizard.photoError.limitReachedTitle"), description: t("newClaimWizard.photoError.someNotAdded", { countAdded: filesToActuallyAdd.length, countNotAdded: newFiles.length - filesToActuallyAdd.length }) });
     }
   };
 
@@ -361,16 +358,13 @@ export function NewClaimWizard() {
   const handleCaptureAndPreview = () => {
     if (!videoRef.current || !canvasRef.current || !isCameraActive || !canTakeMorePhotosOverall || isProcessingPhoto || !currentPhotoInstruction) {
         if(!isCameraActive && enableCamera) console.warn("Camera not active, cannot capture.");
-        if(!canTakeMorePhotosOverall) toast({variant: "warning", title:"Limit Reached", description: `Max ${MAX_PHOTOS} photos.`});
+        if(!canTakeMorePhotosOverall) toast({variant: "warning", title: t("newClaimWizard.photoError.limitReachedTitle"), description: t("newClaimWizard.photoError.maxPhotos", {maxPhotos: MAX_PHOTOS})});
         return;
     }
     
     setIsProcessingPhoto(true);
     const video = videoRef.current;
     const canvas = canvasRef.current;
-
-    // Ensure canvas matches video's current dimensions
-    // These might change if the stream restarts or device orientation changes
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     const context = canvas.getContext('2d');
@@ -379,7 +373,6 @@ export function NewClaimWizard() {
       context.drawImage(video, 0, 0, canvas.width, canvas.height); 
       const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
       setCapturedPhotoDataUrl(dataUrl);
-      // Do not stop stream here, user might want to retake
     }
     setIsProcessingPhoto(false);
   };
@@ -391,77 +384,72 @@ export function NewClaimWizard() {
     try {
       const res = await fetch(capturedPhotoDataUrl);
       const blob = await res.blob();
-      // Ensure unique file name if multiple photos are taken for the same instruction type (though current logic moves to next instruction)
       const fileName = `${currentPhotoInstruction.id}-${Date.now()}.jpg`;
       const file = new File([blob], fileName, { type: 'image/jpeg' });
       
       addFilesToForm([file]);
       
-      setCapturedPhotoDataUrl(null); // Clear preview to re-enable camera for next shot
+      setCapturedPhotoDataUrl(null);
 
       const photosAfterAdd = (form.getValues("photos") || []).length;
       if (photosAfterAdd >= MAX_PHOTOS) {
-         toast({ title: "Photo Limit Reached", description: `You've reached the maximum of ${MAX_PHOTOS} photos.` });
-         setEnableCamera(false); // Optionally disable camera if limit reached
-      } else if (currentPhotoInstructionIndex < photoInstructions.length - 1) {
+         toast({ title: t("newClaimWizard.photoMessages.limitReachedTitle"), description: t("newClaimWizard.photoMessages.limitReachedDescription", {maxPhotos: MAX_PHOTOS}) });
+         setEnableCamera(false);
+      } else if (currentPhotoInstructionIndex < translatedPhotoInstructions.length - 1) {
         setCurrentPhotoInstructionIndex(prev => prev + 1);
       } else {
-        toast({ title: "All Photo Types Captured", description: "You can proceed or upload more manually if space allows." });
-        setEnableCamera(false); // All guided photos taken
+        toast({ title: t("newClaimWizard.photoMessages.allTypesCapturedTitle"), description: t("newClaimWizard.photoMessages.allTypesCapturedDescription") });
+        setEnableCamera(false);
       }
     } catch (error) {
       console.error("Error processing photo:", error);
-      toast({ variant: "destructive", title: "Error", description: "Could not process the captured photo." });
+      toast({ variant: "destructive", title: t("newClaimWizard.photoError.genericErrorTitle"), description: t("newClaimWizard.photoError.couldNotProcess") });
     } finally {
       setIsProcessingPhoto(false);
-      // Camera will restart via useEffect if conditions are met (enableCamera, currentStep, !capturedPhotoDataUrl)
     }
   };
   
   const handleRetakePhoto = () => {
-    setCapturedPhotoDataUrl(null); // Clear preview, camera will restart via useEffect
+    setCapturedPhotoDataUrl(null);
   };
 
-  const handleNextPhotoInstruction = () => { // Used for skipping optional photos
+  const handleNextPhotoInstruction = () => {
     setCapturedPhotoDataUrl(null); 
-    if (currentPhotoInstructionIndex < photoInstructions.length - 1) {
+    if (currentPhotoInstructionIndex < translatedPhotoInstructions.length - 1) {
       setCurrentPhotoInstructionIndex(prev => prev + 1);
     } else {
-      toast({ title: "Finished with guided capture.", description: "You can proceed to the next step if requirements are met."});
-       setEnableCamera(false); // No more instructions
+      toast({ title: t("newClaimWizard.photoMessages.finishedGuidedCaptureTitle"), description: t("newClaimWizard.photoMessages.finishedGuidedCaptureDescription")});
+       setEnableCamera(false);
     }
   };
 
   const handleNext = async () => {
-    const currentStepObj = steps[currentStep];
+    const currentStepObj = stepsConfig[currentStep];
     const fieldsToValidate = currentStepObj.id === 3 ? ['photos'] : currentStepObj.fields;
     
     const isValid = await form.trigger(fieldsToValidate as any);
 
     if (isValid) {
-      if (currentStep < steps.length - 1) {
+      if (currentStep < stepsConfig.length - 1) {
         setCurrentStep((prev) => prev + 1);
       } else {
         onSubmit(form.getValues());
       }
     } else {
        const errors = form.formState.errors;
-       let errorMessage = "Please correct the errors before proceeding.";
+       let errorMessage = t("newClaimWizard.validationError.defaultMessage");
        
        if (currentStepObj.id === 3 && errors.photos) {
            if (typeof errors.photos.message === 'string') {
-             errorMessage = errors.photos.message;
-           } else if (Array.isArray(errors.photos) && errors.photos[0] && typeof errors.photos[0].message === 'string') {
-             // Handle array of errors if Zod returns that for array fields
-             errorMessage = errors.photos[0].message;
+             errorMessage = errors.photos.message; // This message itself can be complex to translate if from Zod refine
            }
        } else if (fieldsToValidate && fieldsToValidate.length > 0) {
             const fieldErrorKeys = Object.keys(errors).filter(key => fieldsToValidate.includes(key as any));
             if (fieldErrorKeys.length > 0) {
-                errorMessage = `Please correct errors in: ${fieldErrorKeys.join(', ')}.`;
+                errorMessage = t("newClaimWizard.validationError.specificFields", {fields: fieldErrorKeys.join(', ')});
             }
        }
-       toast({ variant: "destructive", title: "Validation Error", description: errorMessage });
+       toast({ variant: "destructive", title: t("newClaimWizard.validationError.title"), description: errorMessage });
     }
   };
 
@@ -472,8 +460,9 @@ export function NewClaimWizard() {
   function onSubmit(data: ClaimFormValues) {
     console.log("Claim Data:", data); 
     toast({
-      title: "Claim Submitted Successfully!",
-      description: "Your claim is now being processed.", variant: "default",
+      title: t("newClaimWizard.submitSuccess.title"),
+      description: t("newClaimWizard.submitSuccess.description"), 
+      variant: "default",
     });
     form.reset();
     setCurrentStep(0);
@@ -483,13 +472,13 @@ export function NewClaimWizard() {
     setEnableCamera(false); 
     setCurrentPhotoInstructionIndex(0);
     setCapturedPhotoDataUrl(null);
-    stopCurrentStream(); // Ensure camera is off after submission
+    stopCurrentStream();
   }
   
-  const progressValue = ((currentStep + 1) / steps.length) * 100;
-  const CurrentIcon = steps[currentStep].icon;
+  const progressValue = ((currentStep + 1) / stepsConfig.length) * 100;
+  const CurrentIcon = stepsConfig[currentStep].icon;
   
-  let isEffectivelyAllGuidedInstructionsDone = currentPhotoInstructionIndex >= photoInstructions.length;
+  let isEffectivelyAllGuidedInstructionsDone = currentPhotoInstructionIndex >= translatedPhotoInstructions.length;
 
 
   return (
@@ -497,9 +486,9 @@ export function NewClaimWizard() {
       <CardHeader>
         <div className="flex items-center space-x-2 mb-2">
           <CurrentIcon className="h-6 w-6 text-primary" />
-          <CardTitle className="text-xl">{steps[currentStep].title}</CardTitle>
+          <CardTitle className="text-xl">{t(stepsConfig[currentStep].titleKey)}</CardTitle>
         </div>
-        <CardDescription>Step {currentStep + 1} of {steps.length}. Fill accurately.</CardDescription>
+        <CardDescription>{t('newClaimWizard.stepDescription', { currentStep: currentStep + 1, totalSteps: stepsConfig.length })}</CardDescription>
         <Progress value={progressValue} className="w-full mt-2 h-2" />
       </CardHeader>
       <CardContent>
@@ -508,9 +497,9 @@ export function NewClaimWizard() {
             {currentStep === 0 && (
               <FormField control={form.control} name="vehicleId" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Select Vehicle Involved</FormLabel>
+                  <FormLabel>{t('newClaimWizard.selectVehicle.label')}</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="Choose your vehicle" /></SelectTrigger></FormControl>
+                    <FormControl><SelectTrigger><SelectValue placeholder={t('newClaimWizard.selectVehicle.placeholder')} /></SelectTrigger></FormControl>
                     <SelectContent>{userVehicles.map((v) => (<SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>))}</SelectContent>
                   </Select>
                   <FormMessage />
@@ -521,34 +510,35 @@ export function NewClaimWizard() {
             {currentStep === 1 && (
               <>
                 <FormField control={form.control} name="accidentDate" render={({ field }) => (
-                  <FormItem><FormLabel>Date of Accident</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>{t('newClaimWizard.accidentDetails.dateLabel')}</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="accidentTime" render={({ field }) => (
-                  <FormItem><FormLabel>Time of Accident</FormLabel><FormControl><Input type="time" {...field} /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>{t('newClaimWizard.accidentDetails.timeLabel')}</FormLabel><FormControl><Input type="time" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="accidentLocation" render={({ field }) => (
-                  <FormItem><FormLabel>Location of Accident</FormLabel><FormControl><Input placeholder="e.g., Nyerere Rd, near Tazara" {...field} /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>{t('newClaimWizard.accidentDetails.locationLabel')}</FormLabel><FormControl><Input placeholder={t('newClaimWizard.accidentDetails.locationPlaceholder')} {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="accidentDescription" render={({ field }) => (
                   <FormItem>
                     <div className="flex flex-col space-y-1.5">
-                       <FormLabel>Describe the Accident</FormLabel>
+                       <FormLabel>{t('newClaimWizard.accidentDetails.descriptionLabel')}</FormLabel>
                        <div className="flex items-center space-x-2">
-                         <Switch id="audio-toggle" checked={isAudioInputEnabled} onCheckedChange={onAudioToggleChange} disabled={!speechApiAvailable} />
-                         <label htmlFor="audio-toggle" className="text-sm font-normal text-muted-foreground cursor-pointer">Enable Audio Input</label>
+                         <Switch id="audio-toggle" checked={isAudioInputEnabled} onCheckedChange={onAudioToggleChange} disabled={!speechApiAvailable} aria-label={t('newClaimWizard.accidentDetails.audioInputToggleLabel')} />
+                         <label htmlFor="audio-toggle" className="text-sm font-normal text-muted-foreground cursor-pointer">{t('newClaimWizard.accidentDetails.audioInputEnableText')}</label>
                          {isAudioInputEnabled && speechApiAvailable && (
                            <TooltipProvider delayDuration={0}><Tooltip><TooltipTrigger asChild>
                              <Button type="button" variant="outline" size="icon" onClick={handleMicButtonClick} disabled={hasMicPermission === false}
-                               className={cn("h-7 w-7", isRecording && "bg-destructive text-destructive-foreground hover:bg-destructive/90", hasMicPermission === false && "text-muted-foreground cursor-not-allowed")}>
+                               className={cn("h-7 w-7", isRecording && "bg-destructive text-destructive-foreground hover:bg-destructive/90", hasMicPermission === false && "text-muted-foreground cursor-not-allowed")}
+                               aria-label={isRecording ? t('newClaimWizard.buttons.stopRecording') : (hasMicPermission === false ? t('newClaimWizard.buttons.micDenied') : t('newClaimWizard.buttons.startRecording'))}
+                               >
                                {isRecording ? <StopCircle className="h-4 w-4" /> : (hasMicPermission === false ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />)}
-                               <span className="sr-only">{isRecording ? "Stop" : (hasMicPermission === false ? "Mic denied" : "Record")}</span>
-                             </Button></TooltipTrigger><TooltipContent side="top"><p>{isRecording ? "Stop" : (hasMicPermission === false ? "Mic denied" : "Record")}</p></TooltipContent></Tooltip></TooltipProvider>
+                             </Button></TooltipTrigger><TooltipContent side="top"><p>{isRecording ? t('newClaimWizard.buttons.stopRecording') : (hasMicPermission === false ? t('newClaimWizard.buttons.micDenied') : t('newClaimWizard.buttons.startRecording'))}</p></TooltipContent></Tooltip></TooltipProvider>
                          )}
                        </div>
-                       {!speechApiAvailable && <p className="text-xs text-destructive">Audio input not supported.</p>}
-                       {isAudioInputEnabled && isRecording && <p className="text-xs text-primary animate-pulse">Recording...</p>}
+                       {!speechApiAvailable && <p className="text-xs text-destructive">{t('newClaimWizard.audioError.notSupported')}</p>}
+                       {isAudioInputEnabled && isRecording && <p className="text-xs text-primary animate-pulse">{t('newClaimWizard.accidentDetails.recordingInProgress')}</p>}
                      </div>
-                    <FormControl><Textarea rows={4} placeholder="Explain what happened..." {...field} /></FormControl>
+                    <FormControl><Textarea rows={4} placeholder={t('newClaimWizard.accidentDetails.descriptionPlaceholder')} {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
@@ -558,10 +548,10 @@ export function NewClaimWizard() {
             {currentStep === 2 && ( 
               <FormField control={form.control} name="photos" render={() => ( 
                 <FormItem>
-                  <FormLabel>Upload Accident Photos ({totalCommittedPhotos} / {MAX_PHOTOS})</FormLabel>
+                  <FormLabel>{t('newClaimWizard.uploadPhotos.title', { count: totalCommittedPhotos, max: MAX_PHOTOS })}</FormLabel>
                   <div className="flex items-center space-x-2 mb-3">
-                    <Switch id="camera-toggle" checked={enableCamera} onCheckedChange={setEnableCamera} />
-                    <label htmlFor="camera-toggle" className="text-sm font-medium text-foreground">Use Camera for Guided Capture</label>
+                    <Switch id="camera-toggle" checked={enableCamera} onCheckedChange={setEnableCamera} aria-label={t('newClaimWizard.uploadPhotos.cameraToggleLabel')} />
+                    <label htmlFor="camera-toggle" className="text-sm font-medium text-foreground">{t('newClaimWizard.uploadPhotos.useCameraLabel')}</label>
                   </div>
 
                   {enableCamera && currentPhotoInstruction && !isEffectivelyAllGuidedInstructionsDone && (
@@ -577,46 +567,46 @@ export function NewClaimWizard() {
                         <>
                           <div className="relative w-full aspect-video rounded-md bg-black mb-2 overflow-hidden">
                              <video ref={videoRef} className="w-full h-full object-cover" playsInline muted />
-                             {cameraPermissionStatus === 'pending' && <Alert className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 text-white pointer-events-none"><Loader2 className="h-8 w-8 animate-spin text-primary" /><AlertDescription className="mt-2">Initializing camera...</AlertDescription></Alert>}
-                             {cameraPermissionStatus === 'denied' && <Alert variant="destructive" className="absolute inset-0 m-auto max-w-sm max-h-40 flex flex-col items-center justify-center"><AlertTriangle className="h-5 w-5 mb-1" /><AlertTitle className="text-sm">Camera Access Denied</AlertTitle><AlertDescription className="text-xs text-center">Please enable camera permissions in your browser settings.</AlertDescription></Alert>}
-                             {cameraPermissionStatus === 'granted' && !isCameraActive && videoRef.current && videoRef.current.srcObject && <Alert className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 text-white pointer-events-none"><Loader2 className="h-8 w-8 animate-spin text-primary" /><AlertDescription className="mt-2">Starting camera...</AlertDescription></Alert>}
-                             {cameraPermissionStatus === 'granted' && isCameraActive && videoRef.current && !videoRef.current?.videoWidth && <Alert className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 text-white pointer-events-none"><AlertDescription>Camera feed loading...</AlertDescription></Alert>}
+                             {cameraPermissionStatus === 'pending' && <Alert className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 text-white pointer-events-none"><Loader2 className="h-8 w-8 animate-spin text-primary" /><AlertDescription className="mt-2">{t('newClaimWizard.cameraMessages.initializing')}</AlertDescription></Alert>}
+                             {cameraPermissionStatus === 'denied' && <Alert variant="destructive" className="absolute inset-0 m-auto max-w-sm max-h-40 flex flex-col items-center justify-center"><AlertTriangle className="h-5 w-5 mb-1" /><AlertTitle className="text-sm">{t('newClaimWizard.cameraError.accessDeniedTitle')}</AlertTitle><AlertDescription className="text-xs text-center">{t('newClaimWizard.cameraError.permissionDenied')}</AlertDescription></Alert>}
+                             {cameraPermissionStatus === 'granted' && !isCameraActive && videoRef.current && videoRef.current.srcObject && <Alert className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 text-white pointer-events-none"><Loader2 className="h-8 w-8 animate-spin text-primary" /><AlertDescription className="mt-2">{t('newClaimWizard.cameraMessages.starting')}</AlertDescription></Alert>}
+                             {cameraPermissionStatus === 'granted' && isCameraActive && videoRef.current && !videoRef.current?.videoWidth && <Alert className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 text-white pointer-events-none"><AlertDescription>{t('newClaimWizard.cameraMessages.feedLoading')}</AlertDescription></Alert>}
                           </div>
                           
                           <div className="flex flex-wrap gap-2 mt-2">
                             {isCameraActive && cameraPermissionStatus === 'granted' && currentPhotoInstruction && !isEffectivelyAllGuidedInstructionsDone && (
                                 <Button type="button" onClick={handleCaptureAndPreview} className="flex-1 min-w-[120px]" disabled={isProcessingPhoto || !canTakeMorePhotosOverall}>
                                 {isProcessingPhoto ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CameraIcon className="mr-2 h-4 w-4" />}
-                                Capture
+                                {t('newClaimWizard.buttons.capturePhoto')}
                                 </Button>
                             )}
                           </div>
 
-                          {currentPhotoInstruction && (currentPhotoInstruction.isOptional || currentPhotoInstructionIndex >= photoInstructions.filter(p=>!p.isOptional).length) && !isEffectivelyAllGuidedInstructionsDone && isCameraActive && cameraPermissionStatus === 'granted' && (
+                          {currentPhotoInstruction && (currentPhotoInstruction.isOptional || currentPhotoInstructionIndex >= translatedPhotoInstructions.filter(p=>!p.isOptional).length) && !isEffectivelyAllGuidedInstructionsDone && isCameraActive && cameraPermissionStatus === 'granted' && (
                              <Button type="button" variant="outline" onClick={handleNextPhotoInstruction} className="w-full mt-2">
-                                Skip '{currentPhotoInstruction.title}'
+                                {t('newClaimWizard.buttons.skipPhoto', { photoTitle: currentPhotoInstruction.title })}
                                 <ArrowRight className="ml-2 h-4 w-4"/>
                             </Button>
                           )}
                         </>
                       ) : ( 
                         <div className="text-center">
-                           <p className="text-sm font-medium mb-2">Preview: {currentPhotoInstruction?.title}</p>
-                          <Image src={capturedPhotoDataUrl} alt={`Preview for ${currentPhotoInstruction?.title}`} width={320} height={240} className="rounded-md mx-auto mb-3 max-w-full h-auto object-contain border" />
+                           <p className="text-sm font-medium mb-2">{t('newClaimWizard.uploadPhotos.previewTitle', { photoTitle: currentPhotoInstruction?.title })}</p>
+                          <Image src={capturedPhotoDataUrl} alt={t('newClaimWizard.uploadPhotos.previewAlt', { photoTitle: currentPhotoInstruction?.title })} width={320} height={240} className="rounded-md mx-auto mb-3 max-w-full h-auto object-contain border" />
                           <div className="flex justify-center gap-3">
                             <Button type="button" onClick={handleUsePhoto} className="bg-green-600 hover:bg-green-700 text-white" disabled={isProcessingPhoto || !canTakeMorePhotosOverall}>
                               {isProcessingPhoto && form.getValues("photos").find(p=>p.name.startsWith(currentPhotoInstruction?.id || '')) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
-                              Use Photo
+                              {t('newClaimWizard.buttons.usePhoto')}
                             </Button>
                             <Button type="button" variant="outline" onClick={handleRetakePhoto} disabled={isProcessingPhoto}>
-                              <CameraIcon className="mr-2 h-4 w-4" /> Retake Photo
+                              <CameraIcon className="mr-2 h-4 w-4" /> {t('newClaimWizard.buttons.retakePhoto')}
                             </Button>
                           </div>
                         </div>
                       )}
                       <canvas ref={canvasRef} style={{ display: 'none' }} />
-                       {!canTakeMorePhotosOverall && totalCommittedPhotos >= MAX_PHOTOS && <Alert variant="warning" className="mt-3"><AlertTriangle className="h-4 w-4" /><AlertTitle>Photo Limit Reached</AlertTitle><AlertDescription>Maximum {MAX_PHOTOS} photos allowed. You cannot add more.</AlertDescription></Alert>}
-                       {isEffectivelyAllGuidedInstructionsDone && enableCamera && <Alert className="mt-3"><CheckCircle className="h-4 w-4"/><AlertTitle>Guided Capture Complete</AlertTitle><AlertDescription>All photo types covered or skipped. You can upload manually if space permits.</AlertDescription></Alert>}
+                       {!canTakeMorePhotosOverall && totalCommittedPhotos >= MAX_PHOTOS && <Alert variant="warning" className="mt-3"><AlertTriangle className="h-4 w-4" /><AlertTitle>{t('newClaimWizard.photoError.limitReachedTitle')}</AlertTitle><AlertDescription>{t('newClaimWizard.photoError.maxPhotos', {maxPhotos: MAX_PHOTOS})}</AlertDescription></Alert>}
+                       {isEffectivelyAllGuidedInstructionsDone && enableCamera && <Alert className="mt-3"><CheckCircle className="h-4 w-4"/><AlertTitle>{t('newClaimWizard.photoMessages.guidedCaptureCompleteTitle')}</AlertTitle><AlertDescription>{t('newClaimWizard.photoMessages.guidedCaptureCompleteDescription')}</AlertDescription></Alert>}
                     </Card>
                   )}
                   
@@ -624,24 +614,24 @@ export function NewClaimWizard() {
                     <CardContent className="p-6 text-center">
                       <FileUp className="mx-auto h-12 w-12 text-muted-foreground mb-2" />
                       <FormLabel htmlFor="photo-upload" className="text-primary font-semibold cursor-pointer hover:underline">
-                        Click to upload files or drag and drop
+                        {t('newClaimWizard.uploadPhotos.uploadLabel')}
                       </FormLabel>
                       <FormControl>
                         <Input id="photo-upload" type="file" className="sr-only" accept="image/*" multiple onChange={handleFileUpload} disabled={!canTakeMorePhotosOverall} />
                       </FormControl>
-                      <p className="text-xs text-muted-foreground mt-1">PNG, JPG, GIF up to 10MB each. Max {MAX_PHOTOS} photos total.</p>
+                      <p className="text-xs text-muted-foreground mt-1">{t('newClaimWizard.uploadPhotos.fileTypesAndSize', { maxPhotos: MAX_PHOTOS})}</p>
                       <p className="text-xs text-muted-foreground mt-1">
-                         Required: {photoInstructions.filter(p => !p.isOptional).map(p => p.title).join(', ')}.
+                         {t('newClaimWizard.uploadPhotos.requiredPhotosIntro')}: {translatedPhotoInstructions.filter(p => !p.isOptional).map(p => p.title).join(', ')}.
                       </p>
                     </CardContent>
                   </Card>
                   {committedPhotoPreviews.length > 0 && (
                     <div className="mt-4">
-                      <p className="text-sm font-medium mb-2">Uploaded Photos:</p>
+                      <p className="text-sm font-medium mb-2">{t('newClaimWizard.uploadPhotos.uploadedPhotosTitle')}:</p>
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                         {committedPhotoPreviews.map((src, index) => (
                           <div key={index} className="relative aspect-square rounded-md overflow-hidden border shadow">
-                            <Image src={src} alt={`Preview ${index + 1}`} layout="fill" objectFit="cover" />
+                            <Image src={src} alt={t('newClaimWizard.uploadPhotos.previewIndexedAlt', { index: index + 1 })} layout="fill" objectFit="cover" />
                              <Button 
                                 type="button" 
                                 variant="destructive" 
@@ -652,12 +642,12 @@ export function NewClaimWizard() {
                                   const updatedPhotos = currentPhotos.filter((_, i) => i !== index);
                                   form.setValue("photos", updatedPhotos, { shouldValidate: true, shouldDirty: true });
                                 }}
+                                aria-label={t('newClaimWizard.buttons.removePhoto')}
                               >
                                 <LucideXCircle className="h-4 w-4" />
-                                <span className="sr-only">Remove photo</span>
                               </Button>
                             <p className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-1 truncate">
-                                {watchedPhotos[index]?.name.split('-')[0] || `Photo ${index+1}`}
+                                { (watchedPhotos[index]?.name.split('-')[0] && translatedPhotoInstructions.find(instr => instr.id === watchedPhotos[index]?.name.split('-')[0])?.title) || t('newClaimWizard.uploadPhotos.photoIndexed', { index: index + 1 })}
                             </p>
                           </div>
                         ))}
@@ -672,11 +662,11 @@ export function NewClaimWizard() {
             {currentStep === 3 && ( 
                <FormField control={form.control} name="documents" render={() => ( 
                 <FormItem>
-                  <FormLabel>Upload Supporting Docs (Optional)</FormLabel>
+                  <FormLabel>{t('newClaimWizard.supportingDocuments.title')}</FormLabel>
                    <Card className="border-dashed border-2 hover:border-primary transition-colors">
                     <CardContent className="p-6 text-center">
                       <FileUp className="mx-auto h-12 w-12 text-muted-foreground mb-2" />
-                      <FormLabel htmlFor="document-upload" className="text-primary font-semibold cursor-pointer hover:underline">Click to upload or drag and drop</FormLabel>
+                      <FormLabel htmlFor="document-upload" className="text-primary font-semibold cursor-pointer hover:underline">{t('newClaimWizard.supportingDocuments.uploadLabel')}</FormLabel>
                       <FormControl><Input id="document-upload" type="file" className="sr-only" accept=".pdf,.doc,.docx,.png,.jpg" multiple 
                         onChange={(e) => {
                           const files = Array.from(e.target.files || []);
@@ -684,12 +674,12 @@ export function NewClaimWizard() {
                           form.setValue("documents", [...currentDocs, ...files], {shouldValidate: true, shouldDirty: true});
                         }}
                       /></FormControl>
-                       <p className="text-xs text-muted-foreground mt-1">PDF, DOC, JPG, etc.</p>
+                       <p className="text-xs text-muted-foreground mt-1">{t('newClaimWizard.supportingDocuments.fileTypes')}</p>
                     </CardContent>
                   </Card>
                   {watchedDocuments && watchedDocuments.length > 0 && (
                     <div className="mt-4 space-y-2">
-                      <p className="text-sm font-medium">Selected Documents:</p>
+                      <p className="text-sm font-medium">{t('newClaimWizard.supportingDocuments.selectedDocsTitle')}:</p>
                       <ul className="list-disc list-inside text-sm text-muted-foreground">
                         {watchedDocuments.map((doc, index) => (
                           <li key={index} className="flex justify-between items-center">
@@ -703,9 +693,9 @@ export function NewClaimWizard() {
                                 const updatedDocs = watchedDocuments.filter((_, i) => i !== index);
                                 form.setValue("documents", updatedDocs, {shouldValidate:true, shouldDirty: true});
                               }}
+                              aria-label={t('newClaimWizard.buttons.removeDocument')}
                             >
                               <LucideXCircle className="h-4 w-4" />
-                              <span className="sr-only">Remove document</span>
                             </Button>
                           </li>
                         ))}
@@ -719,22 +709,22 @@ export function NewClaimWizard() {
 
             {currentStep === 4 && ( 
               <div className="space-y-3 p-2 rounded-md border bg-muted/20">
-                <h3 className="text-lg font-semibold mb-3 border-b pb-2">Review Your Claim Details</h3>
-                <ReviewItem label="Vehicle" value={userVehicles.find(v => v.id === form.getValues("vehicleId"))?.name || 'N/A'} />
-                <ReviewItem label="Accident Date & Time" value={`${form.getValues("accidentDate")} at ${form.getValues("accidentTime")}`} />
-                <ReviewItem label="Location" value={form.getValues("accidentLocation")} />
-                <ReviewItem label="Description" value={form.getValues("accidentDescription")} preWrap />
-                <ReviewItem label="Photos Uploaded" value={`${form.getValues("photos")?.length || 0}`} />
-                <ReviewItem label="Documents Uploaded" value={`${form.getValues("documents")?.length || 0}`} />
-                <p className="text-sm text-muted-foreground pt-3">Ensure all info is correct before submitting.</p>
+                <h3 className="text-lg font-semibold mb-3 border-b pb-2">{t('newClaimWizard.reviewSubmit.title')}</h3>
+                <ReviewItem label={t('newClaimWizard.reviewSubmit.vehicleLabel')} value={userVehicles.find(v => v.id === form.getValues("vehicleId"))?.name || 'N/A'} />
+                <ReviewItem label={t('newClaimWizard.reviewSubmit.dateTimeLabel')} value={`${form.getValues("accidentDate")} ${t('newClaimWizard.reviewSubmit.atTimeConnector')} ${form.getValues("accidentTime")}`} />
+                <ReviewItem label={t('newClaimWizard.reviewSubmit.locationLabel')} value={form.getValues("accidentLocation")} />
+                <ReviewItem label={t('newClaimWizard.reviewSubmit.descriptionLabel')} value={form.getValues("accidentDescription")} preWrap />
+                <ReviewItem label={t('newClaimWizard.reviewSubmit.photosUploadedLabel')} value={`${form.getValues("photos")?.length || 0}`} />
+                <ReviewItem label={t('newClaimWizard.reviewSubmit.documentsUploadedLabel')} value={`${form.getValues("documents")?.length || 0}`} />
+                <p className="text-sm text-muted-foreground pt-3">{t('newClaimWizard.reviewSubmit.finalCheckMessage')}</p>
               </div>
             )}
 
             <div className="flex justify-between pt-4">
-              {currentStep > 0 && <Button type="button" variant="outline" onClick={handleBack}>Back</Button>}
+              {currentStep > 0 && <Button type="button" variant="outline" onClick={handleBack}>{t('newClaimWizard.buttons.back')}</Button>}
               <div className="flex-grow"></div> {/* Spacer */}
               <Button type="button" onClick={handleNext} className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                {currentStep === steps.length - 1 ? "Submit Claim" : "Next"}
+                {currentStep === stepsConfig.length - 1 ? t('newClaimWizard.buttons.submit') : t('newClaimWizard.buttons.next')}
               </Button>
             </div>
           </form>
@@ -745,10 +735,11 @@ export function NewClaimWizard() {
 }
 
 function ReviewItem({ label, value, preWrap = false }: { label: string; value: string | number; preWrap?: boolean}) {
+  const { t } = useLanguage(); // Access t function if needed for N/A or other static parts
   return (
     <div className="flex flex-col sm:flex-row py-1">
       <strong className="w-full sm:w-1/3 text-sm text-muted-foreground">{label}:</strong>
-      <span className={`w-full sm:w-2/3 text-sm ${preWrap ? 'whitespace-pre-wrap break-words' : ''}`}>{value}</span>
+      <span className={`w-full sm:w-2/3 text-sm ${preWrap ? 'whitespace-pre-wrap break-words' : ''}`}>{value || t('common.notApplicableShort')}</span>
     </div>
   );
 }
