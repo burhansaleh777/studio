@@ -1,6 +1,5 @@
 
 import { Button } from "@/components/ui/button";
-import { BimaHubLogo } from "@/components/shared/bima-hub-logo";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -8,9 +7,8 @@ export default function WelcomePage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-primary/10 via-background to-background p-4">
       <div className="w-full max-w-md text-center">
-        <BimaHubLogo className="mx-auto mb-8 h-16 w-auto" />
         
-        <Card className="shadow-xl">
+        <Card className="shadow-xl mt-8"> {/* Added mt-8 for spacing since logo is removed */}
           <CardHeader>
             <h1 className="text-3xl font-bold tracking-tight text-foreground">
               Welcome to Bima Hub
