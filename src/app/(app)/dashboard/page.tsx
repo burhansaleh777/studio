@@ -1,5 +1,5 @@
 
-"use client"; // Make this a client component to use the language hook for the title
+"use client"; 
 
 import { PageHeader } from "@/components/layout/page-header";
 import { PageContainer } from "@/components/shared/page-container";
@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Bell, Car, FilePlus2, ShieldCheck, CreditCard, MessageSquare, PlusCircle } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import { useLanguage } from "@/contexts/LanguageContext"; // Added import
+import { useLanguage } from "@/contexts/LanguageContext"; 
 
 // Mock data - replace with actual data fetching
 const user = {
@@ -32,7 +32,7 @@ const vehicles = [
 
 
 export default function DashboardPage() {
-  const { t } = useLanguage(); // Added useLanguage hook
+  const { t } = useLanguage(); 
 
   return (
     <>
@@ -79,7 +79,7 @@ export default function DashboardPage() {
             ) : (
               <Card className="text-center py-8">
                 <CardContent>
-                  <p className="text-muted-foreground">{t('dashboard.noPolicies')}</p>
+                  <p className="text-muted-foreground">{t('dashboard.noPoliciesFound')}</p>
                   <Button className="mt-4" asChild>
                     <Link href="/quotes"><span>{t('dashboard.getQuote')}</span></Link>
                   </Button>
@@ -107,7 +107,7 @@ export default function DashboardPage() {
             ) : (
               <Card className="text-center py-8">
                 <CardContent>
-                  <p className="text-muted-foreground">{t('dashboard.noVehicles')}</p>
+                  <p className="text-muted-foreground">{t('dashboard.noVehiclesFound')}</p>
                   <Button className="mt-4" asChild>
                     <Link href="/profile#vehicles"><span>{t('dashboard.addYourVehicle')}</span></Link>
                   </Button>
@@ -118,7 +118,7 @@ export default function DashboardPage() {
 
           {/* Recent Claims Activity */}
           <section>
-            <h2 className="text-lg font-semibold mb-3">{t('dashboard.recentClaims')}</h2>
+            <h2 className="text-lg font-semibold mb-3">{t('dashboard.recentClaimsActivity')}</h2>
              {recentClaims.length > 0 ? (
               <div className="space-y-3">
                 {recentClaims.map(claim => (
@@ -141,7 +141,7 @@ export default function DashboardPage() {
             ) : (
               <Card className="text-center py-8">
                 <CardContent>
-                  <p className="text-muted-foreground">{t('dashboard.noRecentClaims')}</p>
+                  <p className="text-muted-foreground">{t('dashboard.noRecentClaimsActivity')}</p>
                 </CardContent>
               </Card>
             )}
@@ -152,10 +152,6 @@ export default function DashboardPage() {
   );
 }
 
-// QuickActionCard and PolicyCard need to be client components or receive 't' as prop if they use translations.
-// For simplicity, if they contain static text or text passed via props, they might not need immediate changes.
-// If their internal labels need translation, they'd also need `useLanguage`.
-// For now, label is passed as prop to QuickActionCard, so it's translated at the parent.
 function QuickActionCard({ href, icon: Icon, label }: { href: string, icon: React.ElementType, label: string }) {
   return (
     <Link href={href} className="block">

@@ -1,15 +1,51 @@
 
 {
-  "common": {
-    "notifications": "Taarifa",
-    "viewAll": "Tazama Zote",
-    "viewDetails": "Tazama Taarifa Zote",
-    "submitted": "Imewasilishwa",
-    "expires": "Tarehe ya kumalizika",
-    "edit": "Hariri"
-  },
   "splashScreen": {
     "loading": "Inapakia Bima Hub..."
+  },
+  "welcome": {
+    "title": "Karibu Bima Hub",
+    "subtitle": "Bima ya Kisasa Tanzania. Imefanywa Rahisi.",
+    "promoImageAlt": "Picha ya Promosheni ya Bima Hub",
+    "loginButton": "Ingia Kwenye Akaunti Yako",
+    "registerButton": "Fungua Akaunti Mpya",
+    "rightsReserved": "Haki zote zimehifadhiwa.",
+    "tagline": "Amani yako ya moyo, imelindwa."
+  },
+  "auth": {
+    "loginToBimaHub": "Ingia Bima Hub",
+    "accessDashboard": "Fikia dashibodi yako ya bima.",
+    "emailOrPhoneLabel": "Barua Pepe au Namba ya Simu",
+    "emailOrPhonePlaceholder": "Weka barua pepe au simu yako",
+    "passwordLabel": "Nenosiri",
+    "passwordPlaceholder": "Weka nenosiri lako",
+    "hidePassword": "Ficha nenosiri",
+    "showPassword": "Onyesha nenosiri",
+    "loginButton": "Ingia",
+    "forgotPasswordLink": "Umesahau Nenosiri?",
+    "noAccountPrompt": "Huna akaunti?",
+    "registerHereLink": "Jisajili hapa",
+    "createAccountTitle": "Fungua Akaunti Yako ya Bima Hub",
+    "joinBimaHub": "Jiunge nasi kudhibiti bima yako kwa urahisi.",
+    "fullNameLabel": "Jina Kamili",
+    "fullNamePlaceholder": "k.m., Juma Hamisi",
+    "emailLabel": "Anwani ya Barua Pepe",
+    "emailPlaceholder": "k.m., juma@example.com",
+    "phoneLabel": "Namba ya Simu",
+    "phonePlaceholder": "k.m., 0712345678",
+    "confirmPasswordLabel": "Thibitisha Nenosiri",
+    "agreeToTermsPrefix": "Ninakubaliana na",
+    "termsAndConditionsLink": "Vigezo na Masharti",
+    "agreeToTermsCheckboxLabel": "Kubali vigezo na masharti",
+    "registerButton": "Jisajili",
+    "alreadyHaveAccountPrompt": "Tayari una akaunti?",
+    "loginHereLink": "Ingia hapa",
+    "toast": {
+      "loginSubmittedTitle": "Ombi la Kuingia Limewasilishwa",
+      "loginSubmittedDescription": "Tunajaribu kukuunganisha...",
+      "registrationSubmittedTitle": "Usajili Umewasilishwa",
+      "registrationSubmittedDescription": "Akaunti yako inatengenezwa."
+    }
   },
   "pageHeader": {
     "welcome": "Karibu, {{name}}!"
@@ -21,67 +57,32 @@
     "payments": "Malipo",
     "profile": "Wasifu"
   },
+  "common": {
+    "back": "Rudi Nyuma",
+    "notifications": "Taarifa",
+    "viewAll": "Tazama Zote",
+    "submitted": "Imewasilishwa",
+    "edit": "Hariri",
+    "expires": "Tarehe ya kumalizika",
+    "viewDetails": "Tazama Taarifa Zote"
+  },
   "languageToggle": {
     "switchToSwahili": "Badilisha kwenda Kiswahili",
-    "switchToEnglish": "Switch to English"
+    "switchToEnglish": "Badilisha kwenda Kiingereza"
   },
   "dashboard": {
-    "quickActions": "Njia za Haraka",
+    "quickActions": "Vitendo vya Haraka",
     "startClaim": "Anzisha Dai",
-    "getQuote": "Pata Makadirio",
+    "getQuote": "Pata Nukuu",
     "makePayment": "Fanya Malipo",
-    "supportChat": "Msaada wa Gumzo",
+    "supportChat": "Huduma kwa Wateja (Chat)",
     "myPolicies": "Bima Zangu",
-    "noPolicies": "Huna bima yoyote hai kwa sasa.",
+    "noPoliciesFound": "Hakuna bima zilizopatikana.",
     "myVehicles": "Magari Yangu",
     "addVehicle": "Ongeza Gari",
-    "noVehicles": "Bado hujaongeza gari lolote.",
+    "noVehiclesFound": "Hakuna magari yaliyoongezwa bado.",
     "addYourVehicle": "Ongeza Gari Lako",
-    "recentClaims": "Madai ya Hivi Karibuni",
-    "noRecentClaims": "Hakuna madai ya hivi karibuni."
-  },
-  "welcome": {
-    "title": "Karibu Bima Hub",
-    "subtitle": "Mshirika wako mwaminifu wa bima Tanzania.",
-    "promoImageAlt": "Picha ya matangazo ya Bima Hub",
-    "loginButton": "Ingia",
-    "registerButton": "Jisajili",
-    "rightsReserved": "Haki zote zimehifadhiwa.",
-    "tagline": "Suluhisho Salama na za Kuaminika za Bima."
-  },
-  "auth": {
-    "loginToBimaHub": "Ingia Bima Hub",
-    "accessDashboard": "Fikia dashibodi yako ya bima.",
-    "emailOrPhoneLabel": "Barua Pepe au Namba ya Simu",
-    "emailOrPhonePlaceholder": "k.m., mtumiaji@mfano.com au 07XXXXXXXX",
-    "passwordLabel": "Nenosiri",
-    "passwordPlaceholder": "••••••••",
-    "showPassword": "Onyesha nenosiri",
-    "hidePassword": "Ficha nenosiri",
-    "loginButton": "Ingia",
-    "forgotPasswordLink": "Umesahau Nenosiri?",
-    "noAccountPrompt": "Huna akaunti?",
-    "registerHereLink": "Jisajili hapa",
-    "createAccountTitle": "Fungua Akaunti",
-    "joinBimaHub": "Jiunge na Bima Hub leo kwa usimamizi rahisi wa bima.",
-    "fullNameLabel": "Jina Kamili",
-    "fullNamePlaceholder": "k.m., Juma Hamisi",
-    "emailLabel": "Anwani ya Barua Pepe",
-    "emailPlaceholder": "k.m., juma.hamisi@mfano.com",
-    "phoneLabel": "Namba ya Simu",
-    "phonePlaceholder": "k.m., 0712345678",
-    "confirmPasswordLabel": "Thibitisha Nenosiri",
-    "agreeToTermsCheckboxLabel": "Checkbox ya kukubali vigezo na masharti",
-    "agreeToTermsPrefix": "Ninakubaliana na",
-    "termsAndConditionsLink": "Vigezo na Masharti",
-    "registerButton": "Jisajili",
-    "alreadyHaveAccountPrompt": "Tayari una akaunti?",
-    "loginHereLink": "Ingia hapa",
-    "toast": {
-      "loginSubmittedTitle": "Jaribio la Kuingia Limefanywa",
-      "loginSubmittedDescription": "Kama limefanikiwa, utaelekezwa hivi punde.",
-      "registrationSubmittedTitle": "Usajili Umewasilishwa",
-      "registrationSubmittedDescription": "Tafadhali angalia barua pepe/simu yako kwa uthibitishaji wa OTP (imeigwa)."
-    }
+    "recentClaimsActivity": "Shughuli za Madai za Hivi Karibuni",
+    "noRecentClaimsActivity": "Hakuna shughuli za madai za hivi karibuni."
   }
 }
