@@ -1,9 +1,13 @@
+
+"use client";
+
 import { PageHeader } from "@/components/layout/page-header";
 import { PageContainer } from "@/components/shared/page-container";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FilePlus2, AlertTriangle, CheckCircle, Hourglass } from "lucide-react";
+import { FilePlus2, AlertTriangle, CheckCircle, Hourglass, ShieldQuestion } from "lucide-react";
 import Link from "next/link";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 // Mock data for claims list
 const claims = [
@@ -40,12 +44,27 @@ const getStatusColor = (status: string) => {
 
 
 export default function ClaimsPage() {
+  const { t } = useLanguage();
+
+  const getTranslatedStatus = (status: string) => {
+    switch (status) {
+      case "Under Review":
+        return t('claimsPage.status.underReview');
+      case "Settled":
+        return t('claimsPage.status.settled');
+      case "Rejected":
+        return t('claimsPage.status.rejected');
+      default:
+        return status;
+    }
+  };
+
   return (
     <>
-      <PageHeader title="Your Claims">
+      <PageHeader title={t('claimsPage.title')}>
         <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground">
           <Link href="/claims/new">
-            <FilePlus2 className="mr-2 h-4 w-4" /> New Claim
+            <FilePlus2 className="mr-2 h-4 w-4" /> {t('claimsPage.newClaimButton')}
           </Link>
         </Button>
       </PageHeader>
@@ -58,33 +77,32 @@ export default function ClaimsPage() {
                   <div className="flex justify-between items-start">
                     <div>
                       <CardTitle className="text-lg">{claim.vehicle}</CardTitle>
-                      <CardDescription>Claim #{claim.claimNumber} (Policy: {claim.policyNumber})</CardDescription>
+                      <CardDescription>{t('claimsPage.claimCard.claimNumberLabel', { claimNumber: claim.claimNumber })} ({t('claimsPage.claimCard.policyLabel')}: {claim.policyNumber})</CardDescription>
                     </div>
                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(claim.status)}`}>
                       {getStatusIcon(claim.status)}
-                      <span className="ml-1.5">{claim.status}</span>
+                      <span className="ml-1.5">{getTranslatedStatus(claim.status)}</span>
                     </span>
                   </div>
                 </CardHeader>
                 <CardContent className="pt-2">
-                  <p className="text-sm text-muted-foreground">Submitted: {claim.dateSubmitted}</p>
+                  <p className="text-sm text-muted-foreground">{t('claimsPage.claimCard.submittedLabel')}: {claim.dateSubmitted}</p>
                   <div className="mt-3 border-t pt-3">
-                     {/* Simplified Timeline Placeholder */}
                     <ol className="relative border-s border-gray-200 dark:border-gray-700 ml-1">                  
                         <li className="mb-4 ms-4">
                             <div className={`absolute w-3 h-3 rounded-full mt-1.5 -start-1.5 border border-white ${claim.status === "Submitted" || claim.status === "Under Review" || claim.status === "Settled" ? 'bg-primary' : 'bg-gray-300'}`}></div>
-                            <time className="mb-1 text-xs font-normal leading-none text-muted-foreground">Step 1</time>
-                            <h3 className="text-sm font-semibold">Submitted</h3>
+                            <time className="mb-1 text-xs font-normal leading-none text-muted-foreground">{t('claimsPage.timeline.step', { stepNumber: 1 })}</time>
+                            <h3 className="text-sm font-semibold">{t('claimsPage.timeline.submitted')}</h3>
                         </li>
                         <li className="mb-4 ms-4">
                             <div className={`absolute w-3 h-3 rounded-full mt-1.5 -start-1.5 border border-white ${claim.status === "Under Review" || claim.status === "Settled" ? 'bg-primary' : 'bg-gray-300'}`}></div>
-                            <time className="mb-1 text-xs font-normal leading-none text-muted-foreground">Step 2</time>
-                            <h3 className="text-sm font-semibold">Under Review</h3>
+                            <time className="mb-1 text-xs font-normal leading-none text-muted-foreground">{t('claimsPage.timeline.step', { stepNumber: 2 })}</time>
+                            <h3 className="text-sm font-semibold">{t('claimsPage.timeline.underReview')}</h3>
                         </li>
                         <li className="ms-4">
                            <div className={`absolute w-3 h-3 rounded-full mt-1.5 -start-1.5 border border-white ${claim.status === "Settled" ? 'bg-green-500' : (claim.status === "Rejected" ? 'bg-red-500' : 'bg-gray-300')}`}></div>
-                            <time className="mb-1 text-xs font-normal leading-none text-muted-foreground">Step 3</time>
-                            <h3 className="text-sm font-semibold">{claim.status === "Rejected" ? "Decision Made" : "Settled/Finalized"}</h3>
+                            <time className="mb-1 text-xs font-normal leading-none text-muted-foreground">{t('claimsPage.timeline.step', { stepNumber: 3 })}</time>
+                            <h3 className="text-sm font-semibold">{claim.status === "Rejected" ? t('claimsPage.timeline.decisionMade') : t('claimsPage.timeline.settledFinalized')}</h3>
                         </li>
                     </ol>
                   </div>
@@ -96,13 +114,13 @@ export default function ClaimsPage() {
           <Card className="text-center py-12">
             <CardContent>
               <ShieldQuestion className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-              <h3 className="text-xl font-semibold mb-2">No Claims Found</h3>
+              <h3 className="text-xl font-semibold mb-2">{t('claimsPage.emptyState.title')}</h3>
               <p className="text-muted-foreground mb-6">
-                You haven&apos;t submitted any claims yet. If you need to, you can start a new claim.
+                {t('claimsPage.emptyState.description')}
               </p>
               <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground">
                 <Link href="/claims/new">
-                  <FilePlus2 className="mr-2 h-4 w-4" /> Submit Your First Claim
+                  <FilePlus2 className="mr-2 h-4 w-4" /> {t('claimsPage.emptyState.submitFirstClaimButton')}
                 </Link>
               </Button>
             </CardContent>

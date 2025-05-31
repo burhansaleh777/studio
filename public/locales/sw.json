@@ -5,12 +5,12 @@
   },
   "welcome": {
     "title": "Karibu Bima Hub",
-    "subtitle": "Bima ya Kisasa Tanzania. Imefanywa Rahisi.",
-    "promoImageAlt": "Picha ya Promosheni ya Bima Hub",
+    "subtitle": "Mshirika wako mwaminifu kwa huduma za kisasa za bima Tanzania. Pata makadirio, dhibiti bima zako, na wasilisha madai kwa urahisi.",
     "loginButton": "Ingia Kwenye Akaunti Yako",
     "registerButton": "Fungua Akaunti Mpya",
+    "promoImageAlt": "Picha ya Matangazo ya Bima Hub",
     "rightsReserved": "Haki zote zimehifadhiwa.",
-    "tagline": "Amani yako ya moyo, imelindwa."
+    "tagline": "Bima, Kurahisishwa."
   },
   "auth": {
     "loginToBimaHub": "Ingia Bima Hub",
@@ -19,25 +19,25 @@
     "emailOrPhonePlaceholder": "Weka barua pepe au simu yako",
     "passwordLabel": "Nenosiri",
     "passwordPlaceholder": "Weka nenosiri lako",
-    "hidePassword": "Ficha nenosiri",
     "showPassword": "Onyesha nenosiri",
-    "loginButton": "Ingia",
+    "hidePassword": "Ficha nenosiri",
+    "loginButton": "Ingia Salama",
     "forgotPasswordLink": "Umesahau Nenosiri?",
     "noAccountPrompt": "Huna akaunti?",
     "registerHereLink": "Jisajili hapa",
     "createAccountTitle": "Fungua Akaunti Yako ya Bima Hub",
-    "joinBimaHub": "Jiunge nasi kudhibiti bima yako kwa urahisi.",
+    "joinBimaHub": "Jiunge nasi kudhibiti mahitaji yako ya bima kwa ufanisi.",
     "fullNameLabel": "Jina Kamili",
     "fullNamePlaceholder": "k.m., Juma Hamisi",
     "emailLabel": "Anwani ya Barua Pepe",
-    "emailPlaceholder": "k.m., juma@example.com",
+    "emailPlaceholder": "k.m., mtumiaji@mfano.com",
     "phoneLabel": "Namba ya Simu",
     "phonePlaceholder": "k.m., 0712345678",
     "confirmPasswordLabel": "Thibitisha Nenosiri",
-    "agreeToTermsPrefix": "Ninakubaliana na",
+    "agreeToTermsPrefix": "Nakubaliana na",
     "termsAndConditionsLink": "Vigezo na Masharti",
     "agreeToTermsCheckboxLabel": "Kubali vigezo na masharti",
-    "registerButton": "Jisajili",
+    "registerButton": "Fungua Akaunti",
     "alreadyHaveAccountPrompt": "Tayari una akaunti?",
     "loginHereLink": "Ingia hapa",
     "toast": {
@@ -46,6 +46,19 @@
       "registrationSubmittedTitle": "Usajili Umewasilishwa",
       "registrationSubmittedDescription": "Akaunti yako inatengenezwa."
     }
+  },
+  "common": {
+    "back": "Rudi Nyuma",
+    "notifications": "Taarifa",
+    "viewAll": "Tazama Zote",
+    "viewDetails": "Tazama Taarifa Zote",
+    "edit": "Badilisha",
+    "submitted": "Imewasilishwa",
+    "expires": "Tarehe ya kumalizika"
+  },
+  "languageToggle": {
+    "switchToSwahili": "Badilisha kwenda Kiswahili",
+    "switchToEnglish": "Badilisha kwenda Kiingereza"
   },
   "pageHeader": {
     "welcome": "Karibu, {{name}}!"
@@ -57,32 +70,45 @@
     "payments": "Malipo",
     "profile": "Wasifu"
   },
-  "common": {
-    "back": "Rudi Nyuma",
-    "notifications": "Taarifa",
-    "viewAll": "Tazama Zote",
-    "submitted": "Imewasilishwa",
-    "edit": "Hariri",
-    "expires": "Tarehe ya kumalizika",
-    "viewDetails": "Tazama Taarifa Zote"
-  },
-  "languageToggle": {
-    "switchToSwahili": "Badilisha kwenda Kiswahili",
-    "switchToEnglish": "Badilisha kwenda Kiingereza"
-  },
   "dashboard": {
-    "quickActions": "Vitendo vya Haraka",
+    "quickActions": "Njia za Haraka",
     "startClaim": "Anzisha Dai",
-    "getQuote": "Pata Nukuu",
+    "getQuote": "Pata Makadirio",
     "makePayment": "Fanya Malipo",
-    "supportChat": "Huduma kwa Wateja (Chat)",
+    "supportChat": "Msaada Gumzo",
     "myPolicies": "Bima Zangu",
-    "noPoliciesFound": "Hakuna bima zilizopatikana.",
+    "noPoliciesFound": "Hakuna bima zinazoendelea. Unahitaji bima?",
     "myVehicles": "Magari Yangu",
     "addVehicle": "Ongeza Gari",
-    "noVehiclesFound": "Hakuna magari yaliyoongezwa bado.",
+    "noVehiclesFound": "Hakuna magari yaliyosajiliwa.",
     "addYourVehicle": "Ongeza Gari Lako",
     "recentClaimsActivity": "Shughuli za Madai za Hivi Karibuni",
     "noRecentClaimsActivity": "Hakuna shughuli za madai za hivi karibuni."
+  },
+  "claimsPage": {
+    "title": "Madai Yako",
+    "newClaimButton": "Dai Jipya",
+    "claimCard": {
+      "claimNumberLabel": "Dai #{{claimNumber}}",
+      "policyLabel": "Bima",
+      "submittedLabel": "Imewasilishwa"
+    },
+    "status": {
+      "underReview": "Inakaguliwa",
+      "settled": "Imekamilika",
+      "rejected": "Imekataliwa"
+    },
+    "timeline": {
+      "step": "Hatua ya {{stepNumber}}",
+      "submitted": "Imewasilishwa",
+      "underReview": "Inakaguliwa",
+      "decisionMade": "Uamuzi Umefanyika",
+      "settledFinalized": "Imekamilika/Imefungwa"
+    },
+    "emptyState": {
+      "title": "Hakuna Madai Yaliyopatikana",
+      "description": "Bado hujawasilisha dai lolote. Ikiwa unahitaji, unaweza kuanzisha dai jipya.",
+      "submitFirstClaimButton": "Wasilisha Dai Lako la Kwanza"
+    }
   }
 }

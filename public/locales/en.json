@@ -5,39 +5,39 @@
   },
   "welcome": {
     "title": "Welcome to Bima Hub",
-    "subtitle": "Modern Insurance for Tanzania. Simplified.",
-    "promoImageAlt": "Bima Hub Promotional Image",
+    "subtitle": "Your trusted partner for modern insurance solutions in Tanzania. Get quotes, manage policies, and file claims with ease.",
     "loginButton": "Login to Your Account",
     "registerButton": "Create New Account",
+    "promoImageAlt": "Bima Hub Promotional Image",
     "rightsReserved": "All rights reserved.",
-    "tagline": "Your peace of mind, secured."
+    "tagline": "Insurance, Simplified."
   },
   "auth": {
     "loginToBimaHub": "Login to Bima Hub",
-    "accessDashboard": "Access your insurance dashboard.",
+    "accessDashboard": "Access your personalized insurance dashboard.",
     "emailOrPhoneLabel": "Email or Phone Number",
     "emailOrPhonePlaceholder": "Enter your email or phone",
     "passwordLabel": "Password",
     "passwordPlaceholder": "Enter your password",
-    "hidePassword": "Hide password",
     "showPassword": "Show password",
-    "loginButton": "Login",
+    "hidePassword": "Hide password",
+    "loginButton": "Login Securely",
     "forgotPasswordLink": "Forgot Password?",
     "noAccountPrompt": "Don't have an account?",
     "registerHereLink": "Register here",
     "createAccountTitle": "Create Your Bima Hub Account",
-    "joinBimaHub": "Join us to manage your insurance easily.",
+    "joinBimaHub": "Join us to manage your insurance needs efficiently.",
     "fullNameLabel": "Full Name",
     "fullNamePlaceholder": "e.g., Juma Hamisi",
     "emailLabel": "Email Address",
-    "emailPlaceholder": "e.g., juma@example.com",
+    "emailPlaceholder": "e.g., user@example.com",
     "phoneLabel": "Phone Number",
     "phonePlaceholder": "e.g., 0712345678",
     "confirmPasswordLabel": "Confirm Password",
     "agreeToTermsPrefix": "I agree to the",
-    "termsAndConditionsLink": "Terms and Conditions",
+    "termsAndConditionsLink": "Terms & Conditions",
     "agreeToTermsCheckboxLabel": "Agree to terms and conditions",
-    "registerButton": "Register",
+    "registerButton": "Create Account",
     "alreadyHaveAccountPrompt": "Already have an account?",
     "loginHereLink": "Login here",
     "toast": {
@@ -46,6 +46,19 @@
       "registrationSubmittedTitle": "Registration Submitted",
       "registrationSubmittedDescription": "Your account is being created."
     }
+  },
+  "common": {
+    "back": "Back",
+    "notifications": "Notifications",
+    "viewAll": "View All",
+    "viewDetails": "View Details",
+    "edit": "Edit",
+    "submitted": "Submitted",
+    "expires": "Expires"
+  },
+  "languageToggle": {
+    "switchToSwahili": "Switch to Swahili",
+    "switchToEnglish": "Switch to English"
   },
   "pageHeader": {
     "welcome": "Welcome, {{name}}!"
@@ -57,32 +70,45 @@
     "payments": "Payments",
     "profile": "Profile"
   },
-  "common": {
-    "back": "Back",
-    "notifications": "Notifications",
-    "viewAll": "View All",
-    "submitted": "Submitted",
-    "edit": "Edit",
-    "expires": "Expires",
-    "viewDetails": "View Details"
-  },
-  "languageToggle": {
-    "switchToSwahili": "Switch to Swahili",
-    "switchToEnglish": "Switch to English"
-  },
   "dashboard": {
     "quickActions": "Quick Actions",
     "startClaim": "Start Claim",
-    "getQuote": "Get Quote",
+    "getQuote": "Get a Quote",
     "makePayment": "Make Payment",
     "supportChat": "Support Chat",
     "myPolicies": "My Policies",
-    "noPoliciesFound": "No policies found.",
+    "noPoliciesFound": "No active policies found. Need coverage?",
     "myVehicles": "My Vehicles",
     "addVehicle": "Add Vehicle",
-    "noVehiclesFound": "No vehicles added yet.",
+    "noVehiclesFound": "No vehicles registered yet.",
     "addYourVehicle": "Add Your Vehicle",
     "recentClaimsActivity": "Recent Claims Activity",
-    "noRecentClaimsActivity": "No recent claims activity."
+    "noRecentClaimsActivity": "No recent claims activity to show."
+  },
+  "claimsPage": {
+    "title": "Your Claims",
+    "newClaimButton": "New Claim",
+    "claimCard": {
+      "claimNumberLabel": "Claim #{{claimNumber}}",
+      "policyLabel": "Policy",
+      "submittedLabel": "Submitted"
+    },
+    "status": {
+      "underReview": "Under Review",
+      "settled": "Settled",
+      "rejected": "Rejected"
+    },
+    "timeline": {
+      "step": "Step {{stepNumber}}",
+      "submitted": "Submitted",
+      "underReview": "Under Review",
+      "decisionMade": "Decision Made",
+      "settledFinalized": "Settled/Finalized"
+    },
+    "emptyState": {
+      "title": "No Claims Found",
+      "description": "You haven't submitted any claims yet. If you need to, you can start a new claim.",
+      "submitFirstClaimButton": "Submit Your First Claim"
+    }
   }
 }
