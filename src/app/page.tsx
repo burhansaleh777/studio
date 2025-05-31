@@ -20,12 +20,12 @@ export default function WelcomePage() {
           </CardHeader>
           <CardContent className="space-y-6">
             <Image 
-              src="https://picsum.photos/400/200" 
-              alt="Tanzania landscape" 
+              src="https://placehold.co/400x200.png" 
+              alt="Promotional image for Bima Hub" 
               width={400} 
               height={200} 
               className="rounded-lg object-cover mx-auto"
-              data-ai-hint="Tanzania landscape"
+              data-ai-hint="promotional image"
             />
             <div className="space-y-4">
               <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" size="lg">
