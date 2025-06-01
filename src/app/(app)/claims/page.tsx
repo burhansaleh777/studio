@@ -1,6 +1,7 @@
 
 "use client";
 
+import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/layout/page-header";
 import { PageContainer } from "@/components/shared/page-container";
 import { Button } from "@/components/ui/button";
@@ -9,12 +10,21 @@ import { FilePlus2, AlertTriangle, CheckCircle, Hourglass, ShieldQuestion } from
 import Link from "next/link";
 import { useLanguage } from "@/contexts/LanguageContext";
 
-// Mock data for claims list
-const claims = [
-  { id: "1", policyNumber: "BIMA-001", vehicle: "Toyota IST", dateSubmitted: "2024-07-15", status: "Under Review", claimNumber: "CLM-2024-001" },
-  { id: "2", policyNumber: "BIMA-002", vehicle: "Nissan March", dateSubmitted: "2024-06-20", status: "Settled", claimNumber: "CLM-2024-002" },
-  { id: "3", policyNumber: "BIMA-001", vehicle: "Toyota IST", dateSubmitted: "2024-05-01", status: "Rejected", claimNumber: "CLM-2024-003" },
+// Mock data for claims list - This will be supplemented by localStorage
+const initialMockClaims = [
+  { id: "mock-1", policyNumber: "BIMA-001", vehicle: "Toyota IST", dateSubmitted: "2024-07-15", status: "Under Review", claimNumber: "CLM-2024-001" },
+  { id: "mock-2", policyNumber: "BIMA-002", vehicle: "Nissan March", dateSubmitted: "2024-06-20", status: "Settled", claimNumber: "CLM-2024-002" },
+  { id: "mock-3", policyNumber: "BIMA-001", vehicle: "Toyota IST", dateSubmitted: "2024-05-01", status: "Rejected", claimNumber: "CLM-2024-003" },
 ];
+
+interface ClaimItem {
+  id: string;
+  policyNumber: string;
+  vehicle: string;
+  dateSubmitted: string;
+  status: "Under Review" | "Settled" | "Rejected";
+  claimNumber: string;
+}
 
 const getStatusIcon = (status: string) => {
   switch (status) {
@@ -45,6 +55,25 @@ const getStatusColor = (status: string) => {
 
 export default function ClaimsPage() {
   const { t } = useLanguage();
+  const [displayedClaims, setDisplayedClaims] = useState<ClaimItem[]>(initialMockClaims);
+
+  useEffect(() => {
+    try {
+      const storedClaimsString = localStorage.getItem("userClaims");
+      if (storedClaimsString) {
+        const userSubmittedClaims: ClaimItem[] = JSON.parse(storedClaimsString);
+        // Combine user claims with mock claims, ensuring user claims are at the top and no duplicates by ID
+        const combined = [...userSubmittedClaims, ...initialMockClaims.filter(mc => !userSubmittedClaims.find(uc => uc.id === mc.id))];
+        setDisplayedClaims(combined);
+      } else {
+        setDisplayedClaims(initialMockClaims);
+      }
+    } catch (error) {
+      console.error("Failed to load claims from localStorage:", error);
+      setDisplayedClaims(initialMockClaims); // Fallback to mock claims on error
+    }
+  }, []);
+
 
   const getTranslatedStatus = (status: string) => {
     switch (status) {
@@ -69,9 +98,9 @@ export default function ClaimsPage() {
         </Button>
       </PageHeader>
       <PageContainer>
-        {claims.length > 0 ? (
+        {displayedClaims.length > 0 ? (
           <div className="space-y-4">
-            {claims.map((claim) => (
+            {displayedClaims.map((claim) => (
               <Card key={claim.id} className="shadow-md hover:shadow-lg transition-shadow">
                 <CardHeader className="pb-2">
                   <div className="flex justify-between items-start">
@@ -130,3 +159,5 @@ export default function ClaimsPage() {
     </>
   );
 }
+
+    

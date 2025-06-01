@@ -25,9 +25,9 @@ import { useLanguage } from "@/contexts/LanguageContext";
 
 // Mock data for user's vehicles
 const userVehicles = [
-  { id: "v1", name: "Toyota IST (T123 ABC)" },
-  { id: "v2", name: "Nissan March (T456 XYZ)" },
-  { id: "v3", name: "Honda Fit (T789 DEF)" },
+  { id: "v1", name: "Toyota IST (T123 ABC)", policyNumber: "BIMA-001" },
+  { id: "v2", name: "Nissan March (T456 XYZ)", policyNumber: "BIMA-002" },
+  { id: "v3", name: "Honda Fit (T789 DEF)", policyNumber: "BIMA-003" },
 ];
 
 const claimSchemaStep1 = z.object({
@@ -72,8 +72,6 @@ const claimSchemaStep3 = z.object({
             .map(p => p.titleKey) // Will be translated later
             .join(', ');
         
-        // This message itself would ideally be translated if it's user-facing often.
-        // For now, focusing on the titles.
         let message = `Please upload ${allRequiredPhotoInstructions.length} photos covering all required types. Missing: ${missingRequiredTitles}. Currently ${files?.length || 0} photos uploaded.`;
         
         return { message };
@@ -95,6 +93,21 @@ const stepsConfig = [
   { id: 4, titleKey: "newClaimWizard.steps.supportingDocuments.title", icon: FileUp, schema: claimSchemaStep4, fields: ['documents'] as const },
   { id: 5, titleKey: "newClaimWizard.steps.reviewSubmit.title", icon: CheckCircle, schema: z.object({}), fields: [] as const },
 ];
+
+interface StoredClaim {
+  id: string;
+  policyNumber: string;
+  vehicle: string;
+  dateSubmitted: string;
+  status: "Under Review" | "Settled" | "Rejected";
+  claimNumber: string;
+  accidentDescription: string;
+  accidentDate: string;
+  accidentTime: string;
+  accidentLocation: string;
+  photoCount: number;
+  documentCount: number;
+}
 
 
 export function NewClaimWizard() {
@@ -458,12 +471,45 @@ export function NewClaimWizard() {
   };
 
   function onSubmit(data: ClaimFormValues) {
-    console.log("Claim Data:", data); 
-    toast({
-      title: t("newClaimWizard.submitSuccess.title"),
-      description: t("newClaimWizard.submitSuccess.description"), 
-      variant: "default",
-    });
+    const selectedVehicle = userVehicles.find(v => v.id === data.vehicleId);
+
+    const newClaim: StoredClaim = {
+      id: crypto.randomUUID(),
+      policyNumber: selectedVehicle?.policyNumber || 'N/A',
+      vehicle: selectedVehicle?.name || 'Unknown Vehicle',
+      dateSubmitted: new Date().toISOString().split('T')[0],
+      status: "Under Review",
+      claimNumber: `CLM-${new Date().getFullYear()}-${Date.now().toString().slice(-5)}`,
+      accidentDescription: data.accidentDescription,
+      accidentDate: data.accidentDate,
+      accidentTime: data.accidentTime,
+      accidentLocation: data.accidentLocation,
+      photoCount: (data.photos || []).length,
+      documentCount: (data.documents || []).length,
+    };
+
+    try {
+      const existingClaimsString = localStorage.getItem("userClaims");
+      const existingClaims: StoredClaim[] = existingClaimsString ? JSON.parse(existingClaimsString) : [];
+      existingClaims.unshift(newClaim); // Add new claim to the beginning
+      localStorage.setItem("userClaims", JSON.stringify(existingClaims));
+      
+      console.log("Claim Data Saved to localStorage:", newClaim);
+      toast({
+        title: t("newClaimWizard.submitSuccess.title"),
+        description: t("newClaimWizard.submitSuccess.description"), 
+        variant: "default",
+      });
+
+    } catch (error) {
+      console.error("Failed to save claim to localStorage:", error);
+      toast({
+        title: t("newClaimWizard.submitError.title"),
+        description: t("newClaimWizard.submitError.localStorageFailed"),
+        variant: "destructive",
+      });
+    }
+    
     form.reset();
     setCurrentStep(0);
     setCommittedPhotoPreviews([]); 
@@ -735,7 +781,7 @@ export function NewClaimWizard() {
 }
 
 function ReviewItem({ label, value, preWrap = false }: { label: string; value: string | number; preWrap?: boolean}) {
-  const { t } = useLanguage(); // Access t function if needed for N/A or other static parts
+  const { t } = useLanguage(); 
   return (
     <div className="flex flex-col sm:flex-row py-1">
       <strong className="w-full sm:w-1/3 text-sm text-muted-foreground">{label}:</strong>
@@ -744,3 +790,5 @@ function ReviewItem({ label, value, preWrap = false }: { label: string; value: s
   );
 }
 
+
+    
