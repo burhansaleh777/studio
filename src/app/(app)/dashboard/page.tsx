@@ -155,7 +155,7 @@ export default function DashboardPage() {
 function QuickActionCard({ href, icon: Icon, label }: { href: string, icon: React.ElementType, label: string }) {
   return (
     <Link href={href} className="block">
-      <Card className="hover:bg-accent/10 hover:shadow-lg transition-all duration-200">
+      <Card className="hover:bg-primary/10 hover:shadow-lg transition-all duration-200">
         <CardContent className="flex flex-col items-center justify-center p-4 aspect-square">
           <Icon className="h-8 w-8 text-primary mb-2" />
           <span className="text-sm font-medium text-center">{label}</span>
