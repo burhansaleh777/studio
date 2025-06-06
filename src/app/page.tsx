@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Image from "next/image";
 import { useLanguage } from "@/contexts/LanguageContext"; // Added import
+import { LanguageToggle } from "@/components/layout/language-toggle"; // Added import
 
 export default function WelcomePage() {
   const { t } = useLanguage(); // Added useLanguage hook
@@ -13,7 +14,10 @@ export default function WelcomePage() {
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-primary/10 via-background to-background p-4">
       <div className="w-full max-w-md text-center">
         
-        <Card className="shadow-xl mt-8">
+        <Card className="shadow-xl mt-8 relative"> {/* Added relative positioning */}
+          <div className="absolute top-4 right-4 z-10"> {/* Positioned LanguageToggle */}
+            <LanguageToggle />
+          </div>
           <CardHeader>
             <h1 className="text-3xl font-bold tracking-tight text-foreground">
               {t('welcome.title')}
