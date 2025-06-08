@@ -14,6 +14,14 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
+// Check if the API key is still a placeholder or missing
+if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "YOUR_API_KEY") {
+  console.warn(
+    "Firebase API Key is missing or is still a placeholder in .env file. " +
+    "Please update it with your actual Firebase project's API Key and restart the server."
+  );
+}
+
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
@@ -21,3 +29,4 @@ const db = getFirestore(app);
 // const storage = getStorage(app); // If you need storage later
 
 export { app, auth, db };
+
