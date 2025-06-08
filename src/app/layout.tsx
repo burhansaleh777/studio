@@ -4,7 +4,8 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { AppLoader } from '@/components/layout/app-loader';
-import { LanguageProvider } from '@/contexts/LanguageContext'; // Added import
+import { LanguageProvider } from '@/contexts/LanguageContext';
+import { AuthProvider } from '@/contexts/AuthContext'; // Added AuthProvider
 
 const inter = Inter({
   subsets: ['latin'],
@@ -24,12 +25,14 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`}>
-        <LanguageProvider> {/* Added LanguageProvider */}
-          <AppLoader>
-            {children}
-          </AppLoader>
-          <Toaster />
-        </LanguageProvider>
+        <AuthProvider> {/* Added AuthProvider */}
+          <LanguageProvider>
+            <AppLoader>
+              {children}
+            </AppLoader>
+            <Toaster />
+          </LanguageProvider>
+        </AuthProvider>
       </body>
     </html>
   );

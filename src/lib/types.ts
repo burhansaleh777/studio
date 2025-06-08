@@ -1,13 +1,18 @@
+
 // This file can be used to define common types used across the application.
 // For now, it's a placeholder. As the app grows, interfaces for User, Policy,
 // Vehicle, Claim, etc., would be defined here.
+import type { Timestamp } from 'firebase/firestore';
 
 export interface UserProfile {
-  id: string;
-  name: string;
+  id: string; // This will be the Firebase UID
+  uid: string; // Firebase UID, often same as id
+  fullName?: string;
   email: string;
   phone?: string;
   avatarUrl?: string;
+  createdAt?: Timestamp | Date; // Store as Timestamp, allow Date for input
+  // any other app-specific user fields
 }
 
 export interface Vehicle {
@@ -19,6 +24,7 @@ export interface Vehicle {
   // Add other vehicle-specific fields like color, VIN, documents, etc.
   documents?: VehicleDocument[];
   imageUrl?: string;
+  userId?: string; // To link to the user
 }
 
 export interface VehicleDocument {
@@ -29,7 +35,7 @@ export interface VehicleDocument {
 }
 
 export interface Policy {
-  id: string;
+  id:string;
   policyNumber: string;
   userId: string;
   vehicleId?: string; // Optional if it's not a vehicle policy

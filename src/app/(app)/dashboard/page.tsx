@@ -1,21 +1,17 @@
 
-"use client"; 
+"use client";
 
 import { PageHeader } from "@/components/layout/page-header";
 import { PageContainer } from "@/components/shared/page-container";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Bell, Car, FilePlus2, ShieldCheck, CreditCard, MessageSquare, PlusCircle } from "lucide-react";
+import { Bell, Car, FilePlus2, ShieldCheck, CreditCard, MessageSquare, PlusCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import { useLanguage } from "@/contexts/LanguageContext"; 
+import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext"; // Added useAuth
 
-// Mock data - replace with actual data fetching
-const user = {
-  name: "Juma Hamisi",
-  notificationsCount: 3,
-};
-
+// Mock data - some will be replaced/augmented
 const policies = [
   { id: "1", vehicleName: "Toyota IST", policyNumber: "BIMA-001", expiryDate: "2024-12-31", status: "Active" },
   { id: "2", vehicleName: "Nissan March", policyNumber: "BIMA-002", expiryDate: "2025-03-15", status: "Active" },
@@ -30,17 +26,33 @@ const vehicles = [
   { id: "V2", name: "Nissan March", model: "2012", plate: "T456 XYZ", imageUrl:"https://placehold.co/100x70.png"  },
 ];
 
+const mockUser = { // Temporary until all parts use AuthContext
+  notificationsCount: 3,
+};
+
 
 export default function DashboardPage() {
-  const { t } = useLanguage(); 
+  const { t } = useLanguage();
+  const { userProfile, loadingAuth, loadingProfile } = useAuth(); // Get user from AuthContext
+
+  if (loadingAuth || loadingProfile) {
+    return (
+      <PageContainer className="flex justify-center items-center min-h-[calc(100vh-10rem)]">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </PageContainer>
+    );
+  }
+  
+  const displayName = userProfile?.fullName || userProfile?.email || t('pageHeader.guest');
+
 
   return (
     <>
-      <PageHeader title={t('pageHeader.welcome', { name: user.name })}>
+      <PageHeader title={t('pageHeader.welcome', { name: displayName })}>
         <Button variant="ghost" size="icon" asChild>
           <Link href="/notifications" aria-label={t('common.notifications')}>
             <Bell className="h-5 w-5" />
-            {user.notificationsCount > 0 && (
+            {mockUser.notificationsCount > 0 && (
               <span className="absolute top-1 right-1 flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-accent"></span>
@@ -87,7 +99,7 @@ export default function DashboardPage() {
               </Card>
             )}
           </section>
-          
+
           {/* My Vehicles */}
            <section>
             <div className="flex justify-between items-center mb-3">
@@ -129,10 +141,10 @@ export default function DashboardPage() {
                         <p className="text-sm text-muted-foreground">{t('common.submitted')}: {claim.date}</p>
                       </div>
                       <span className={`px-2 py-1 text-xs rounded-full ${
-                        claim.status === "Under Review" ? "bg-yellow-100 text-yellow-700" : 
+                        claim.status === "Under Review" ? "bg-yellow-100 text-yellow-700" :
                         claim.status === "Settled" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"
                       }`}>
-                        {claim.status} 
+                        {claim.status}
                       </span>
                     </CardContent>
                   </Card>
@@ -166,7 +178,7 @@ function QuickActionCard({ href, icon: Icon, label }: { href: string, icon: Reac
 }
 
 function PolicyCard({ policy }: { policy: (typeof policies)[0] }) {
-  const { t } = useLanguage(); 
+  const { t } = useLanguage();
   return (
     <Card className="shadow-md hover:shadow-lg transition-shadow">
       <CardHeader>
@@ -193,11 +205,11 @@ function VehicleCard({ vehicle }: { vehicle: (typeof vehicles)[0] }) {
   return (
     <Card className="shadow-md hover:shadow-lg transition-shadow overflow-hidden">
        <div className="flex items-center p-4">
-        <Image 
-          src={vehicle.imageUrl} 
-          alt={vehicle.name} 
-          width={80} 
-          height={56} 
+        <Image
+          src={vehicle.imageUrl}
+          alt={vehicle.name}
+          width={80}
+          height={56}
           className="rounded-md object-cover mr-4"
           data-ai-hint="vehicle side"
         />
@@ -214,4 +226,3 @@ function VehicleCard({ vehicle }: { vehicle: (typeof vehicles)[0] }) {
     </Card>
   );
 }
-
