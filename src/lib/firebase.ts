@@ -14,11 +14,17 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-// Check if the API key is still a placeholder or missing
-if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "YOUR_API_KEY") {
+// Check if the API key or Project ID is still a placeholder or missing
+if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "YOUR_API_KEY" || firebaseConfig.apiKey === "AIzaSyXXXXXXXXXXXXXXXXXXX") {
   console.warn(
-    "Firebase API Key is missing or is still a placeholder in .env file. " +
+    "Firebase API Key (NEXT_PUBLIC_FIREBASE_API_KEY) is missing or is still a placeholder in your .env file. " +
     "Please update it with your actual Firebase project's API Key and restart the server."
+  );
+}
+if (!firebaseConfig.projectId || firebaseConfig.projectId === "YOUR_PROJECT_ID" || firebaseConfig.projectId === "your-project-id") {
+  console.warn(
+    "Firebase Project ID (NEXT_PUBLIC_FIREBASE_PROJECT_ID) is missing or is still a placeholder in your .env file. " +
+    "Please update it with your actual Firebase project's Project ID and restart the server."
   );
 }
 
@@ -29,4 +35,3 @@ const db = getFirestore(app);
 // const storage = getStorage(app); // If you need storage later
 
 export { app, auth, db };
-

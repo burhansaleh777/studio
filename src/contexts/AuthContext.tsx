@@ -37,10 +37,14 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
             setUserProfile({ id: user.uid, ...userDocSnap.data() } as UserProfile);
           } else {
             setUserProfile(null); // Or a default profile
-            console.log("No such user profile document!");
+            console.log("No such user profile document for UID:", user.uid);
           }
         } catch (error) {
-          console.error("Error fetching user profile:", error);
+          console.error("Error fetching user profile from Firestore:", error);
+          // Attempt to log Firebase specific error codes if available
+          if (error instanceof Error && 'code' in error) {
+            console.error("Firebase error code:", (error as any).code, "Message:", (error as any).message);
+          }
           setUserProfile(null);
         } finally {
           setLoadingProfile(false);
