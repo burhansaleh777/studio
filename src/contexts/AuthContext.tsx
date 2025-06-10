@@ -43,7 +43,14 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
           console.error("Error fetching user profile from Firestore:", error);
           // Attempt to log Firebase specific error codes if available
           if (error instanceof Error && 'code' in error) {
-            console.error("Firebase error code:", (error as any).code, "Message:", (error as any).message);
+            const firebaseError = error as any; // Type assertion for easier access
+            console.error("Firebase error code:", firebaseError.code, "Message:", firebaseError.message);
+            if (firebaseError.code === 'unavailable') {
+              console.error(
+                "Firestore 'unavailable' error. This often means Firestore hasn't been initialized in your Firebase project console, or there are network issues. " +
+                "Please: 1. Check your internet connection. 2. Go to the Firebase console, select your project, navigate to 'Firestore Database', and ensure you have clicked 'Create database' and selected a region. 3. Verify your .env file Firebase configuration."
+              );
+            }
           }
           setUserProfile(null);
         } finally {
