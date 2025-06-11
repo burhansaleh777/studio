@@ -19,7 +19,7 @@ export default function WelcomePage() {
             <LanguageToggle />
           </div>
           <CardHeader>
-            <h1 className="text-3xl font-bold tracking-tight text-foreground pr-16">
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">
               {t('welcome.title')}
             </h1>
             <p className="text-muted-foreground mt-2">
@@ -74,4 +74,3 @@ const CardContent = ({ className, ...props }: React.HTMLAttributes<HTMLDivElemen
 const CardFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div className={`flex items-center p-6 pt-0 ${className || ''}`} {...props} />
 );
-
