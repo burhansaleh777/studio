@@ -64,7 +64,7 @@ const Card = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => 
 );
 
 const CardHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={`flex flex-col space-y-1.5 p-6 ${className || ''}`} {...props} />
+  <div className={`flex flex-col space-y-1.5 px-6 pt-16 pb-6 ${className || ''}`} {...props} />
 );
 
 const CardContent = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
@@ -74,3 +74,4 @@ const CardContent = ({ className, ...props }: React.HTMLAttributes<HTMLDivElemen
 const CardFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div className={`flex items-center p-6 pt-0 ${className || ''}`} {...props} />
 );
+
