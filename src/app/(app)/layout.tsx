@@ -7,8 +7,8 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-// import { signOut } from "firebase/auth"; // Uncomment if explicit sign out is desired
-// import { auth } from "@/lib/firebase";    // Uncomment if explicit sign out is desired
+import { signOut } from "firebase/auth"; // Import signOut
+import { auth } from "@/lib/firebase";    // Import auth
 
 export default function AuthenticatedAppLayout({
   children,
@@ -41,9 +41,13 @@ export default function AuthenticatedAppLayout({
         description: "Could not load your user profile. Please try logging in again or contact support.",
         variant: "destructive",
       });
-      // Optional: sign out the user before redirecting to login
-      // signOut(auth).then(() => router.push("/login")).catch(() => router.push("/login"));
-      router.push("/login");
+      // Sign out the user before redirecting to login
+      signOut(auth).then(() => {
+        router.push("/login");
+      }).catch((error) => {
+        console.error("Error signing out during profile error: ", error);
+        router.push("/login"); // Still redirect even if sign out fails
+      });
     }
   }, [currentUser, userProfile, loadingAuth, loadingProfile, router, toast]);
 
@@ -77,3 +81,4 @@ export default function AuthenticatedAppLayout({
   // If all checks pass (currentUser and userProfile exist, and not loading), render the app shell.
   return <AppShell>{children}</AppShell>;
 }
+
