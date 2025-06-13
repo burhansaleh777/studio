@@ -21,10 +21,22 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, ShieldAlert, CheckCircle2 } from "lucide-react";
 import React, { useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { generateQuote, type GenerateQuoteInput, type GenerateQuoteOutput, GenerateQuoteInputSchema } from "@/ai/flows/generate-quote-flow"; // Ensure this path is correct
+import { generateQuote, type GenerateQuoteInput, type GenerateQuoteOutput } from "@/ai/flows/generate-quote-flow";
 
-// Sub-schema for conditional validation if needed, but for now rely on GenerateQuoteInputSchema directly
-const quoteFormSchema = GenerateQuoteInputSchema; // Using the schema from the flow
+// Define the schema directly in the form component
+const quoteFormSchema = z.object({
+  vehicleType: z.string({required_error: "Vehicle type is required."}).min(1, "Vehicle type is required."),
+  vehicleMake: z.string().min(1, "Vehicle make is required."),
+  vehicleModel: z.string().min(1, "Vehicle model is required."),
+  vehicleYear: z.number({required_error: "Vehicle year is required."}).min(1900, "Year must be 1900 or later.").max(new Date().getFullYear() + 1, `Year cannot be after ${new Date().getFullYear() + 1}.`),
+  vehicleValue: z.number({required_error: "Vehicle value is required."}).positive("Vehicle value must be positive."),
+  coverageType: z.string({required_error: "Coverage type is required."}).min(1, "Coverage type is required."),
+  drivingExperience: z.number({required_error: "Driving experience is required."}).min(0, "Driving experience cannot be negative."),
+  noClaimBonus: z.number({required_error: "No claim bonus is required."}).min(0, "NCB cannot be negative.").max(100, "NCB cannot exceed 100."),
+  additionalDrivers: z.enum(['none', 'one', 'two_plus'], {required_error: "Please select number of additional drivers."}),
+  driverAge: z.number({required_error: "Driver age is required."}).min(18, "Driver must be at least 18.").max(100, "Driver age seems too high."),
+  driverLocation: z.string().min(1, "Driver location is required."),
+});
 
 type QuoteFormValues = z.infer<typeof quoteFormSchema>;
 
@@ -38,12 +50,12 @@ export function QuoteForm() {
   const form = useForm<QuoteFormValues>({
     resolver: zodResolver(quoteFormSchema),
     defaultValues: {
-      vehicleType: undefined, // Or a sensible default like "Private Car"
+      vehicleType: undefined,
       vehicleMake: "",
       vehicleModel: "",
-      vehicleYear: new Date().getFullYear() - 5, // Default to 5 years old
-      vehicleValue: 0,
-      coverageType: undefined, // Or a sensible default like "Comprehensive"
+      vehicleYear: new Date().getFullYear() - 5,
+      vehicleValue: undefined, // Changed to undefined to better trigger required validation
+      coverageType: undefined,
       drivingExperience: 5,
       noClaimBonus: 0,
       additionalDrivers: "none",
@@ -59,7 +71,8 @@ export function QuoteForm() {
     console.log("Quote Form Data Submitted:", data);
 
     try {
-      const result = await generateQuote(data);
+      // Ensure data conforms to GenerateQuoteInput, which should be identical to QuoteFormValues
+      const result = await generateQuote(data as GenerateQuoteInput);
       setQuoteResult(result);
       toast({
         title: t('quoteForm.toast.successTitle'),
@@ -159,7 +172,7 @@ export function QuoteForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t('quoteForm.vehicleYear.label')}</FormLabel>
-                    <FormControl><Input type="number" placeholder={t('quoteForm.vehicleYear.placeholder')} {...field} onChange={e => field.onChange(parseInt(e.target.value,10) || 0)} /></FormControl>
+                    <FormControl><Input type="number" placeholder={t('quoteForm.vehicleYear.placeholder')} {...field} onChange={e => field.onChange(parseInt(e.target.value,10) || undefined)} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -170,7 +183,7 @@ export function QuoteForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t('quoteForm.vehicleValue.label')}</FormLabel>
-                    <FormControl><Input type="number" placeholder={t('quoteForm.vehicleValue.placeholder')} {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl>
+                    <FormControl><Input type="number" placeholder={t('quoteForm.vehicleValue.placeholder')} {...field} onChange={e => field.onChange(parseFloat(e.target.value) || undefined)} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -205,7 +218,7 @@ export function QuoteForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t('quoteForm.drivingExperience.label')}</FormLabel>
-                    <FormControl><Input type="number" placeholder={t('quoteForm.drivingExperience.placeholder')} {...field} onChange={e => field.onChange(parseInt(e.target.value,10) || 0)} /></FormControl>
+                    <FormControl><Input type="number" placeholder={t('quoteForm.drivingExperience.placeholder')} {...field} onChange={e => field.onChange(parseInt(e.target.value,10) || undefined)} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -251,7 +264,7 @@ export function QuoteForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t('quoteForm.driverAge.label')}</FormLabel>
-                    <FormControl><Input type="number" placeholder={t('quoteForm.driverAge.placeholder')} {...field} onChange={e => field.onChange(parseInt(e.target.value,10) || 0)} /></FormControl>
+                    <FormControl><Input type="number" placeholder={t('quoteForm.driverAge.placeholder')} {...field} onChange={e => field.onChange(parseInt(e.target.value,10) || undefined)} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -310,5 +323,3 @@ export function QuoteForm() {
     </Card>
   );
 }
-
-    

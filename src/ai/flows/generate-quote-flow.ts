@@ -11,7 +11,7 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-export const GenerateQuoteInputSchema = z.object({
+const GenerateQuoteInputSchema = z.object({
   vehicleType: z.string().describe('Type of vehicle (e.g., Private Car, Motorcycle, Commercial Vehicle).'),
   vehicleMake: z.string().describe('Manufacturer of the vehicle (e.g., Toyota, Honda).'),
   vehicleModel: z.string().describe('Model of the vehicle (e.g., Corolla, IST).'),
@@ -26,7 +26,7 @@ export const GenerateQuoteInputSchema = z.object({
 });
 export type GenerateQuoteInput = z.infer<typeof GenerateQuoteInputSchema>;
 
-export const GenerateQuoteOutputSchema = z.object({
+const GenerateQuoteOutputSchema = z.object({
   quoteDetails: z.string().describe('A summary of the generated quote and coverage details.'),
   premiumAmount: z.number().describe('The calculated premium amount in TZS.'),
   currency: z.string().default('TZS').describe('The currency of the premium amount.'),
