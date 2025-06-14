@@ -28,13 +28,36 @@ const quoteFormSchema = z.object({
   vehicleType: z.string({required_error: "Vehicle type is required."}).min(1, "Vehicle type is required."),
   vehicleMake: z.string().min(1, "Vehicle make is required."),
   vehicleModel: z.string().min(1, "Vehicle model is required."),
-  vehicleYear: z.number({required_error: "Vehicle year is required."}).min(1900, "Year must be 1900 or later.").max(new Date().getFullYear() + 1, `Year cannot be after ${new Date().getFullYear() + 1}.`),
-  vehicleValue: z.number({required_error: "Vehicle value is required."}).positive("Vehicle value must be positive."),
+  vehicleYear: z.preprocess(
+    (val) => (String(val).trim() === "" ? undefined : parseInt(String(val), 10)),
+    z.number({required_error: "Vehicle year is required.", invalid_type_error: "Vehicle year must be a number."})
+      .min(1900, "Year must be 1900 or later.")
+      .max(new Date().getFullYear() + 1, `Year cannot be after ${new Date().getFullYear() + 1}.`)
+  ),
+  vehicleValue: z.preprocess(
+    (val) => (String(val).trim() === "" ? undefined : parseFloat(String(val))),
+    z.number({required_error: "Vehicle value is required.", invalid_type_error: "Vehicle value must be a number."})
+      .positive("Vehicle value must be positive.")
+  ),
   coverageType: z.string({required_error: "Coverage type is required."}).min(1, "Coverage type is required."),
-  drivingExperience: z.number({required_error: "Driving experience is required."}).min(0, "Driving experience cannot be negative."),
-  noClaimBonus: z.number({required_error: "No claim bonus is required."}).min(0, "NCB cannot be negative.").max(100, "NCB cannot exceed 100."),
+  drivingExperience: z.preprocess(
+    (val) => (String(val).trim() === "" ? undefined : parseInt(String(val), 10)),
+    z.number({required_error: "Driving experience is required.", invalid_type_error: "Driving experience must be a number."})
+      .min(0, "Driving experience cannot be negative.")
+  ),
+  noClaimBonus: z.preprocess(
+    (val) => (String(val).trim() === "" ? undefined : parseInt(String(val), 10)),
+    z.number({required_error: "No claim bonus is required.", invalid_type_error: "NCB must be a number."})
+      .min(0, "NCB cannot be negative.")
+      .max(100, "NCB cannot exceed 100.")
+  ),
   additionalDrivers: z.enum(['none', 'one', 'two_plus'], {required_error: "Please select number of additional drivers."}),
-  driverAge: z.number({required_error: "Driver age is required."}).min(18, "Driver must be at least 18.").max(100, "Driver age seems too high."),
+  driverAge: z.preprocess(
+    (val) => (String(val).trim() === "" ? undefined : parseInt(String(val), 10)),
+    z.number({required_error: "Driver age is required.", invalid_type_error: "Driver age must be a number."})
+      .min(18, "Driver must be at least 18.")
+      .max(100, "Driver age seems too high.")
+  ),
   driverLocation: z.string().min(1, "Driver location is required."),
 });
 
@@ -53,13 +76,13 @@ export function QuoteForm() {
       vehicleType: undefined,
       vehicleMake: "",
       vehicleModel: "",
-      vehicleYear: new Date().getFullYear() - 5,
-      vehicleValue: undefined, // Changed to undefined to better trigger required validation
+      vehicleYear: '', // Changed from number to empty string
+      vehicleValue: '', // Changed from undefined to empty string
       coverageType: undefined,
-      drivingExperience: 5,
-      noClaimBonus: 0,
+      drivingExperience: '', // Changed from number to empty string
+      noClaimBonus: '', // Changed from number to empty string
       additionalDrivers: "none",
-      driverAge: 30,
+      driverAge: '', // Changed from number to empty string
       driverLocation: "",
     },
   });
@@ -71,8 +94,7 @@ export function QuoteForm() {
     console.log("Quote Form Data Submitted:", data);
 
     try {
-      // Ensure data conforms to GenerateQuoteInput, which should be identical to QuoteFormValues
-      const result = await generateQuote(data as GenerateQuoteInput);
+      const result = await generateQuote(data as GenerateQuoteInput); // Zod schema ensures data is correct type
       setQuoteResult(result);
       toast({
         title: t('quoteForm.toast.successTitle'),
@@ -172,7 +194,7 @@ export function QuoteForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t('quoteForm.vehicleYear.label')}</FormLabel>
-                    <FormControl><Input type="number" placeholder={t('quoteForm.vehicleYear.placeholder')} {...field} onChange={e => field.onChange(parseInt(e.target.value,10) || undefined)} /></FormControl>
+                    <FormControl><Input type="number" placeholder={t('quoteForm.vehicleYear.placeholder')} {...field} onChange={e => field.onChange(e.target.value)} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -183,7 +205,7 @@ export function QuoteForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t('quoteForm.vehicleValue.label')}</FormLabel>
-                    <FormControl><Input type="number" placeholder={t('quoteForm.vehicleValue.placeholder')} {...field} onChange={e => field.onChange(parseFloat(e.target.value) || undefined)} /></FormControl>
+                    <FormControl><Input type="number" placeholder={t('quoteForm.vehicleValue.placeholder')} {...field} onChange={e => field.onChange(e.target.value)} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -218,7 +240,7 @@ export function QuoteForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t('quoteForm.drivingExperience.label')}</FormLabel>
-                    <FormControl><Input type="number" placeholder={t('quoteForm.drivingExperience.placeholder')} {...field} onChange={e => field.onChange(parseInt(e.target.value,10) || undefined)} /></FormControl>
+                    <FormControl><Input type="number" placeholder={t('quoteForm.drivingExperience.placeholder')} {...field} onChange={e => field.onChange(e.target.value)} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -229,7 +251,7 @@ export function QuoteForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t('quoteForm.noClaimBonus.label')}</FormLabel>
-                    <FormControl><Input type="number" placeholder={t('quoteForm.noClaimBonus.placeholder')} {...field} onChange={e => field.onChange(parseInt(e.target.value,10) || 0)} min="0" max="100" /></FormControl>
+                    <FormControl><Input type="number" placeholder={t('quoteForm.noClaimBonus.placeholder')} {...field} onChange={e => field.onChange(e.target.value)} min="0" max="100" /></FormControl>
                      <FormDescription>{t('quoteForm.noClaimBonus.description')}</FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -264,7 +286,7 @@ export function QuoteForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t('quoteForm.driverAge.label')}</FormLabel>
-                    <FormControl><Input type="number" placeholder={t('quoteForm.driverAge.placeholder')} {...field} onChange={e => field.onChange(parseInt(e.target.value,10) || undefined)} /></FormControl>
+                    <FormControl><Input type="number" placeholder={t('quoteForm.driverAge.placeholder')} {...field} onChange={e => field.onChange(e.target.value)} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -323,3 +345,4 @@ export function QuoteForm() {
     </Card>
   );
 }
+
