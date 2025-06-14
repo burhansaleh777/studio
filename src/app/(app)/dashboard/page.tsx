@@ -1,41 +1,116 @@
 
 "use client";
 
+import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/layout/page-header";
 import { PageContainer } from "@/components/shared/page-container";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Bell, Car, FilePlus2, ShieldCheck, CreditCard, MessageSquare, PlusCircle, Loader2 } from "lucide-react";
+import { Bell, Car, FilePlus2, ShieldCheck, CreditCard, MessageSquare, PlusCircle, Loader2, ImageOff } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useAuth } from "@/contexts/AuthContext"; // Added useAuth
+import { useAuth } from "@/contexts/AuthContext";
+import { db } from "@/lib/firebase";
+import { collection, query, where, getDocs, orderBy, Timestamp } from "firebase/firestore";
+import type { Policy, Vehicle as AppVehicle } from "@/lib/types"; // Assuming Vehicle type is also in types.ts
 
-// Mock data - some will be replaced/augmented
-const policies = [
-  { id: "1", vehicleName: "Toyota IST", policyNumber: "BIMA-001", expiryDate: "2024-12-31", status: "Active" },
-  { id: "2", vehicleName: "Nissan March", policyNumber: "BIMA-002", expiryDate: "2025-03-15", status: "Active" },
-];
-
+// Mock data for recentClaims and vehicles - to be replaced later
 const recentClaims = [
   { id: "C1", vehicleName: "Toyota IST", status: "Under Review", date: "2024-07-10" },
 ];
 
-const vehicles = [
+const initialVehicles = [
   { id: "V1", name: "Toyota IST", model: "2010", plate: "T123 ABC", imageUrl:"https://placehold.co/100x70.png" },
   { id: "V2", name: "Nissan March", model: "2012", plate: "T456 XYZ", imageUrl:"https://placehold.co/100x70.png"  },
 ];
 
-const mockUser = { // Temporary until all parts use AuthContext
+// Mock data for notifications - to be replaced later
+const mockUser = {
   notificationsCount: 3,
 };
+
+interface DashboardPolicy extends Policy {
+  // The Policy type from types.ts should be sufficient
+  // vehicleName is not standard on Policy, it should be derived or policy linked to a vehicle object
+  vehicleName?: string; // Temporary, ideally this is resolved via vehicleId
+}
 
 
 export default function DashboardPage() {
   const { t } = useLanguage();
-  const { userProfile, loadingAuth, loadingProfile } = useAuth(); // Get user from AuthContext
+  const { currentUser, userProfile, loadingAuth, loadingProfile } = useAuth();
+  const [policies, setPolicies] = useState<DashboardPolicy[]>([]);
+  const [loadingPolicies, setLoadingPolicies] = useState(true);
+  const [vehicles, setVehicles] = useState<AppVehicle[]>(initialVehicles); // Placeholder for vehicles
+  const [loadingVehicles, setLoadingVehicles] = useState(true);
 
-  if (loadingAuth || loadingProfile) {
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      if (currentUser) {
+        // Fetch Policies
+        setLoadingPolicies(true);
+        try {
+          const policiesRef = collection(db, "users", currentUser.uid, "policies");
+          const q = query(policiesRef, orderBy("endDate", "desc"));
+          const querySnapshot = await getDocs(q);
+          const fetchedPolicies = querySnapshot.docs.map(doc => {
+            const data = doc.data() as Omit<Policy, 'id'>;
+            // For now, we'll have to manually assign vehicleName or fetch vehicle details if policy has vehicleId
+            // This is a simplification. A real app might do a join or have vehicle details embedded/denormalized.
+            let vehicleName = "N/A";
+            if (data.vehicleId && vehicles.length > 0) { // vehicles here is still mock, will need to fetch user vehicles too
+                const linkedVehicle = vehicles.find(v => v.id === data.vehicleId);
+                if(linkedVehicle) vehicleName = `${linkedVehicle.make} ${linkedVehicle.model}`;
+                else vehicleName = "Unknown Vehicle"; // Fallback if vehicle not in mock/local list
+            } else if (data.type !== 'vehicle') {
+                vehicleName = data.type; // e.g. "Health Policy"
+            }
+
+            return {
+              id: doc.id,
+              ...data,
+              vehicleName: vehicleName, // Placeholder logic
+            } as DashboardPolicy;
+          });
+          setPolicies(fetchedPolicies);
+        } catch (error) {
+          console.error("Error fetching policies:", error);
+          toast({ title: t('common.error'), description: t('dashboard.fetchPoliciesError'), variant: "destructive" });
+        } finally {
+          setLoadingPolicies(false);
+        }
+
+        // Fetch Vehicles (similar to profile page)
+        setLoadingVehicles(true);
+        try {
+          const vehiclesRef = collection(db, "users", currentUser.uid, "vehicles");
+          const qVehicles = query(vehiclesRef, orderBy("createdAt", "desc"));
+          const vehiclesSnapshot = await getDocs(qVehicles);
+          const fetchedVehicles = vehiclesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AppVehicle));
+          setVehicles(fetchedVehicles);
+        } catch (error) {
+            console.error("Error fetching vehicles for dashboard:", error);
+            // toast({ title: t('common.error'), description: t('dashboard.fetchVehiclesError'), variant: "destructive" });
+        } finally {
+            setLoadingVehicles(false);
+        }
+      } else {
+        setLoadingPolicies(false);
+        setLoadingVehicles(false);
+      }
+    };
+
+    if (!loadingAuth && currentUser) {
+      fetchDashboardData();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser, loadingAuth, t]); // Removed toast from deps as it's stable
+
+  const { toast } = useToast(); // Moved useToast inside the component body
+
+  if (loadingAuth || (currentUser && (loadingProfile || loadingPolicies || loadingVehicles))) {
     return (
       <PageContainer className="flex justify-center items-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -82,7 +157,11 @@ export default function DashboardPage() {
                 <Link href="/policies"><span>{t('common.viewAll')}</span></Link>
               </Button>
             </div>
-            {policies.length > 0 ? (
+            {loadingPolicies ? (
+                <div className="flex justify-center items-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+            ) : policies.length > 0 ? (
               <div className="grid gap-4 sm:grid-cols-2">
                 {policies.map(policy => (
                   <PolicyCard key={policy.id} policy={policy} />
@@ -110,7 +189,11 @@ export default function DashboardPage() {
                 </Link>
               </Button>
             </div>
-            {vehicles.length > 0 ? (
+            {loadingVehicles ? (
+                <div className="flex justify-center items-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+            ) : vehicles.length > 0 ? (
               <div className="grid gap-4 sm:grid-cols-2">
                 {vehicles.map(vehicle => (
                   <VehicleCard key={vehicle.id} vehicle={vehicle} />
@@ -131,7 +214,7 @@ export default function DashboardPage() {
           {/* Recent Claims Activity */}
           <section>
             <h2 className="text-lg font-semibold mb-3">{t('dashboard.recentClaimsActivity')}</h2>
-             {recentClaims.length > 0 ? (
+             {recentClaims.length > 0 ? ( // This still uses mock data
               <div className="space-y-3">
                 {recentClaims.map(claim => (
                   <Card key={claim.id} className="hover:shadow-md transition-shadow">
@@ -144,7 +227,7 @@ export default function DashboardPage() {
                         claim.status === "Under Review" ? "bg-yellow-100 text-yellow-700" :
                         claim.status === "Settled" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"
                       }`}>
-                        {claim.status}
+                        {claim.status} {/* This status needs translation if it becomes dynamic */}
                       </span>
                     </CardContent>
                   </Card>
@@ -177,20 +260,23 @@ function QuickActionCard({ href, icon: Icon, label }: { href: string, icon: Reac
   );
 }
 
-function PolicyCard({ policy }: { policy: (typeof policies)[0] }) {
+function PolicyCard({ policy }: { policy: DashboardPolicy }) {
   const { t } = useLanguage();
+  const displayEndDate = policy.endDate instanceof Timestamp ? policy.endDate.toDate().toLocaleDateString() : String(policy.endDate);
+  
   return (
     <Card className="shadow-md hover:shadow-lg transition-shadow">
       <CardHeader>
-        <CardTitle className="text-lg">{policy.vehicleName}</CardTitle>
+        <CardTitle className="text-lg">{policy.vehicleName || `${policy.type} Insurance`}</CardTitle>
         <CardDescription>Policy: {policy.policyNumber}</CardDescription>
       </CardHeader>
       <CardContent>
-        <p className="text-sm">{t('common.expires')}: <span className="font-medium">{policy.expiryDate}</span></p>
-        <p className="text-sm">Status: <span className={`font-medium ${policy.status === "Active" ? "text-green-600" : "text-red-600"}`}>{policy.status}</span></p>
+        <p className="text-sm">{t('common.expires')}: <span className="font-medium">{displayEndDate}</span></p>
+        <p className="text-sm">Status: <span className={`font-medium ${policy.status === "active" ? "text-green-600" : (policy.status === "expired" ? "text-red-600" : "text-yellow-600")}`}>{t(`policyCard.status.${policy.status}`, {defaultValue: policy.status})}</span></p>
       </CardContent>
       <CardFooter>
         <Button variant="link" className="p-0 h-auto text-primary" asChild>
+          {/* The link to /policies/:id is a placeholder for now as the page doesn't exist */}
           <Link href={`/policies/${policy.id}`}>
             <span>{t('common.viewDetails')}</span>
           </Link>
@@ -200,22 +286,28 @@ function PolicyCard({ policy }: { policy: (typeof policies)[0] }) {
   );
 }
 
-function VehicleCard({ vehicle }: { vehicle: (typeof vehicles)[0] }) {
-   const { t } = useLanguage();
+function VehicleCard({ vehicle }: { vehicle: AppVehicle }) {
+  const { t } = useLanguage();
   return (
     <Card className="shadow-md hover:shadow-lg transition-shadow overflow-hidden">
        <div className="flex items-center p-4">
-        <Image
-          src={vehicle.imageUrl}
-          alt={vehicle.name}
-          width={80}
-          height={56}
-          className="rounded-md object-cover mr-4"
-          data-ai-hint="vehicle side"
-        />
+       {vehicle.imageUrl ? (
+            <Image
+                src={vehicle.imageUrl}
+                alt={`${vehicle.make} ${vehicle.model}`}
+                width={80}
+                height={56}
+                className="rounded-md object-cover mr-4"
+                data-ai-hint="vehicle side"
+            />
+        ) : (
+            <div className="w-20 h-14 rounded-md bg-muted flex items-center justify-center mr-4">
+                <ImageOff className="h-8 w-8 text-muted-foreground" data-ai-hint="vehicle placeholder" />
+            </div>
+        )}
         <div className="flex-1">
-          <CardTitle className="text-lg">{vehicle.name}</CardTitle>
-          <CardDescription>{vehicle.model} - {vehicle.plate}</CardDescription>
+          <CardTitle className="text-lg">{vehicle.make} {vehicle.model}</CardTitle>
+          <CardDescription>{vehicle.year} - {vehicle.registrationNumber}</CardDescription>
            <Button variant="link" size="sm" className="p-0 h-auto text-primary mt-1" asChild>
             <Link href={`/profile#vehicle-${vehicle.id}`}>
               <span>{t('common.edit')}</span>
@@ -226,3 +318,5 @@ function VehicleCard({ vehicle }: { vehicle: (typeof vehicles)[0] }) {
     </Card>
   );
 }
+
+    
