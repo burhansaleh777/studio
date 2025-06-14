@@ -45,7 +45,7 @@ export default function WelcomePage() {
             </div>
           </CardContent>
           <CardFooter className="flex-col items-center text-xs text-muted-foreground">
-            <p>&copy; {new Date().getFullYear()} Bima Hub. {t('welcome.rightsReserved')}</p>
+            <p>&copy; 2025 Bima Hub. {t('welcome.rightsReserved')}</p>
             <p>{t('welcome.tagline')}</p>
           </CardFooter>
         </Card>
