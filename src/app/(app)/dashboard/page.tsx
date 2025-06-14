@@ -14,16 +14,18 @@ import { useAuth } from "@/contexts/AuthContext";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, orderBy, Timestamp } from "firebase/firestore";
 import type { Policy, Vehicle as AppVehicle } from "@/lib/types"; // Assuming Vehicle type is also in types.ts
+import { useToast } from "@/hooks/use-toast"; // Added this import
 
-// Mock data for recentClaims and vehicles - to be replaced later
+// Mock data for recentClaims - to be replaced later
 const recentClaims = [
   { id: "C1", vehicleName: "Toyota IST", status: "Under Review", date: "2024-07-10" },
 ];
 
-const initialVehicles = [
-  { id: "V1", name: "Toyota IST", model: "2010", plate: "T123 ABC", imageUrl:"https://placehold.co/100x70.png" },
-  { id: "V2", name: "Nissan March", model: "2012", plate: "T456 XYZ", imageUrl:"https://placehold.co/100x70.png"  },
-];
+// initialVehicles is now fetched from Firestore or remains empty
+// const initialVehicles = [
+//   { id: "V1", name: "Toyota IST", model: "2010", plate: "T123 ABC", imageUrl:"https://placehold.co/100x70.png" },
+//   { id: "V2", name: "Nissan March", model: "2012", plate: "T456 XYZ", imageUrl:"https://placehold.co/100x70.png"  },
+// ];
 
 // Mock data for notifications - to be replaced later
 const mockUser = {
@@ -31,9 +33,7 @@ const mockUser = {
 };
 
 interface DashboardPolicy extends Policy {
-  // The Policy type from types.ts should be sufficient
-  // vehicleName is not standard on Policy, it should be derived or policy linked to a vehicle object
-  vehicleName?: string; // Temporary, ideally this is resolved via vehicleId
+  vehicleName?: string;
 }
 
 
@@ -42,8 +42,9 @@ export default function DashboardPage() {
   const { currentUser, userProfile, loadingAuth, loadingProfile } = useAuth();
   const [policies, setPolicies] = useState<DashboardPolicy[]>([]);
   const [loadingPolicies, setLoadingPolicies] = useState(true);
-  const [vehicles, setVehicles] = useState<AppVehicle[]>(initialVehicles); // Placeholder for vehicles
+  const [vehicles, setVehicles] = useState<AppVehicle[]>([]);
   const [loadingVehicles, setLoadingVehicles] = useState(true);
+  const { toast } = useToast(); // Moved useToast inside the component body, ensure import exists
 
 
   useEffect(() => {
@@ -53,36 +54,37 @@ export default function DashboardPage() {
         setLoadingPolicies(true);
         try {
           const policiesRef = collection(db, "users", currentUser.uid, "policies");
-          const q = query(policiesRef, orderBy("endDate", "desc"));
-          const querySnapshot = await getDocs(q);
-          const fetchedPolicies = querySnapshot.docs.map(doc => {
+          const qPolicies = query(policiesRef, orderBy("endDate", "desc")); // Assuming policies have an endDate
+          const policiesSnapshot = await getDocs(qPolicies);
+          const fetchedPolicies = policiesSnapshot.docs.map(doc => {
             const data = doc.data() as Omit<Policy, 'id'>;
-            // For now, we'll have to manually assign vehicleName or fetch vehicle details if policy has vehicleId
-            // This is a simplification. A real app might do a join or have vehicle details embedded/denormalized.
-            let vehicleName = "N/A";
-            if (data.vehicleId && vehicles.length > 0) { // vehicles here is still mock, will need to fetch user vehicles too
+            // Attempt to link vehicle name if vehicleId exists and vehicles are loaded
+            // This part depends on vehicles being fetched first or simultaneously.
+            // For now, we'll simplify or assume vehicles might not be fully loaded yet for name linking.
+            let vehicleName = "N/A"; // Default
+            if (data.vehicleId) {
+                // Try to find in already fetched vehicles for this page, if any
                 const linkedVehicle = vehicles.find(v => v.id === data.vehicleId);
                 if(linkedVehicle) vehicleName = `${linkedVehicle.make} ${linkedVehicle.model}`;
-                else vehicleName = "Unknown Vehicle"; // Fallback if vehicle not in mock/local list
-            } else if (data.type !== 'vehicle') {
-                vehicleName = data.type; // e.g. "Health Policy"
+                else vehicleName = data.type === 'vehicle' ? "Vehicle Policy" : data.type; // Fallback
+            } else {
+                vehicleName = data.type; // For non-vehicle policies like "Health"
             }
-
             return {
               id: doc.id,
               ...data,
-              vehicleName: vehicleName, // Placeholder logic
+              vehicleName: vehicleName,
             } as DashboardPolicy;
           });
           setPolicies(fetchedPolicies);
         } catch (error) {
-          console.error("Error fetching policies:", error);
+          console.error("Error fetching policies for dashboard:", error);
           toast({ title: t('common.error'), description: t('dashboard.fetchPoliciesError'), variant: "destructive" });
         } finally {
           setLoadingPolicies(false);
         }
 
-        // Fetch Vehicles (similar to profile page)
+        // Fetch Vehicles
         setLoadingVehicles(true);
         try {
           const vehiclesRef = collection(db, "users", currentUser.uid, "vehicles");
@@ -92,23 +94,30 @@ export default function DashboardPage() {
           setVehicles(fetchedVehicles);
         } catch (error) {
             console.error("Error fetching vehicles for dashboard:", error);
-            // toast({ title: t('common.error'), description: t('dashboard.fetchVehiclesError'), variant: "destructive" });
+            toast({ title: t('common.error'), description: t('dashboard.fetchVehiclesError'), variant: "destructive" });
         } finally {
             setLoadingVehicles(false);
         }
       } else {
         setLoadingPolicies(false);
         setLoadingVehicles(false);
+        setPolicies([]); // Clear policies if no user
+        setVehicles([]); // Clear vehicles if no user
       }
     };
 
     if (!loadingAuth && currentUser) {
       fetchDashboardData();
+    } else if (!loadingAuth && !currentUser) {
+      // If auth is done and no user, ensure loading states are false and data is empty
+      setLoadingPolicies(false);
+      setLoadingVehicles(false);
+      setPolicies([]);
+      setVehicles([]);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser, loadingAuth, t]); // Removed toast from deps as it's stable
+  }, [currentUser, loadingAuth, t]); // Removed toast from deps
 
-  const { toast } = useToast(); // Moved useToast inside the component body
 
   if (loadingAuth || (currentUser && (loadingProfile || loadingPolicies || loadingVehicles))) {
     return (
@@ -262,7 +271,20 @@ function QuickActionCard({ href, icon: Icon, label }: { href: string, icon: Reac
 
 function PolicyCard({ policy }: { policy: DashboardPolicy }) {
   const { t } = useLanguage();
-  const displayEndDate = policy.endDate instanceof Timestamp ? policy.endDate.toDate().toLocaleDateString() : String(policy.endDate);
+  // Handle both Timestamp and string dates
+  const getDisplayDate = (dateInput: string | Timestamp) => {
+    if (dateInput instanceof Timestamp) {
+      return dateInput.toDate().toLocaleDateString();
+    }
+    // Attempt to parse if it's a string that might be an ISO string or similar
+    const parsedDate = new Date(dateInput);
+    if (!isNaN(parsedDate.getTime())) {
+        return parsedDate.toLocaleDateString();
+    }
+    return String(dateInput); // Fallback to string if not a Timestamp or valid date string
+  };
+  
+  const displayEndDate = getDisplayDate(policy.endDate);
   
   return (
     <Card className="shadow-md hover:shadow-lg transition-shadow">
@@ -318,5 +340,3 @@ function VehicleCard({ vehicle }: { vehicle: AppVehicle }) {
     </Card>
   );
 }
-
-    
