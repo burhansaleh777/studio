@@ -1,39 +1,69 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { PageHeader } from "@/components/layout/page-header";
 import { PageContainer } from "@/components/shared/page-container";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, Car, Shield, Bell, LogOut, Edit3, PlusCircle, Loader2 } from "lucide-react";
+import { User, Car, Shield, Bell, LogOut, Edit3, PlusCircle, Loader2, ImageOff } from "lucide-react";
 import Link from "next/link";
 import { AddVehicleForm } from "@/components/profile/add-vehicle-form";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
-import type { UserProfile as AppUserProfile } from '@/lib/types';
-
-
-// Mock data for vehicles - to be replaced with Firestore data later
-const userVehicles = [
-  { id: "v1", make: "Toyota", model: "IST", year: 2010, registration: "T123 ABC", imageUrl: "https://placehold.co/100x70.png?text=Vehicle1" },
-  { id: "v2", make: "Nissan", model: "March", year: 2012, registration: "T456 XYZ", imageUrl: "https://placehold.co/100x70.png?text=Vehicle2" },
-];
+import type { UserProfile as AppUserProfile, Vehicle } from '@/lib/types';
+import { collection, query, where, getDocs, onSnapshot, orderBy } from "firebase/firestore";
 
 
 export default function ProfilePage() {
   const { currentUser, userProfile, loadingAuth, loadingProfile } = useAuth();
+  const [userVehicles, setUserVehicles] = useState<Vehicle[]>([]);
+  const [loadingVehicles, setLoadingVehicles] = useState(true);
   const [showAddVehicleForm, setShowAddVehicleForm] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
   const { t } = useLanguage();
+
+  const fetchVehicles = useCallback(async () => {
+    if (!currentUser) {
+      setLoadingVehicles(false);
+      return;
+    }
+    setLoadingVehicles(true);
+    try {
+      const vehiclesRef = collection(db, "users", currentUser.uid, "vehicles");
+      const q = query(vehiclesRef, orderBy("createdAt", "desc"));
+      
+      // Using getDocs for a one-time fetch, or onSnapshot for real-time
+      // For simplicity here, let's use getDocs and call fetchVehicles after adding.
+      const querySnapshot = await getDocs(q);
+      const vehiclesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Vehicle));
+      setUserVehicles(vehiclesData);
+
+    } catch (error) {
+      console.error("Error fetching vehicles:", error);
+      toast({ title: t('common.error'), description: t('profilePage.fetchVehiclesError'), variant: "destructive" });
+      setUserVehicles([]); // Clear vehicles on error
+    } finally {
+      setLoadingVehicles(false);
+    }
+  }, [currentUser, toast, t]);
+
+  useEffect(() => {
+    if (currentUser) {
+      fetchVehicles();
+    } else if (!loadingAuth) { // If auth loading is done and no current user
+      setUserVehicles([]);
+      setLoadingVehicles(false);
+    }
+  }, [currentUser, loadingAuth, fetchVehicles]);
 
   const handleLogout = async () => {
     try {
@@ -55,8 +85,6 @@ export default function ProfilePage() {
   }
 
   if (!currentUser || !userProfile) {
-    // This case should ideally be handled by route protection in layout
-    // router.push('/login'); // or show an error/login prompt
     return (
         <PageContainer>
             <Card>
@@ -72,7 +100,7 @@ export default function ProfilePage() {
     );
   }
 
-  const { fullName, email, phone } = userProfile as AppUserProfile & {fullName?: string}; // Casting because fullName might not be on UserProfile yet
+  const { fullName, email, phone } = userProfile as AppUserProfile & {fullName?: string};
 
   return (
     <>
@@ -83,8 +111,7 @@ export default function ProfilePage() {
           <Card className="shadow-lg">
             <CardHeader className="flex flex-row items-center space-x-4">
               <Avatar className="h-20 w-20 border-2 border-primary">
-                {/* Placeholder for user avatar, can be fetched from storage if implemented */}
-                <AvatarImage src={userProfile.avatarUrl || `https://placehold.co/100x100.png?text=${(fullName || email || 'U').substring(0,2).toUpperCase()}`} alt={fullName || email || 'User'} data-ai-hint="profile picture" />
+                <AvatarImage src={userProfile.avatarUrl || `https://placehold.co/100x100.png?text=${(fullName || email || 'U').substring(0,2).toUpperCase()}`} alt={fullName || email || 'User'} data-ai-hint="profile picture"/>
                 <AvatarFallback className="text-2xl bg-muted">{(fullName || email || 'U').substring(0,2).toUpperCase()}</AvatarFallback>
               </Avatar>
               <div>
@@ -111,32 +138,45 @@ export default function ProfilePage() {
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-[625px]">
                     <DialogHeader>
-                      <DialogTitle>{t('profilePage.addVehicleModalTitle')}</DialogTitle>
+                      <DialogTitle>{t('addVehicleForm.title')}</DialogTitle> {/* Changed to use AddVehicleForm title key */}
                     </DialogHeader>
-                    <AddVehicleForm onVehicleAdded={() => setShowAddVehicleForm(false)} />
+                    <AddVehicleForm onVehicleAdded={() => {
+                      setShowAddVehicleForm(false);
+                      fetchVehicles(); // Re-fetch vehicles after one is added
+                    }} />
                   </DialogContent>
                 </Dialog>
               </div>
               <CardDescription>{t('profilePage.myVehiclesDescription')}</CardDescription>
             </CardHeader>
             <CardContent>
-              {userVehicles.length > 0 ? (
+              {loadingVehicles ? (
+                <div className="flex justify-center items-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : userVehicles.length > 0 ? (
                 <div className="space-y-4">
                   {userVehicles.map(vehicle => (
                     <Card key={vehicle.id} className="flex items-center p-3 hover:shadow-md transition-shadow">
-                      <Image
-                        src={vehicle.imageUrl}
-                        alt={`${vehicle.make} ${vehicle.model}`}
-                        width={64}
-                        height={48}
-                        className="rounded-md object-cover mr-4"
-                        data-ai-hint="vehicle side"
-                      />
+                       {vehicle.imageUrl ? (
+                        <Image
+                            src={vehicle.imageUrl}
+                            alt={`${vehicle.make} ${vehicle.model}`}
+                            width={64}
+                            height={48}
+                            className="rounded-md object-cover mr-4"
+                            data-ai-hint="vehicle side"
+                        />
+                        ) : (
+                        <div className="w-16 h-12 rounded-md bg-muted flex items-center justify-center mr-4">
+                            <ImageOff className="h-6 w-6 text-muted-foreground" data-ai-hint="vehicle placeholder" />
+                        </div>
+                        )}
                       <div className="flex-grow">
                         <h4 className="font-semibold">{vehicle.make} {vehicle.model} ({vehicle.year})</h4>
-                        <p className="text-sm text-muted-foreground">{vehicle.registration}</p>
+                        <p className="text-sm text-muted-foreground">{vehicle.registrationNumber}</p>
                       </div>
-                      <Button variant="ghost" size="sm" disabled>{t('common.edit')}</Button>
+                      <Button variant="ghost" size="sm" disabled>{t('common.edit')}</Button> {/* Edit vehicle functionality to be implemented */}
                     </Card>
                   ))}
                 </div>
@@ -181,3 +221,5 @@ function SettingsLink({ href, icon: Icon, label, disabled = false }: { href: str
     </Button>
   );
 }
+
+    

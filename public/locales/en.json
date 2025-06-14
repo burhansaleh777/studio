@@ -1,11 +1,166 @@
 
 {
+  "common": {
+    "back": "Back",
+    "loading": "Loading...",
+    "error": "Error",
+    "submit": "Submit",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "viewAll": "View All",
+    "viewDetails": "View Details",
+    "notifications": "Notifications",
+    "comingSoon": "Coming Soon",
+    "notApplicableShort": "N/A",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "splashScreen": {
+    "loading": "Modern Insurance for Tanzania..."
+  },
+  "welcome": {
+    "title": "Welcome to Bima Hub",
+    "subtitle": "Your smart, simple, and reliable insurance partner in Tanzania. Access your policies, file claims, and get support all in one place.",
+    "loginButton": "Login to Your Account",
+    "registerButton": "Create New Account",
+    "promoImageAlt": "Bima Hub promotional image showing happy customers or insurance concept",
+    "rightsReserved": "All rights reserved.",
+    "tagline": "Insuring Your Peace of Mind."
+  },
+  "auth": {
+    "loginToBimaHub": "Login to Bima Hub",
+    "accessDashboard": "Access your dashboard and manage your insurance.",
+    "emailOrPhoneLabel": "Email or Phone Number",
+    "emailOrPhonePlaceholder": "Enter your email or phone",
+    "emailLabel": "Email Address",
+    "emailPlaceholder": "yourname@example.com",
+    "phoneLabel": "Phone Number",
+    "phonePlaceholder": "+255 712 345678",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "Enter your password",
+    "confirmPasswordLabel": "Confirm Password",
+    "forgotPasswordLink": "Forgot Password?",
+    "noAccountPrompt": "Don't have an account?",
+    "registerHereLink": "Register here",
+    "loginButton": "Login",
+    "registerButton": "Register",
+    "createAccountTitle": "Create Your Bima Hub Account",
+    "joinBimaHub": "Join Bima Hub today for easy insurance management.",
+    "fullNameLabel": "Full Name",
+    "fullNamePlaceholder": "Enter your full name",
+    "agreeToTermsPrefix": "I agree to the",
+    "termsAndConditionsLink": "Terms and Conditions",
+    "agreeToTermsCheckboxLabel": "Agree to terms and conditions",
+    "alreadyHaveAccountPrompt": "Already have an account?",
+    "loginHereLink": "Login here",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "notAuthenticatedError": "You are not authenticated. Please log in.",
+    "toast": {
+      "loginSuccessTitle": "Login Successful!",
+      "loginSuccessDescription": "Welcome back! Redirecting to your dashboard...",
+      "loginErrorTitle": "Login Failed",
+      "loginErrorDefault": "An unexpected error occurred. Please try again.",
+      "invalidCredentialsError": "Invalid email/phone or password. Please check and try again.",
+      "registrationSuccessTitle": "Registration Successful!",
+      "registrationSuccessDescription": "Your account has been created. Please login.",
+      "registrationErrorTitle": "Registration Failed",
+      "registrationErrorDefault": "An error occurred during registration. Please try again.",
+      "emailInUseError": "This email address is already in use.",
+      "weakPasswordError": "Password is too weak. Please choose a stronger password.",
+      "logoutSuccessTitle": "Logged Out Successfully",
+      "logoutErrorTitle": "Logout Failed"
+    }
+  },
+  "pageHeader": {
+    "welcome": "Welcome, {{name}}!",
+    "guest": "Guest"
+  },
+  "bottomNav": {
+    "dashboard": "Dashboard",
+    "claims": "Claims",
+    "chat": "Chat",
+    "payments": "Payments",
+    "profile": "Profile"
+  },
+  "languageToggle": {
+    "switchToSwahili": "Badilisha Lugha kwenda Kiswahili",
+    "switchToEnglish": "Switch Language to English"
+  },
+  "dashboard": {
+    "quickActions": "Quick Actions",
+    "startClaim": "Start Claim",
+    "getQuote": "Get Quote",
+    "makePayment": "Make Payment",
+    "supportChat": "Support Chat",
+    "myPolicies": "My Policies",
+    "noPoliciesFound": "No active policies found.",
+    "myVehicles": "My Vehicles",
+    "addVehicle": "Add Vehicle",
+    "noVehiclesFound": "No vehicles registered yet.",
+    "addYourVehicle": "Add Your Vehicle",
+    "recentClaimsActivity": "Recent Claims Activity",
+    "noRecentClaimsActivity": "No recent claims activity to show."
+  },
+  "profilePage": {
+    "title": "My Profile",
+    "notSet": "Not Set",
+    "editProfileButton": "Edit Profile",
+    "myVehiclesTitle": "My Vehicles",
+    "addVehicleButton": "Add New Vehicle",
+    "myVehiclesDescription": "Manage your registered vehicles.",
+    "addVehicleModalTitle": "Add Your Vehicle Details",
+    "noVehiclesAdded": "You haven't added any vehicles yet. Add one to get started!",
+    "settingsAndActionsTitle": "Settings & Actions",
+    "editProfileInfoLink": "Edit Profile Information",
+    "managePoliciesLink": "Manage My Policies",
+    "notificationPreferencesLink": "Notification Preferences",
+    "privacyDataLink": "Privacy & Data",
+    "logoutButton": "Logout",
+    "loadError": "Could not load user profile. Please try logging in again.",
+    "fetchVehiclesError": "Could not fetch your vehicles. Please try again later."
+  },
+  "addVehicleForm": {
+    "title": "Add New Vehicle",
+    "description": "Enter the details of your vehicle.",
+    "make": {
+      "label": "Make",
+      "placeholder": "e.g., Toyota"
+    },
+    "model": {
+      "label": "Model",
+      "placeholder": "e.g., IST"
+    },
+    "year": {
+      "label": "Year of Manufacture",
+      "placeholder": "e.g., 2010"
+    },
+    "registrationNumber": {
+      "label": "Registration Number",
+      "placeholder": "e.g., T123 ABC"
+    },
+    "documents": {
+      "label": "Upload Vehicle Documents (Optional)",
+      "uploadTrigger": "Click to upload or drag and drop",
+      "description": "Registration card, Logbook, etc.",
+      "selectedLabel": "Selected"
+    },
+    "submitButton": "Add Vehicle",
+    "toast": {
+      "successTitle": "Vehicle Added!",
+      "successDescription": "{{make}} {{model}} has been added to your profile.",
+      "errorTitle": "Failed to Add Vehicle",
+      "errorDefault": "An unexpected error occurred. Please try again."
+    }
+  },
   "quotesPage": {
     "title": "Get an Insurance Quote"
   },
   "quoteForm": {
-    "title": "Get Your Insurance Quote",
-    "description": "Fill in the details below to receive a personalized insurance quote.",
+    "title": "Get a Quick Insurance Quote",
+    "description": "Fill in your details below to receive an instant quote.",
     "vehicleType": {
       "label": "Vehicle Type",
       "placeholder": "Select vehicle type",
@@ -15,19 +170,19 @@
     },
     "vehicleMake": {
       "label": "Vehicle Make",
-      "placeholder": "e.g., Toyota"
+      "placeholder": "e.g., Toyota, Honda"
     },
     "vehicleModel": {
       "label": "Vehicle Model",
       "placeholder": "e.g., Corolla, IST"
     },
     "vehicleYear": {
-      "label": "Year of Manufacture",
-      "placeholder": "e.g., 2018"
+      "label": "Vehicle Year",
+      "placeholder": "e.g., 2015"
     },
     "vehicleValue": {
-      "label": "Estimated Vehicle Value (TZS)",
-      "placeholder": "e.g., 15,000,000"
+      "label": "Vehicle Value (TZS)",
+      "placeholder": "e.g., 15000000"
     },
     "coverageType": {
       "label": "Coverage Type",
@@ -41,15 +196,15 @@
     },
     "noClaimBonus": {
       "label": "No Claim Bonus (%)",
-      "placeholder": "e.g., 0 or 20",
-      "description": "Enter 0 if not applicable, up to 100."
+      "placeholder": "e.g., 0, 10, 20",
+      "description": "Enter percentage (0-100)"
     },
     "additionalDrivers": {
       "label": "Additional Drivers",
       "placeholder": "Select number of additional drivers",
       "none": "None",
-      "one": "One Additional Driver",
-      "twoPlus": "Two or More Additional Drivers"
+      "one": "One",
+      "twoPlus": "Two or more"
     },
     "driverAge": {
       "label": "Main Driver's Age",
@@ -57,8 +212,8 @@
     },
     "driverLocation": {
       "label": "Primary Location of Use",
-      "placeholder": "e.g., Dar es Salaam",
-      "description": "Region/city where vehicle is mostly used."
+      "placeholder": "e.g., Dar es Salaam, Arusha",
+      "description": "Region or main city where vehicle is used."
     },
     "submitButton": "Get My Quote",
     "toast": {
@@ -68,123 +223,171 @@
       "errorDefault": "An unexpected error occurred. Please try again."
     },
     "result": {
-      "successTitle": "Your Quote is Ready!",
+      "successTitle": "Your Insurance Quote",
       "quoteIdLabel": "Quote ID",
       "premiumLabel": "Estimated Premium",
       "summaryLabel": "Quote Summary",
       "errorTitle": "Error Getting Quote"
     }
   },
-  "splashScreen": {
-    "loading": "Loading Bima Hub..."
-  },
-  "welcome": {
-    "title": "Welcome to Bima Hub",
-    "subtitle": "Your modern insurance partner in Tanzania. Get quotes, manage policies, and file claims with ease.",
-    "promoImageAlt": "Bima Hub Promotional Image",
-    "loginButton": "Login to Your Account",
-    "registerButton": "Create New Account",
-    "rightsReserved": "All rights reserved.",
-    "tagline": "Smart Insurance, Simplified."
-  },
-  "auth": {
-    "loginToBimaHub": "Login to Bima Hub",
-    "accessDashboard": "Access your dashboard and manage your policies.",
-    "emailOrPhoneLabel": "Email",
-    "emailOrPhonePlaceholder": "your@email.com",
-    "passwordLabel": "Password",
-    "passwordPlaceholder": "••••••••",
-    "showPassword": "Show password",
-    "hidePassword": "Hide password",
-    "loginButton": "Login",
-    "forgotPasswordLink": "Forgot Password?",
-    "noAccountPrompt": "Don't have an account?",
-    "registerHereLink": "Register here",
-    "createAccountTitle": "Create Your Bima Hub Account",
-    "joinBimaHub": "Join Bima Hub today for easy insurance management.",
-    "fullNameLabel": "Full Name",
-    "fullNamePlaceholder": "e.g., Juma Hamisi",
-    "emailLabel": "Email Address",
-    "emailPlaceholder": "your@email.com",
-    "phoneLabel": "Phone Number",
-    "phonePlaceholder": "e.g., +255 712 345678",
-    "confirmPasswordLabel": "Confirm Password",
-    "agreeToTermsCheckboxLabel": "Agree to terms",
-    "agreeToTermsPrefix": "I agree to the",
-    "termsAndConditionsLink": "Terms and Conditions",
-    "registerButton": "Register",
-    "alreadyHaveAccountPrompt": "Already have an account?",
-    "loginHereLink": "Login here",
-    "toast": {
-      "loginSuccessTitle": "Login Successful",
-      "loginSuccessDescription": "Welcome back!",
-      "loginErrorTitle": "Login Failed",
-      "loginErrorDefault": "An unexpected error occurred. Please try again.",
-      "invalidCredentialsError": "Invalid email or password. Please try again.",
-      "registrationSuccessTitle": "Registration Successful!",
-      "registrationSuccessDescription": "Your account has been created. Please login.",
-      "registrationErrorTitle": "Registration Failed",
-      "registrationErrorDefault": "An error occurred during registration. Please try again.",
-      "emailInUseError": "This email is already in use. Try logging in.",
-      "weakPasswordError": "Password is too weak. Please choose a stronger one.",
-      "logoutSuccessTitle": "Logged Out",
-      "logoutErrorTitle": "Logout Failed"
+  "newClaimWizard": {
+    "pageTitle": "File a New Claim",
+    "stepDescription": "Step {{currentStep}} of {{totalSteps}}",
+    "selectVehicle": {
+      "title": "Select Vehicle",
+      "label": "Which vehicle was involved?",
+      "placeholder": "Choose your vehicle"
+    },
+    "accidentDetails": {
+      "title": "Accident Details",
+      "dateLabel": "Date of Accident",
+      "timeLabel": "Time of Accident",
+      "locationLabel": "Location of Accident",
+      "locationPlaceholder": "e.g., Nyerere Rd, near Tazara junction",
+      "descriptionLabel": "Describe the Accident",
+      "descriptionPlaceholder": "Provide a clear and detailed description of what happened...",
+      "audioInputToggleLabel": "Enable audio input for description",
+      "audioInputEnableText": "Use voice to describe",
+      "recordingInProgress": "Recording..."
+    },
+    "uploadPhotos": {
+      "title": "Upload Photos ({{count}}/{{max}})",
+      "cameraToggleLabel": "Enable Camera for Photos",
+      "useCameraLabel": "Use Camera",
+      "uploadLabel": "Upload from device",
+      "fileTypesAndSize": "JPG, PNG. Max {{maxPhotos}} photos.",
+      "requiredPhotosIntro": "Required: At least one photo for each of",
+      "previewTitle": "Preview: {{photoTitle}}",
+      "previewAlt": "Photo preview of {{photoTitle}}",
+      "previewIndexedAlt": "Photo preview {{index}}",
+      "photoIndexed": "Photo {{index}}",
+      "uploadedPhotosTitle": "Uploaded Photos"
+    },
+    "photoInstructions": {
+      "fullVehicle": {
+        "title": "Full Vehicle View",
+        "description": "Capture the entire vehicle, showing all sides if possible, including the number plate."
+      },
+      "damageCloseUp": {
+        "title": "Damage Close-up",
+        "description": "Take close-up photos of all damaged areas from different angles."
+      },
+      "surroundingArea": {
+        "title": "Surrounding Area & Scene",
+        "description": "Photo of the accident scene, including road conditions or relevant landmarks."
+      },
+      "otherVehicles": {
+        "title": "Other Vehicles/Property (if any)",
+        "description": "If other vehicles or property were involved, capture their damage and position."
+      }
+    },
+    "photoError": {
+      "limitReachedTitle": "Photo Limit Reached",
+      "limitReachedDescription": "You have uploaded the maximum of {{maxPhotos}} photos.",
+      "someNotAdded": "{{countAdded}} photos added. {{countNotAdded}} could not be added due to limit.",
+      "maxPhotos": "Maximum {{maxPhotos}} photos allowed.",
+      "genericErrorTitle": "Photo Error",
+      "couldNotProcess": "Could not process the captured photo."
+    },
+    "photoMessages": {
+      "limitReachedTitle": "Photo Limit Reached",
+      "limitReachedDescription": "Maximum of {{maxPhotos}} photos uploaded. You can proceed or remove some to add new ones.",
+      "allTypesCapturedTitle": "All Guided Photos Done",
+      "allTypesCapturedDescription": "You've captured photos for all suggested types. You can add more manually if needed.",
+      "finishedGuidedCaptureTitle": "Guided Capture Complete",
+      "finishedGuidedCaptureDescription": "You can still upload more photos manually or proceed.",
+      "guidedCaptureCompleteTitle": "All Guided Shots Taken",
+      "guidedCaptureCompleteDescription": "You can still upload more manually if you need, or proceed to the next step."
+    },
+    "cameraError": {
+      "title": "Camera Error",
+      "notSupported": "Camera access is not supported by your browser or device.",
+      "videoElementNotReady": "Camera preview element is not ready.",
+      "couldNotAccess": "Could not access the camera. It might be in use by another app or disabled in your browser settings. ({{errorName}}: {{errorMessage}})",
+      "permissionDenied": "Camera permission denied. Please enable it in your browser settings.",
+      "noCameraFound": "No camera found on your device.",
+      "cameraInUse": "Camera might be in use by another application or browser tab.",
+      "accessErrorTitle": "Camera Access Error"
+    },
+    "cameraMessages": {
+      "initializing": "Initializing camera...",
+      "starting": "Starting camera feed...",
+      "feedLoading": "Camera feed loading..."
+    },
+    "audioError": {
+      "title": "Audio Input Error",
+      "generic": "An error occurred with audio input.",
+      "noSpeech": "No speech was detected. Please try again.",
+      "micProblem": "Problem with your microphone. Please check it.",
+      "micDenied": "Microphone permission denied. Please enable it in settings.",
+      "notSupported": "Speech recognition is not supported by your browser.",
+      "accessDeniedTitle": "Microphone Access Denied",
+      "accessDeniedDescription": "Please allow microphone access in your browser settings to use this feature."
+    },
+    "supportingDocuments": {
+      "title": "Supporting Documents (Optional)",
+      "uploadLabel": "Upload police report, witness statements, etc.",
+      "fileTypes": "PDF, DOC, DOCX, PNG, JPG",
+      "selectedDocsTitle": "Selected Documents"
+    },
+    "reviewSubmit": {
+      "title": "Review & Submit Your Claim",
+      "vehicleLabel": "Vehicle",
+      "dateTimeLabel": "Date & Time",
+      "atTimeConnector": "at",
+      "locationLabel": "Location",
+      "descriptionLabel": "Description",
+      "photosUploadedLabel": "Photos Uploaded",
+      "documentsUploadedLabel": "Documents Uploaded",
+      "finalCheckMessage": "Please review all details carefully before submitting."
+    },
+    "validationError": {
+      "title": "Validation Error",
+      "defaultMessage": "Please correct the errors in the form.",
+      "specificFields": "Please check the following fields: {{fields}}"
+    },
+    "submitSuccess": {
+      "title": "Claim Submitted Successfully!",
+      "description": "Your claim has been received and is now under review. You can track its status on the Claims page."
+    },
+    "submitError": {
+      "title": "Claim Submission Failed",
+      "localStorageFailed": "Could not save claim details locally. Please try again or contact support."
+    },
+    "buttons": {
+      "back": "Back",
+      "next": "Next",
+      "submit": "Submit Claim",
+      "startRecording": "Start Recording",
+      "stopRecording": "Stop Recording",
+      "micDenied": "Mic Denied",
+      "capturePhoto": "Capture Photo",
+      "skipPhoto": "Skip '{{photoTitle}}'",
+      "usePhoto": "Use This Photo",
+      "retakePhoto": "Retake",
+      "removePhoto": "Remove photo",
+      "removeDocument": "Remove document"
+    },
+    "steps": {
+      "selectVehicle": { "title": "Select Vehicle" },
+      "accidentDetails": { "title": "Accident Details" },
+      "uploadPhotos": { "title": "Upload Photos" },
+      "supportingDocuments": { "title": "Supporting Documents" },
+      "reviewSubmit": { "title": "Review & Submit" }
     }
-  },
-  "languageToggle": {
-    "switchToSwahili": "Badilisha iwe Kiswahili",
-    "switchToEnglish": "Switch to English"
-  },
-  "bottomNav": {
-    "dashboard": "Dashboard",
-    "claims": "Claims",
-    "chat": "Chat",
-    "payments": "Payments",
-    "profile": "Profile"
-  },
-  "pageHeader": {
-    "welcome": "Welcome, {{name}}!",
-    "guest": "Guest"
-  },
-  "dashboard": {
-    "quickActions": "Quick Actions",
-    "startClaim": "Start Claim",
-    "getQuote": "Get Quote",
-    "makePayment": "Make Payment",
-    "supportChat": "Support Chat",
-    "myPolicies": "My Policies",
-    "noPoliciesFound": "No policies found. Get a quote to start.",
-    "myVehicles": "My Vehicles",
-    "addVehicle": "Add Vehicle",
-    "noVehiclesFound": "No vehicles registered yet.",
-    "addYourVehicle": "Add Your Vehicle",
-    "recentClaimsActivity": "Recent Claims Activity",
-    "noRecentClaimsActivity": "No recent claims activity to show."
-  },
-  "common": {
-    "back": "Back",
-    "viewAll": "View All",
-    "viewDetails": "View Details",
-    "edit": "Edit",
-    "submitted": "Submitted",
-    "expires": "Expires",
-    "notifications": "Notifications",
-    "error": "Error",
-    "comingSoon": "Coming Soon",
-    "notApplicableShort": "N/A"
   },
   "claimsPage": {
     "title": "My Claims",
-    "newClaimButton": "New Claim",
-    "claimCard": {
-        "claimNumberLabel": "Claim #{{claimNumber}}",
-        "policyLabel": "Policy",
-        "submittedLabel": "Submitted"
-    },
+    "newClaimButton": "File New Claim",
     "status": {
-        "underReview": "Under Review",
-        "settled": "Settled",
-        "rejected": "Rejected"
+      "underReview": "Under Review",
+      "settled": "Settled",
+      "rejected": "Rejected"
+    },
+    "claimCard": {
+      "claimNumberLabel": "Claim #{{claimNumber}}",
+      "policyLabel": "Policy",
+      "submittedLabel": "Submitted"
     },
     "timeline": {
         "step": "Step {{stepNumber}}",
@@ -194,182 +397,10 @@
         "settledFinalized": "Settled/Finalized"
     },
     "emptyState": {
-        "title": "No Claims Yet",
-        "description": "You haven't submitted any claims. Start by filing your first one.",
-        "submitFirstClaimButton": "Submit First Claim"
+      "title": "No Claims Filed Yet",
+      "description": "It looks like you haven't submitted any claims. When you need to, you can start the process here.",
+      "submitFirstClaimButton": "Submit Your First Claim"
     }
-  },
-  "newClaimWizard": {
-    "pageTitle": "New Insurance Claim",
-    "stepDescription": "Step {{currentStep}} of {{totalSteps}}",
-    "steps": {
-      "selectVehicle": {
-        "title": "Select Vehicle"
-      },
-      "accidentDetails": {
-        "title": "Accident Details"
-      },
-      "uploadPhotos": {
-        "title": "Upload Photos"
-      },
-      "supportingDocuments": {
-        "title": "Supporting Documents"
-      },
-      "reviewSubmit": {
-        "title": "Review & Submit"
-      }
-    },
-    "selectVehicle": {
-      "label": "Select Your Vehicle",
-      "placeholder": "Choose the vehicle involved"
-    },
-    "accidentDetails": {
-      "dateLabel": "Date of Accident",
-      "timeLabel": "Time of Accident",
-      "locationLabel": "Location of Accident",
-      "locationPlaceholder": "e.g., Nyerere Rd, near Tazara",
-      "descriptionLabel": "Describe the Accident",
-      "descriptionPlaceholder": "Provide a clear description of what happened, damages, etc.",
-      "audioInputToggleLabel": "Enable audio input for description",
-      "audioInputEnableText": "Use Voice Input",
-      "recordingInProgress": "Recording..."
-    },
-    "uploadPhotos": {
-      "title": "Upload Photos ({{count}}/{{max}})",
-      "cameraToggleLabel": "Toggle camera for photo capture",
-      "useCameraLabel": "Use Camera to Capture Photos",
-      "uploadLabel": "Click to upload or drag and drop",
-      "fileTypesAndSize": "PNG, JPG, GIF. Max {{maxPhotos}} photos.",
-      "requiredPhotosIntro": "Required photos include",
-      "previewTitle": "Preview: {{photoTitle}}",
-      "previewAlt": "Photo preview for {{photoTitle}}",
-      "previewIndexedAlt": "Uploaded photo {{index}}",
-      "uploadedPhotosTitle": "Uploaded Photos",
-      "photoIndexed": "Photo {{index}}"
-    },
-    "photoInstructions": {
-      "fullVehicle": {
-        "title": "Full Vehicle View",
-        "description": "Capture the entire vehicle, showing its current state and license plate if possible."
-      },
-      "damageCloseUp": {
-        "title": "Close-up of Damage",
-        "description": "Take clear photos of all damaged areas from different angles."
-      },
-      "surroundingArea": {
-        "title": "Accident Scene/Surroundings",
-        "description": "Photo of the accident location, including road conditions or relevant landmarks."
-      },
-      "otherVehicles": {
-        "title": "Other Involved Parties (Optional)",
-        "description": "If other vehicles/property were involved, capture them and their damages/plates if safe."
-      }
-    },
-    "cameraMessages": {
-      "initializing": "Initializing camera...",
-      "starting": "Starting camera feed...",
-      "feedLoading": "Camera feed loading..." ,
-      "guidedCaptureCompleteTitle": "Guided Capture Complete",
-      "guidedCaptureCompleteDescription": "You have captured all suggested photo types. You can still add more photos via upload if needed."
-    },
-    "photoMessages": {
-        "limitReachedTitle": "Photo Limit Reached",
-        "limitReachedDescription": "You have reached the maximum of {{maxPhotos}} photos.",
-        "allTypesCapturedTitle": "All Guided Photos Captured",
-        "allTypesCapturedDescription": "You've captured all suggested photo types. You can proceed or upload more if needed.",
-        "finishedGuidedCaptureTitle": "Finished Guided Capture",
-        "finishedGuidedCaptureDescription": "You can now use the general upload or proceed if done."
-    },
-    "photoError": {
-        "limitReachedTitle": "Photo Limit Reached",
-        "limitReachedDescription": "You cannot upload more than {{maxPhotos}} photos.",
-        "someNotAdded": "{{countAdded}} photos added. {{countNotAdded}} could not be added due to limit.",
-        "maxPhotos": "Maximum {{maxPhotos}} photos allowed.",
-        "genericErrorTitle": "Photo Error",
-        "couldNotProcess": "Could not process the captured photo."
-    },
-    "supportingDocuments": {
-      "title": "Upload Supporting Documents (Optional)",
-      "uploadLabel": "Click to upload or drag and drop",
-      "fileTypes": "PDF, DOC, PNG, JPG. e.g., Police Report, Witness Statements.",
-      "selectedDocsTitle": "Selected Documents"
-    },
-    "reviewSubmit": {
-      "title": "Review Your Claim",
-      "vehicleLabel": "Vehicle",
-      "dateTimeLabel": "Date & Time",
-      "atTimeConnector": "at",
-      "locationLabel": "Location",
-      "descriptionLabel": "Description",
-      "photosUploadedLabel": "Photos Uploaded",
-      "documentsUploadedLabel": "Documents Uploaded",
-      "finalCheckMessage": "Please review all details carefully before submitting your claim."
-    },
-    "buttons": {
-      "back": "Back",
-      "next": "Next",
-      "submit": "Submit Claim",
-      "startRecording": "Start Recording",
-      "stopRecording": "Stop Recording",
-      "micDenied": "Mic Access Denied",
-      "capturePhoto": "Capture Photo",
-      "skipPhoto": "Skip {{photoTitle}}",
-      "usePhoto": "Use This Photo",
-      "retakePhoto": "Retake Photo",
-      "removePhoto": "Remove photo",
-      "removeDocument": "Remove document"
-    },
-    "audioError": {
-      "title": "Audio Input Error",
-      "notSupported": "Speech recognition is not supported by your browser.",
-      "micProblem": "Could not start audio capture. Check microphone.",
-      "noSpeech": "No speech detected. Please try speaking clearly.",
-      "micDenied": "Microphone access denied. Please enable it in browser settings.",
-      "generic": "An error occurred with speech recognition.",
-      "accessDeniedTitle": "Microphone Access Denied",
-      "accessDeniedDescription": "Please enable microphone access in your browser settings to use voice input."
-    },
-     "cameraError": {
-      "title": "Camera Error",
-      "notSupported": "Camera access is not supported by your browser or device.",
-      "permissionDenied": "Camera permission denied. Please enable it in your browser settings.",
-      "noCameraFound": "No camera found on this device.",
-      "cameraInUse": "Camera is already in use by another application.",
-      "couldNotAccess": "Could not access the camera. Please ensure it's not in use and permissions are granted.",
-      "accessErrorTitle": "Camera Access Error",
-      "videoElementNotReady": "Camera preview element is not ready.",
-      "couldNotCapture": "Failed to capture photo. Please try again."
-    },
-    "validationError": {
-      "title": "Validation Error",
-      "defaultMessage": "Please correct the errors in the form.",
-      "specificFields": "Please correct the following fields: {{fields}}"
-    },
-    "submitSuccess": {
-      "title": "Claim Submitted!",
-      "description": "Your claim has been successfully submitted and is now under review."
-    },
-    "submitError": {
-      "title": "Submission Failed",
-      "localStorageFailed": "Could not save claim data locally. Please try again."
-    }
-  },
-  "profilePage": {
-    "title": "My Profile",
-    "notSet": "Not set",
-    "editProfileButton": "Edit Profile",
-    "myVehiclesTitle": "My Vehicles",
-    "addVehicleButton": "Add Vehicle",
-    "addVehicleModalTitle": "Add New Vehicle",
-    "myVehiclesDescription": "Manage your registered vehicles.",
-    "noVehiclesAdded": "No vehicles added yet. Add your first vehicle to manage it here.",
-    "settingsAndActionsTitle": "Settings & Actions",
-    "editProfileInfoLink": "Edit Profile Information",
-    "managePoliciesLink": "Manage My Policies",
-    "notificationPreferencesLink": "Notification Preferences",
-    "privacyDataLink": "Privacy & Data",
-    "logoutButton": "Logout",
-    "loadError": "Could not load user profile. Please try logging in again."
   }
 }
 
