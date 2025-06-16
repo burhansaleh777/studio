@@ -17,13 +17,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox"; // Added Checkbox
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, ShieldAlert, CheckCircle2 } from "lucide-react";
 import React, { useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { generateQuote, type GenerateQuoteInput, type GenerateQuoteOutput } from "@/ai/flows/generate-quote-flow";
 
-// Define the schema directly in the form component
 const quoteFormSchema = z.object({
   vehicleType: z.string({required_error: "Vehicle type is required."}).min(1, "Vehicle type is required."),
   vehicleMake: z.string().min(1, "Vehicle make is required."),
@@ -40,6 +40,8 @@ const quoteFormSchema = z.object({
       .positive("Vehicle value must be positive.")
   ),
   coverageType: z.string({required_error: "Coverage type is required."}).min(1, "Coverage type is required."),
+  hasPriorClaims: z.boolean().default(false),
+  vehicleUsage: z.string({required_error: "Vehicle usage is required."}).min(1, "Vehicle usage is required.").default("Private"),
 });
 
 type QuoteFormValues = z.infer<typeof quoteFormSchema>;
@@ -57,9 +59,11 @@ export function QuoteForm() {
       vehicleType: undefined,
       vehicleMake: "",
       vehicleModel: "",
-      vehicleYear: '',
-      vehicleValue: '',
+      vehicleYear: '', // Keep as empty string for controlled input
+      vehicleValue: '', // Keep as empty string
       coverageType: undefined,
+      hasPriorClaims: false,
+      vehicleUsage: "Private",
     },
   });
 
@@ -67,10 +71,17 @@ export function QuoteForm() {
     setIsLoading(true);
     setQuoteResult(null);
     setQuoteError(null);
-    console.log("Quote Form Data Submitted:", data);
+    console.log("Quote Form Data Submitted for AI:", data);
+
+    // Ensure data types match GenerateQuoteInput for AI flow
+    const aiInput: GenerateQuoteInput = {
+        ...data,
+        vehicleYear: Number(data.vehicleYear), // Ensure conversion if Zod preprocess doesn't guarantee number type for AI
+        vehicleValue: Number(data.vehicleValue), // Ensure conversion
+    };
 
     try {
-      const result = await generateQuote(data as GenerateQuoteInput);
+      const result = await generateQuote(aiInput);
       setQuoteResult(result);
       toast({
         title: t('quoteForm.toast.successTitle'),
@@ -91,15 +102,22 @@ export function QuoteForm() {
   }
 
   const vehicleTypeOptions = [
-    { value: "Private Car", labelKey: "quoteForm.vehicleType.privateCar" },
-    { value: "Motorcycle", labelKey: "quoteForm.vehicleType.motorcycle" },
-    { value: "Commercial Vehicle", labelKey: "quoteForm.vehicleType.commercial" },
+    { value: "Motor Vehicles", labelKey: "quoteForm.vehicleType.motorVehicles" },
+    { value: "2-Wheelers", labelKey: "quoteForm.vehicleType.twoWheelers" },
+    { value: "3-Wheelers", labelKey: "quoteForm.vehicleType.threeWheelers" },
   ];
 
   const coverageTypeOptions = [
     { value: "Comprehensive", labelKey: "quoteForm.coverageType.comprehensive" },
     { value: "Third Party Only", labelKey: "quoteForm.coverageType.thirdParty" },
+    { value: "Third Party Fire & Theft", labelKey: "quoteForm.coverageType.tpft" },
   ];
+
+  const vehicleUsageOptions = [
+    { value: "Private", labelKey: "quoteForm.vehicleUsage.private" },
+    { value: "Commercial", labelKey: "quoteForm.vehicleUsage.commercial" },
+  ];
+
 
   return (
     <Card className="w-full max-w-2xl mx-auto shadow-xl">
@@ -130,6 +148,28 @@ export function QuoteForm() {
                 </FormItem>
               )}
             />
+            
+            <FormField
+              control={form.control}
+              name="vehicleUsage"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('quoteForm.vehicleUsage.label')}</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger><SelectValue placeholder={t('quoteForm.vehicleUsage.placeholder')} /></SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {vehicleUsageOptions.map(opt => (
+                        <SelectItem key={opt.value} value={opt.value}>{t(opt.labelKey)}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
@@ -157,13 +197,13 @@ export function QuoteForm() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
+               <FormField
                 control={form.control}
                 name="vehicleYear"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t('quoteForm.vehicleYear.label')}</FormLabel>
-                    <FormControl><Input type="number" placeholder={t('quoteForm.vehicleYear.placeholder')} {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : e.target.valueAsNumber)} value={field.value === undefined ? '' : field.value} /></FormControl>
+                    <FormControl><Input type="number" placeholder={t('quoteForm.vehicleYear.placeholder')} {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? '' : e.target.value)} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -174,7 +214,7 @@ export function QuoteForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t('quoteForm.vehicleValue.label')}</FormLabel>
-                    <FormControl><Input type="number" placeholder={t('quoteForm.vehicleValue.placeholder')} {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : e.target.valueAsNumber)} value={field.value === undefined ? '' : field.value} /></FormControl>
+                    <FormControl><Input type="number" placeholder={t('quoteForm.vehicleValue.placeholder')} {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? '' : e.target.value)} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -201,6 +241,29 @@ export function QuoteForm() {
                 </FormItem>
               )}
             />
+
+            <FormField
+                control={form.control}
+                name="hasPriorClaims"
+                render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm">
+                    <FormControl>
+                        <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                        <FormLabel>{t('quoteForm.hasPriorClaims.label')}</FormLabel>
+                        <FormDescription>
+                        {t('quoteForm.hasPriorClaims.description')}
+                        </FormDescription>
+                    </div>
+                    <FormMessage />
+                    </FormItem>
+                )}
+            />
+
           </CardContent>
           <CardFooter className="flex flex-col items-stretch gap-4">
             <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isLoading}>
@@ -219,6 +282,7 @@ export function QuoteForm() {
                   <p><strong>{t('quoteForm.result.quoteIdLabel')}:</strong> {quoteResult.quoteId}</p>
                   <p><strong>{t('quoteForm.result.premiumLabel')}:</strong> {quoteResult.premiumAmount.toLocaleString()} {quoteResult.currency}</p>
                   <p><strong>{t('quoteForm.result.summaryLabel')}:</strong> {quoteResult.quoteDetails}</p>
+                  {quoteResult.effectiveCoverageRule && <p><strong>{t('quoteForm.result.effectiveCoverageRuleLabel')}:</strong> {quoteResult.effectiveCoverageRule}</p>}
                 </CardContent>
               </Card>
             )}
@@ -232,6 +296,7 @@ export function QuoteForm() {
                 </CardHeader>
                 <CardContent className="text-sm text-red-600">
                   <p>{quoteError}</p>
+                  <p>{t('quoteForm.result.errorGuidance')}</p>
                 </CardContent>
               </Card>
             )}
