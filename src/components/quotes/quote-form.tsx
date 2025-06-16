@@ -40,25 +40,6 @@ const quoteFormSchema = z.object({
       .positive("Vehicle value must be positive.")
   ),
   coverageType: z.string({required_error: "Coverage type is required."}).min(1, "Coverage type is required."),
-  drivingExperience: z.preprocess(
-    (val) => (String(val).trim() === "" ? undefined : parseInt(String(val), 10)),
-    z.number({required_error: "Driving experience is required.", invalid_type_error: "Driving experience must be a number."})
-      .min(0, "Driving experience cannot be negative.")
-  ),
-  noClaimBonus: z.preprocess(
-    (val) => (String(val).trim() === "" ? undefined : parseInt(String(val), 10)),
-    z.number({required_error: "No claim bonus is required.", invalid_type_error: "NCB must be a number."})
-      .min(0, "NCB cannot be negative.")
-      .max(100, "NCB cannot exceed 100.")
-  ),
-  additionalDrivers: z.enum(['none', 'one', 'two_plus'], {required_error: "Please select number of additional drivers."}),
-  driverAge: z.preprocess(
-    (val) => (String(val).trim() === "" ? undefined : parseInt(String(val), 10)),
-    z.number({required_error: "Driver age is required.", invalid_type_error: "Driver age must be a number."})
-      .min(18, "Driver must be at least 18.")
-      .max(100, "Driver age seems too high.")
-  ),
-  driverLocation: z.string().min(1, "Driver location is required."),
 });
 
 type QuoteFormValues = z.infer<typeof quoteFormSchema>;
@@ -76,14 +57,9 @@ export function QuoteForm() {
       vehicleType: undefined,
       vehicleMake: "",
       vehicleModel: "",
-      vehicleYear: '', // Changed from number to empty string
-      vehicleValue: '', // Changed from undefined to empty string
+      vehicleYear: '',
+      vehicleValue: '',
       coverageType: undefined,
-      drivingExperience: '', // Changed from number to empty string
-      noClaimBonus: '', // Changed from number to empty string
-      additionalDrivers: "none",
-      driverAge: '', // Changed from number to empty string
-      driverLocation: "",
     },
   });
 
@@ -94,7 +70,7 @@ export function QuoteForm() {
     console.log("Quote Form Data Submitted:", data);
 
     try {
-      const result = await generateQuote(data as GenerateQuoteInput); // Zod schema ensures data is correct type
+      const result = await generateQuote(data as GenerateQuoteInput);
       setQuoteResult(result);
       toast({
         title: t('quoteForm.toast.successTitle'),
@@ -124,13 +100,6 @@ export function QuoteForm() {
     { value: "Comprehensive", labelKey: "quoteForm.coverageType.comprehensive" },
     { value: "Third Party Only", labelKey: "quoteForm.coverageType.thirdParty" },
   ];
-
-  const additionalDriverOptions = [
-    { value: "none", labelKey: "quoteForm.additionalDrivers.none" },
-    { value: "one", labelKey: "quoteForm.additionalDrivers.one" },
-    { value: "two_plus", labelKey: "quoteForm.additionalDrivers.twoPlus" },
-  ];
-
 
   return (
     <Card className="w-full max-w-2xl mx-auto shadow-xl">
@@ -194,7 +163,7 @@ export function QuoteForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t('quoteForm.vehicleYear.label')}</FormLabel>
-                    <FormControl><Input type="number" placeholder={t('quoteForm.vehicleYear.placeholder')} {...field} onChange={e => field.onChange(e.target.value)} /></FormControl>
+                    <FormControl><Input type="number" placeholder={t('quoteForm.vehicleYear.placeholder')} {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : e.target.valueAsNumber)} value={field.value === undefined ? '' : field.value} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -205,7 +174,7 @@ export function QuoteForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t('quoteForm.vehicleValue.label')}</FormLabel>
-                    <FormControl><Input type="number" placeholder={t('quoteForm.vehicleValue.placeholder')} {...field} onChange={e => field.onChange(e.target.value)} /></FormControl>
+                    <FormControl><Input type="number" placeholder={t('quoteForm.vehicleValue.placeholder')} {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : e.target.valueAsNumber)} value={field.value === undefined ? '' : field.value} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -228,79 +197,6 @@ export function QuoteForm() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="drivingExperience"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('quoteForm.drivingExperience.label')}</FormLabel>
-                    <FormControl><Input type="number" placeholder={t('quoteForm.drivingExperience.placeholder')} {...field} onChange={e => field.onChange(e.target.value)} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="noClaimBonus"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('quoteForm.noClaimBonus.label')}</FormLabel>
-                    <FormControl><Input type="number" placeholder={t('quoteForm.noClaimBonus.placeholder')} {...field} onChange={e => field.onChange(e.target.value)} min="0" max="100" /></FormControl>
-                     <FormDescription>{t('quoteForm.noClaimBonus.description')}</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="additionalDrivers"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('quoteForm.additionalDrivers.label')}</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger><SelectValue placeholder={t('quoteForm.additionalDrivers.placeholder')} /></SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {additionalDriverOptions.map(opt => (
-                          <SelectItem key={opt.value} value={opt.value}>{t(opt.labelKey)}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="driverAge"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('quoteForm.driverAge.label')}</FormLabel>
-                    <FormControl><Input type="number" placeholder={t('quoteForm.driverAge.placeholder')} {...field} onChange={e => field.onChange(e.target.value)} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="driverLocation"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('quoteForm.driverLocation.label')}</FormLabel>
-                  <FormControl><Input placeholder={t('quoteForm.driverLocation.placeholder')} {...field} /></FormControl>
-                  <FormDescription>{t('quoteForm.driverLocation.description')}</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -345,4 +241,3 @@ export function QuoteForm() {
     </Card>
   );
 }
-

@@ -18,11 +18,6 @@ const GenerateQuoteInputSchema = z.object({
   vehicleYear: z.number().describe('Year of manufacture of the vehicle.'),
   vehicleValue: z.number().describe('Estimated current market value of the vehicle in TZS.'),
   coverageType: z.string().describe('Desired type of insurance coverage (e.g., Comprehensive, Third Party Only).'),
-  drivingExperience: z.number().describe('Main driver\'s years of driving experience.'),
-  noClaimBonus: z.number().describe('Percentage of No Claim Bonus (NCB) applicable (0-100).'),
-  additionalDrivers: z.enum(['none', 'one', 'two_plus']).describe('Number of additional drivers to be covered.'),
-  driverAge: z.number().describe('Age of the main driver.'),
-  driverLocation: z.string().describe('Primary location/region where the vehicle will be used (e.g., Dar es Salaam, Arusha).'),
 });
 export type GenerateQuoteInput = z.infer<typeof GenerateQuoteInputSchema>;
 
@@ -55,21 +50,12 @@ Vehicle Details:
 
 Coverage Preferences:
 - Type: {{coverageType}}
-- Driving Experience (years): {{drivingExperience}}
-- No Claim Bonus (%): {{noClaimBonus}}
-- Additional Drivers: {{additionalDrivers}}
-
-Driver Information:
-- Age: {{driverAge}}
-- Location: {{driverLocation}}
 
 Calculate a premium. Provide a quote summary in 'quoteDetails'.
 Generate a unique quoteId.
 The currency should be TZS.
 Ensure the output is in the specified JSON format.
 If the vehicle type is Motorcycle or Commercial Vehicle and coverage is Comprehensive, be cautious with the premium, it might be higher.
-If no claim bonus is high (e.g. > 30%), reduce the premium slightly. Young drivers (under 25) or very old drivers (over 70) might have higher premiums.
-Locations like Dar es Salaam might have slightly higher premiums due to traffic density.
 `,
 });
 
