@@ -345,8 +345,10 @@ export function NewClaimWizard() {
   };
 
   const currentPhotoInstruction = translatedPhotoInstructions[currentPhotoInstructionIndex];
-  const totalCommittedPhotos = (form.getValues("photos") || []).length;
-  const canTakeMorePhotosOverall = totalCommittedPhotos < MAX_PHOTOS;
+  
+  const getCommittedPhotoCount = () => (form.getValues("photos") || []).length;
+  const canTakeMorePhotosOverall = () => getCommittedPhotoCount() < MAX_PHOTOS;
+
 
   const addFilesToForm = (newFiles: File[]) => {
     const currentFiles: File[] = form.getValues("photos") || [];
@@ -369,9 +371,9 @@ export function NewClaimWizard() {
   };
   
   const handleCaptureAndPreview = () => {
-    if (!videoRef.current || !canvasRef.current || !isCameraActive || !canTakeMorePhotosOverall || isProcessingPhoto || !currentPhotoInstruction) {
+    if (!videoRef.current || !canvasRef.current || !isCameraActive || !canTakeMorePhotosOverall() || isProcessingPhoto || !currentPhotoInstruction) {
         if(!isCameraActive && enableCamera) console.warn("Camera not active, cannot capture.");
-        if(!canTakeMorePhotosOverall) toast({variant: "warning", title: t("newClaimWizard.photoError.limitReachedTitle"), description: t("newClaimWizard.photoError.maxPhotos", {maxPhotos: MAX_PHOTOS})});
+        if(!canTakeMorePhotosOverall()) toast({variant: "warning", title: t("newClaimWizard.photoError.limitReachedTitle"), description: t("newClaimWizard.photoError.maxPhotos", {maxPhotos: MAX_PHOTOS})});
         return;
     }
     
@@ -391,7 +393,7 @@ export function NewClaimWizard() {
   };
 
   const handleUsePhoto = async () => {
-    if (!capturedPhotoDataUrl || !canTakeMorePhotosOverall || !currentPhotoInstruction) return;
+    if (!capturedPhotoDataUrl || !canTakeMorePhotosOverall() || !currentPhotoInstruction) return;
   
     setIsProcessingPhoto(true);
     try {
@@ -404,7 +406,7 @@ export function NewClaimWizard() {
       
       setCapturedPhotoDataUrl(null);
 
-      const photosAfterAdd = (form.getValues("photos") || []).length;
+      const photosAfterAdd = getCommittedPhotoCount();
       if (photosAfterAdd >= MAX_PHOTOS) {
          toast({ title: t("newClaimWizard.photoMessages.limitReachedTitle"), description: t("newClaimWizard.photoMessages.limitReachedDescription", {maxPhotos: MAX_PHOTOS}) });
          setEnableCamera(false);
@@ -591,119 +593,123 @@ export function NewClaimWizard() {
               </>
             )}
 
-            {currentStep === 2 && ( 
-              <FormField control={form.control} name="photos" render={() => ( 
-                <FormItem>
-                  <FormLabel>{t('newClaimWizard.uploadPhotos.title', { count: totalCommittedPhotos, max: MAX_PHOTOS })}</FormLabel>
-                  <div className="flex items-center space-x-2 mb-3">
-                    <Switch id="camera-toggle" checked={enableCamera} onCheckedChange={setEnableCamera} aria-label={t('newClaimWizard.uploadPhotos.cameraToggleLabel')} />
-                    <label htmlFor="camera-toggle" className="text-sm font-medium text-foreground">{t('newClaimWizard.uploadPhotos.useCameraLabel')}</label>
-                  </div>
-
-                  {enableCamera && currentPhotoInstruction && !isEffectivelyAllGuidedInstructionsDone && (
-                    <Card className="mb-4 p-3 bg-primary/5 border-primary/20">
-                      <CardTitle className="text-md mb-1">{currentPhotoInstruction.title}</CardTitle>
-                      <CardDescription className="text-sm">{currentPhotoInstruction.description}</CardDescription>
-                    </Card>
-                  )}
-                  
-                  {enableCamera && (
-                    <Card className="p-4 mb-3 bg-muted/30">
-                      {!capturedPhotoDataUrl ? (
-                        <>
-                          <div className="relative w-full aspect-video rounded-md bg-black mb-2 overflow-hidden">
-                             <video ref={videoRef} className="w-full h-full object-cover" playsInline muted />
-                             {cameraPermissionStatus === 'pending' && <Alert className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 text-white pointer-events-none"><Loader2 className="h-8 w-8 animate-spin text-primary" /><AlertDescription className="mt-2">{t('newClaimWizard.cameraMessages.initializing')}</AlertDescription></Alert>}
-                             {cameraPermissionStatus === 'denied' && <Alert variant="destructive" className="absolute inset-0 m-auto max-w-sm max-h-40 flex flex-col items-center justify-center"><AlertTriangle className="h-5 w-5 mb-1" /><AlertTitle className="text-sm">{t('newClaimWizard.cameraError.accessDeniedTitle')}</AlertTitle><AlertDescription className="text-xs text-center">{t('newClaimWizard.cameraError.permissionDenied')}</AlertDescription></Alert>}
-                             {cameraPermissionStatus === 'granted' && !isCameraActive && videoRef.current && videoRef.current.srcObject && <Alert className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 text-white pointer-events-none"><Loader2 className="h-8 w-8 animate-spin text-primary" /><AlertDescription className="mt-2">{t('newClaimWizard.cameraMessages.starting')}</AlertDescription></Alert>}
-                             {cameraPermissionStatus === 'granted' && isCameraActive && videoRef.current && !videoRef.current?.videoWidth && <Alert className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 text-white pointer-events-none"><AlertDescription>{t('newClaimWizard.cameraMessages.feedLoading')}</AlertDescription></Alert>}
-                          </div>
-                          
-                          <div className="flex flex-wrap gap-2 mt-2">
-                            {isCameraActive && cameraPermissionStatus === 'granted' && currentPhotoInstruction && !isEffectivelyAllGuidedInstructionsDone && (
-                                <Button type="button" onClick={handleCaptureAndPreview} className="flex-1 min-w-[120px]" disabled={isProcessingPhoto || !canTakeMorePhotosOverall}>
-                                {isProcessingPhoto ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CameraIcon className="mr-2 h-4 w-4" />}
-                                {t('newClaimWizard.buttons.capturePhoto')}
-                                </Button>
-                            )}
-                          </div>
-
-                          {currentPhotoInstruction && (currentPhotoInstruction.isOptional || currentPhotoInstructionIndex >= translatedPhotoInstructions.filter(p=>!p.isOptional).length) && !isEffectivelyAllGuidedInstructionsDone && isCameraActive && cameraPermissionStatus === 'granted' && (
-                             <Button type="button" variant="outline" onClick={handleNextPhotoInstruction} className="w-full mt-2">
-                                {t('newClaimWizard.buttons.skipPhoto', { photoTitle: currentPhotoInstruction.title })}
-                                <ArrowRight className="ml-2 h-4 w-4"/>
-                            </Button>
-                          )}
-                        </>
-                      ) : ( 
-                        <div className="text-center">
-                           <p className="text-sm font-medium mb-2">{t('newClaimWizard.uploadPhotos.previewTitle', { photoTitle: currentPhotoInstruction?.title })}</p>
-                          <Image src={capturedPhotoDataUrl} alt={t('newClaimWizard.uploadPhotos.previewAlt', { photoTitle: currentPhotoInstruction?.title })} width={320} height={240} className="rounded-md mx-auto mb-3 max-w-full h-auto object-contain border" />
-                          <div className="flex justify-center gap-3">
-                            <Button type="button" onClick={handleUsePhoto} className="bg-green-600 hover:bg-green-700 text-white" disabled={isProcessingPhoto || !canTakeMorePhotosOverall}>
-                              {isProcessingPhoto && form.getValues("photos").find(p=>p.name.startsWith(currentPhotoInstruction?.id || '')) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
-                              {t('newClaimWizard.buttons.usePhoto')}
-                            </Button>
-                            <Button type="button" variant="outline" onClick={handleRetakePhoto} disabled={isProcessingPhoto}>
-                              <CameraIcon className="mr-2 h-4 w-4" /> {t('newClaimWizard.buttons.retakePhoto')}
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-                      <canvas ref={canvasRef} style={{ display: 'none' }} />
-                       {!canTakeMorePhotosOverall && totalCommittedPhotos >= MAX_PHOTOS && <Alert variant="warning" className="mt-3"><AlertTriangle className="h-4 w-4" /><AlertTitle>{t('newClaimWizard.photoError.limitReachedTitle')}</AlertTitle><AlertDescription>{t('newClaimWizard.photoError.maxPhotos', {maxPhotos: MAX_PHOTOS})}</AlertDescription></Alert>}
-                       {isEffectivelyAllGuidedInstructionsDone && enableCamera && <Alert className="mt-3"><CheckCircle className="h-4 w-4"/><AlertTitle>{t('newClaimWizard.photoMessages.guidedCaptureCompleteTitle')}</AlertTitle><AlertDescription>{t('newClaimWizard.photoMessages.guidedCaptureCompleteDescription')}</AlertDescription></Alert>}
-                    </Card>
-                  )}
-                  
-                  <Card className="border-dashed border-2 hover:border-primary transition-colors">
-                    <CardContent className="p-6 text-center">
-                      <FileUp className="mx-auto h-12 w-12 text-muted-foreground mb-2" />
-                      <FormLabel htmlFor="photo-upload" className="text-primary font-semibold cursor-pointer hover:underline">
-                        {t('newClaimWizard.uploadPhotos.uploadLabel')}
-                      </FormLabel>
-                      <FormControl>
-                        <Input id="photo-upload" type="file" className="sr-only" accept="image/*" multiple onChange={handleFileUpload} disabled={!canTakeMorePhotosOverall} />
-                      </FormControl>
-                      <p className="text-xs text-muted-foreground mt-1">{t('newClaimWizard.uploadPhotos.fileTypesAndSize', { maxPhotos: MAX_PHOTOS})}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                         {t('newClaimWizard.uploadPhotos.requiredPhotosIntro')}: {translatedPhotoInstructions.filter(p => !p.isOptional).map(p => p.title).join(', ')}.
-                      </p>
-                    </CardContent>
-                  </Card>
-                  {committedPhotoPreviews.length > 0 && (
-                    <div className="mt-4">
-                      <p className="text-sm font-medium mb-2">{t('newClaimWizard.uploadPhotos.uploadedPhotosTitle')}:</p>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                        {committedPhotoPreviews.map((src, index) => (
-                          <div key={index} className="relative aspect-square rounded-md overflow-hidden border shadow">
-                            <Image src={src} alt={t('newClaimWizard.uploadPhotos.previewIndexedAlt', { index: index + 1 })} layout="fill" objectFit="cover" />
-                             <Button 
-                                type="button" 
-                                variant="destructive" 
-                                size="icon" 
-                                className="absolute top-1 right-1 h-6 w-6 opacity-80 hover:opacity-100"
-                                onClick={() => {
-                                  const currentPhotos = form.getValues("photos") || [];
-                                  const updatedPhotos = currentPhotos.filter((_, i) => i !== index);
-                                  form.setValue("photos", updatedPhotos, { shouldValidate: true, shouldDirty: true });
-                                }}
-                                aria-label={t('newClaimWizard.buttons.removePhoto')}
-                              >
-                                <LucideXCircle className="h-4 w-4" />
-                              </Button>
-                            <p className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-1 truncate">
-                                { (watchedPhotos[index]?.name.split('-')[0] && translatedPhotoInstructions.find(instr => instr.id === watchedPhotos[index]?.name.split('-')[0])?.title) || t('newClaimWizard.uploadPhotos.photoIndexed', { index: index + 1 })}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
+            {currentStep === 2 && (() => {
+              const currentPhotoCount = getCommittedPhotoCount();
+              const maxPhotoCount = MAX_PHOTOS;
+              return (
+                <FormField control={form.control} name="photos" render={() => ( 
+                  <FormItem>
+                    <FormLabel>{t('newClaimWizard.uploadPhotos.title', { count: currentPhotoCount, max: maxPhotoCount })}</FormLabel>
+                    <div className="flex items-center space-x-2 mb-3">
+                      <Switch id="camera-toggle" checked={enableCamera} onCheckedChange={setEnableCamera} aria-label={t('newClaimWizard.uploadPhotos.cameraToggleLabel')} />
+                      <label htmlFor="camera-toggle" className="text-sm font-medium text-foreground">{t('newClaimWizard.uploadPhotos.useCameraLabel')}</label>
                     </div>
-                  )}
-                  <FormMessage className="mt-2" /> 
-                </FormItem>
-              )} />
-            )}
+
+                    {enableCamera && currentPhotoInstruction && !isEffectivelyAllGuidedInstructionsDone && (
+                      <Card className="mb-4 p-3 bg-primary/5 border-primary/20">
+                        <CardTitle className="text-md mb-1">{currentPhotoInstruction.title}</CardTitle>
+                        <CardDescription className="text-sm">{currentPhotoInstruction.description}</CardDescription>
+                      </Card>
+                    )}
+                    
+                    {enableCamera && (
+                      <Card className="p-4 mb-3 bg-muted/30">
+                        {!capturedPhotoDataUrl ? (
+                          <>
+                            <div className="relative w-full aspect-video rounded-md bg-black mb-2 overflow-hidden">
+                               <video ref={videoRef} className="w-full h-full object-cover" playsInline muted />
+                               {cameraPermissionStatus === 'pending' && <Alert className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 text-white pointer-events-none"><Loader2 className="h-8 w-8 animate-spin text-primary" /><AlertDescription className="mt-2">{t('newClaimWizard.cameraMessages.initializing')}</AlertDescription></Alert>}
+                               {cameraPermissionStatus === 'denied' && <Alert variant="destructive" className="absolute inset-0 m-auto max-w-sm max-h-40 flex flex-col items-center justify-center"><AlertTriangle className="h-5 w-5 mb-1" /><AlertTitle className="text-sm">{t('newClaimWizard.cameraError.accessDeniedTitle')}</AlertTitle><AlertDescription className="text-xs text-center">{t('newClaimWizard.cameraError.permissionDenied')}</AlertDescription></Alert>}
+                               {cameraPermissionStatus === 'granted' && !isCameraActive && videoRef.current && videoRef.current.srcObject && <Alert className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 text-white pointer-events-none"><Loader2 className="h-8 w-8 animate-spin text-primary" /><AlertDescription className="mt-2">{t('newClaimWizard.cameraMessages.starting')}</AlertDescription></Alert>}
+                               {cameraPermissionStatus === 'granted' && isCameraActive && videoRef.current && !videoRef.current?.videoWidth && <Alert className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 text-white pointer-events-none"><AlertDescription>{t('newClaimWizard.cameraMessages.feedLoading')}</AlertDescription></Alert>}
+                            </div>
+                            
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {isCameraActive && cameraPermissionStatus === 'granted' && currentPhotoInstruction && !isEffectivelyAllGuidedInstructionsDone && (
+                                  <Button type="button" onClick={handleCaptureAndPreview} className="flex-1 min-w-[120px]" disabled={isProcessingPhoto || !canTakeMorePhotosOverall()}>
+                                  {isProcessingPhoto ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CameraIcon className="mr-2 h-4 w-4" />}
+                                  {t('newClaimWizard.buttons.capturePhoto')}
+                                  </Button>
+                              )}
+                            </div>
+
+                            {currentPhotoInstruction && (currentPhotoInstruction.isOptional || currentPhotoInstructionIndex >= translatedPhotoInstructions.filter(p=>!p.isOptional).length) && !isEffectivelyAllGuidedInstructionsDone && isCameraActive && cameraPermissionStatus === 'granted' && (
+                               <Button type="button" variant="outline" onClick={handleNextPhotoInstruction} className="w-full mt-2">
+                                  {t('newClaimWizard.buttons.skipPhoto', { photoTitle: currentPhotoInstruction.title })}
+                                  <ArrowRight className="ml-2 h-4 w-4"/>
+                              </Button>
+                            )}
+                          </>
+                        ) : ( 
+                          <div className="text-center">
+                             <p className="text-sm font-medium mb-2">{t('newClaimWizard.uploadPhotos.previewTitle', { photoTitle: currentPhotoInstruction?.title })}</p>
+                            <Image src={capturedPhotoDataUrl} alt={t('newClaimWizard.uploadPhotos.previewAlt', { photoTitle: currentPhotoInstruction?.title })} width={320} height={240} className="rounded-md mx-auto mb-3 max-w-full h-auto object-contain border" />
+                            <div className="flex justify-center gap-3">
+                              <Button type="button" onClick={handleUsePhoto} className="bg-green-600 hover:bg-green-700 text-white" disabled={isProcessingPhoto || !canTakeMorePhotosOverall()}>
+                                {isProcessingPhoto && form.getValues("photos").find(p=>p.name.startsWith(currentPhotoInstruction?.id || '')) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
+                                {t('newClaimWizard.buttons.usePhoto')}
+                              </Button>
+                              <Button type="button" variant="outline" onClick={handleRetakePhoto} disabled={isProcessingPhoto}>
+                                <CameraIcon className="mr-2 h-4 w-4" /> {t('newClaimWizard.buttons.retakePhoto')}
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                        <canvas ref={canvasRef} style={{ display: 'none' }} />
+                         {!canTakeMorePhotosOverall() && getCommittedPhotoCount() >= MAX_PHOTOS && <Alert variant="warning" className="mt-3"><AlertTriangle className="h-4 w-4" /><AlertTitle>{t('newClaimWizard.photoError.limitReachedTitle')}</AlertTitle><AlertDescription>{t('newClaimWizard.photoError.maxPhotos', {maxPhotos: MAX_PHOTOS})}</AlertDescription></Alert>}
+                         {isEffectivelyAllGuidedInstructionsDone && enableCamera && <Alert className="mt-3"><CheckCircle className="h-4 w-4"/><AlertTitle>{t('newClaimWizard.photoMessages.guidedCaptureCompleteTitle')}</AlertTitle><AlertDescription>{t('newClaimWizard.photoMessages.guidedCaptureCompleteDescription')}</AlertDescription></Alert>}
+                      </Card>
+                    )}
+                    
+                    <Card className="border-dashed border-2 hover:border-primary transition-colors">
+                      <CardContent className="p-6 text-center">
+                        <FileUp className="mx-auto h-12 w-12 text-muted-foreground mb-2" />
+                        <FormLabel htmlFor="photo-upload" className="text-primary font-semibold cursor-pointer hover:underline">
+                          {t('newClaimWizard.uploadPhotos.uploadLabel')}
+                        </FormLabel>
+                        <FormControl>
+                          <Input id="photo-upload" type="file" className="sr-only" accept="image/*" multiple onChange={handleFileUpload} disabled={!canTakeMorePhotosOverall()} />
+                        </FormControl>
+                        <p className="text-xs text-muted-foreground mt-1">{t('newClaimWizard.uploadPhotos.fileTypesAndSize', { maxPhotos: MAX_PHOTOS})}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                           {t('newClaimWizard.uploadPhotos.requiredPhotosIntro')}: {translatedPhotoInstructions.filter(p => !p.isOptional).map(p => p.title).join(', ')}.
+                        </p>
+                      </CardContent>
+                    </Card>
+                    {committedPhotoPreviews.length > 0 && (
+                      <div className="mt-4">
+                        <p className="text-sm font-medium mb-2">{t('newClaimWizard.uploadPhotos.uploadedPhotosTitle')}:</p>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                          {committedPhotoPreviews.map((src, index) => (
+                            <div key={index} className="relative aspect-square rounded-md overflow-hidden border shadow">
+                              <Image src={src} alt={t('newClaimWizard.uploadPhotos.previewIndexedAlt', { index: index + 1 })} layout="fill" objectFit="cover" />
+                               <Button 
+                                  type="button" 
+                                  variant="destructive" 
+                                  size="icon" 
+                                  className="absolute top-1 right-1 h-6 w-6 opacity-80 hover:opacity-100"
+                                  onClick={() => {
+                                    const currentPhotos = form.getValues("photos") || [];
+                                    const updatedPhotos = currentPhotos.filter((_, i) => i !== index);
+                                    form.setValue("photos", updatedPhotos, { shouldValidate: true, shouldDirty: true });
+                                  }}
+                                  aria-label={t('newClaimWizard.buttons.removePhoto')}
+                                >
+                                  <LucideXCircle className="h-4 w-4" />
+                                </Button>
+                              <p className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-1 truncate">
+                                  { (watchedPhotos[index]?.name.split('-')[0] && translatedPhotoInstructions.find(instr => instr.id === watchedPhotos[index]?.name.split('-')[0])?.title) || t('newClaimWizard.uploadPhotos.photoIndexed', { index: index + 1 })}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    <FormMessage className="mt-2" /> 
+                  </FormItem>
+                )} />
+              )
+            })()}
 
             {currentStep === 3 && ( 
                <FormField control={form.control} name="documents" render={() => ( 
@@ -789,6 +795,5 @@ function ReviewItem({ label, value, preWrap = false }: { label: string; value: s
     </div>
   );
 }
-
 
     
