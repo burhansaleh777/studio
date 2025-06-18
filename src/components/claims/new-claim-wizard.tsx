@@ -599,7 +599,10 @@ export function NewClaimWizard() {
               return (
                 <FormField control={form.control} name="photos" render={() => ( 
                   <FormItem>
-                    <FormLabel>{t('newClaimWizard.uploadPhotos.title', { count: currentPhotoCount, max: maxPhotoCount })}</FormLabel>
+                    <FormLabel>
+                        {t('newClaimWizard.steps.uploadPhotos.title')}
+                        {` (${currentPhotoCount}/${maxPhotoCount})`}
+                    </FormLabel>
                     <div className="flex items-center space-x-2 mb-3">
                       <Switch id="camera-toggle" checked={enableCamera} onCheckedChange={setEnableCamera} aria-label={t('newClaimWizard.uploadPhotos.cameraToggleLabel')} />
                       <label htmlFor="camera-toggle" className="text-sm font-medium text-foreground">{t('newClaimWizard.uploadPhotos.useCameraLabel')}</label>

@@ -1,112 +1,126 @@
 
 {
+  "common": {
+    "back": "Rudi Nyuma",
+    "submit": "Wasilisha",
+    "next": "Endelea",
+    "error": "Hitilafu",
+    "success": "Imefanikiwa",
+    "loading": "Inapakia...",
+    "optional": "Si lazima",
+    "viewAll": "Tazama Zote",
+    "viewDetails": "Tazama Maelezo",
+    "edit": "Hariri",
+    "save": "Hifadhi",
+    "cancel": "Ghairi",
+    "delete": "Futa",
+    "confirm": "Thibitisha",
+    "close": "Funga",
+    "add": "Ongeza",
+    "remove": "Ondoa",
+    "search": "Tafuta",
+    "filter": "Chuja",
+    "sort": "Panga",
+    "noResults": "Hakuna matokeo.",
+    "yes": "Ndiyo",
+    "no": "Hapana",
+    "notApplicableShort": "H/A",
+    "comingSoon": "Inakuja Hivi Karibuni",
+    "notifications": "Taarifa"
+  },
   "splashScreen": {
-    "loading": "Inapakia Bima Hub..."
+    "loading": "Tunakuhakikishia Amani ya Akili..."
+  },
+  "languageToggle": {
+    "switchToSwahili": "Badilisha Lugha kwenda Kiswahili",
+    "switchToEnglish": "Switch Language to English"
+  },
+  "pageHeader": {
+    "welcome": "Karibu, {{name}}!",
+    "guest": "Mgeni"
+  },
+  "bottomNav": {
+    "dashboard": "Dashibodi",
+    "claims": "Madai",
+    "chat": "Gumzo",
+    "payments": "Malipo",
+    "profile": "Profaili"
   },
   "welcome": {
     "title": "Karibu Bima Hub",
     "subtitle": "Mshirika wako wa kisasa wa bima nchini Tanzania. Pata nukuu, dhibiti sera, na wasilisha madai kwa urahisi.",
-    "loginButton": "Ingia Kwenye Akaunti Yako",
-    "registerButton": "Fungua Akaunti Mpya",
+    "loginButton": "Ingia",
+    "registerButton": "Jisajili",
     "promoImageAlt": "Picha ya Promosheni ya Bima Hub",
     "rightsReserved": "Haki zote zimehifadhiwa.",
     "tagline": "Bima, Kurahisishwa."
   },
   "auth": {
     "loginToBimaHub": "Ingia Bima Hub",
-    "accessDashboard": "Fikia dashibodi yako, sera, na madai.",
+    "accessDashboard": "Fikia dashibodi yako na dhibiti bima zako.",
     "emailOrPhoneLabel": "Barua Pepe au Namba ya Simu",
     "emailOrPhonePlaceholder": "Weka barua pepe au simu yako",
     "passwordLabel": "Nenosiri",
     "passwordPlaceholder": "Weka nenosiri lako",
-    "forgotPasswordLink": "Umesahau Nenosiri?",
+    "forgotPasswordLink": "Umesahau nenosiri?",
+    "loginButton": "Ingia",
     "noAccountPrompt": "Huna akaunti?",
     "registerHereLink": "Jisajili hapa",
-    "loginButton": "Ingia",
-    "showPassword": "Onyesha nenosiri",
-    "hidePassword": "Ficha nenosiri",
-    "createAccountTitle": "Fungua Akaunti Yako ya Bima Hub",
-    "joinBimaHub": "Jiunge nasi kurahisisha mahitaji yako ya bima.",
+    "createAccountTitle": "Fungua Akaunti",
+    "joinBimaHub": "Jiunge na Bima Hub kudhibiti mahitaji yako ya bima.",
     "fullNameLabel": "Jina Kamili",
-    "fullNamePlaceholder": "k.m., Juma Kondo",
+    "fullNamePlaceholder": "Weka jina lako kamili",
     "emailLabel": "Anwani ya Barua Pepe",
-    "emailPlaceholder": "k.m., juma.kondo@example.com",
+    "emailPlaceholder": "Weka barua pepe yako",
     "phoneLabel": "Namba ya Simu",
-    "phonePlaceholder": "k.m., +255 712 345678",
+    "phonePlaceholder": "Mfano +255 712 345678",
     "confirmPasswordLabel": "Thibitisha Nenosiri",
-    "agreeToTermsCheckboxLabel": "Kubali sheria na masharti",
     "agreeToTermsPrefix": "Nakubaliana na",
-    "termsAndConditionsLink": "Sheria na Masharti",
+    "termsAndConditionsLink": "Vigezo na Masharti",
+    "agreeToTermsCheckboxLabel": "Kubali vigezo na masharti",
     "registerButton": "Jisajili",
     "alreadyHaveAccountPrompt": "Tayari una akaunti?",
     "loginHereLink": "Ingia hapa",
+    "showPassword": "Onyesha nenosiri",
+    "hidePassword": "Ficha nenosiri",
     "notAuthenticatedError": "Hujaingia. Tafadhali ingia.",
     "toast": {
       "loginSuccessTitle": "Umefanikiwa Kuingia",
-      "loginSuccessDescription": "Karibu tena! Unaelekezwa kwenye dashibodi...",
+      "loginSuccessDescription": "Karibu tena Bima Hub!",
       "loginErrorTitle": "Imeshindwa Kuingia",
       "loginErrorDefault": "Hitilafu imetokea. Tafadhali jaribu tena.",
       "invalidCredentialsError": "Barua pepe/simu au nenosiri si sahihi. Tafadhali angalia na ujaribu tena.",
       "registrationSuccessTitle": "Usajili Umefanikiwa!",
-      "registrationSuccessDescription": "Akaunti yako imeundwa. Tafadhali ingia.",
+      "registrationSuccessDescription": "Akaunti yako imefunguliwa. Tafadhali ingia.",
       "registrationErrorTitle": "Usajili Imeshindwa",
-      "registrationErrorDefault": "Imeshindwa kuunda akaunti. Tafadhali jaribu tena.",
-      "emailInUseError": "Barua pepe hii tayari imesajiliwa. Jaribu kuingia.",
-      "weakPasswordError": "Nenosiri ni dhaifu sana. Tafadhali chagua lenye nguvu zaidi.",
+      "registrationErrorDefault": "Imeshindwa kufungua akaunti yako. Tafadhali jaribu tena.",
+      "emailInUseError": "Anwani hii ya barua pepe tayari inatumika.",
+      "weakPasswordError": "Nenosiri ni dhaifu sana. Tafadhali chagua nenosiri imara zaidi.",
       "logoutSuccessTitle": "Umetoka Nje",
-      "logoutErrorTitle": "Hitilafu Wakati wa Kutoka"
+      "logoutErrorTitle": "Imeshindwa Kutoka"
     }
-  },
-  "pageHeader": {
-    "guest": "Mgeni",
-    "welcome": "Karibu, {{name}}!"
-  },
-  "bottomNav": {
-    "dashboard": "Dashibodi",
-    "claims": "Madai",
-    "chat": "Soga",
-    "payments": "Malipo",
-    "profile": "Wasifu"
-  },
-  "common": {
-    "back": "Rudi",
-    "viewAll": "Tazama Zote",
-    "viewDetails": "Tazama Maelezo",
-    "edit": "Hariri",
-    "save": "Hifadhi",
-    "cancel": "Ghairi",
-    "submit": "Wasilisha",
-    "notifications": "Taarifa",
-    "comingSoon": "Inakuja Hivi Karibuni",
-    "error": "Hitilafu",
-    "success": "Imefanikiwa",
-    "notApplicableShort": "H/A"
-  },
-  "languageToggle": {
-    "switchToSwahili": "Badilisha iwe Kiswahili",
-    "switchToEnglish": "Badilisha iwe Kiingereza"
   },
   "dashboard": {
     "quickActions": "Vitendo vya Haraka",
-    "startClaim": "Anzisha Dai Jipya",
-    "getQuote": "Pata Nukuu ya Bima",
+    "startClaim": "Anzisha Dai",
+    "getQuote": "Pata Nukuu",
     "makePayment": "Fanya Malipo",
-    "supportChat": "Soga ya Msaada (AI)",
+    "supportChat": "Msaada (Chat)",
     "myPolicies": "Sera Zangu",
-    "noPoliciesFound": "Bado huna sera zozote zinazoendelea.",
-    "myVehicles": "Vyombo Vyangu vya Moto",
-    "addVehicle": "Ongeza Chombo",
-    "noVehiclesFound": "Hakuna vyombo vya moto vilivyoongezwa kwenye wasifu wako.",
-    "addYourVehicle": "Ongeza Chombo Chako",
-    "recentClaimsActivity": "Shughuli za Madai za Hivi Karibuni",
-    "noRecentClaimsActivity": "Hakuna madai ya hivi karibuni ya kuonyesha.",
-    "fetchPoliciesError": "Imeshindwa kupata sera zako kwa sasa.",
-    "fetchVehiclesError": "Imeshindwa kupata vyombo vyako vya moto.",
-    "fetchClaimsError": "Imeshindwa kupata madai ya hivi karibuni.",
+    "noPoliciesFound": "Hakuna sera zinazoendelea. Unahitaji bima?",
+    "myVehicles": "Magari Yangu",
+    "addVehicle": "Ongeza Gari",
+    "noVehiclesFound": "Hakuna magari yaliyoongezwa bado.",
+    "addYourVehicle": "Ongeza Gari Lako",
+    "recentClaimsActivity": "Madai ya Hivi Karibuni",
+    "noRecentClaimsActivity": "Hakuna madai ya hivi karibuni.",
+    "fetchPoliciesError": "Imeshindwa kupakia sera zako.",
+    "fetchVehiclesError": "Imeshindwa kupakia magari yako.",
+    "fetchClaimsError": "Imeshindwa kupakia madai ya hivi karibuni.",
     "claimCard": {
         "generalClaim": "Dai la Jumla",
         "claimNumberLabel": "Na. ya Dai",
-        "submittedOnLabel": "Imewasilishwa"
+        "submittedOnLabel": "Limewasilishwa"
     }
   },
   "policyCard": {
@@ -118,176 +132,205 @@
       "active": "Inaendelea",
       "expired": "Imeisha Muda",
       "pending": "Inasubiri",
-      "cancelled": "Imefutwa"
+      "cancelled": "Imesitishwa"
     }
   },
   "claimStatus": {
-    "submitted": "Imewasilishwa",
-    "under_review": "Inachunguzwa",
-    "information_requested": "Info Imeombwa",
-    "approved": "Imeidhinishwa",
-    "rejected": "Imekataliwa",
-    "settled": "Imelipwa"
+    "submitted": "Limewasilishwa",
+    "under_review": "Linachunguzwa",
+    "information_requested": "Taarifa Imeombwa",
+    "approved": "Limekubaliwa",
+    "rejected": "Limekataliwa",
+    "settled": "Limelipwa"
   },
   "claimsPage": {
     "title": "Madai Yangu",
-    "newClaimButton": "Dai Jipya",
-     "status": {
-        "underReview": "Inachunguzwa",
-        "settled": "Imelipwa",
-        "rejected": "Imekataliwa"
+    "newClaimButton": "Wasilisha Dai Jipya",
+    "status": {
+        "underReview": "Linachunguzwa",
+        "settled": "Limelipwa",
+        "rejected": "Limekataliwa"
     },
     "claimCard": {
         "claimNumberLabel": "Dai #{{claimNumber}}",
         "policyLabel": "Sera",
-        "submittedLabel": "Imewasilishwa"
+        "submittedLabel": "Limewasilishwa"
     },
     "timeline": {
         "step": "Hatua ya {{stepNumber}}",
         "submitted": "Dai Limewasilishwa",
         "underReview": "Linachunguzwa",
         "decisionMade": "Uamuzi Umefanywa",
-        "settledFinalized": "Imelipwa na Kukamilika"
+        "settledFinalized": "Limelipwa na Kukamilika"
     },
     "emptyState": {
-        "title": "Hakuna Madai Bado",
-        "description": "Hujawasilisha madai yoyote. Anza kwa kuwasilisha la kwanza.",
-        "submitFirstClaimButton": "Wasilisha Dai la Kwanza"
+        "title": "Hakuna Madai Yaliyowasilishwa",
+        "description": "Inaonekana bado hujawasilisha dai lolote. Ikiwa unahitaji kuripoti tukio, unaweza kuanzisha dai jipya hapa.",
+        "submitFirstClaimButton": "Wasilisha Dai Lako la Kwanza"
     }
   },
   "newClaimWizard": {
     "pageTitle": "Mchawi wa Dai Jipya",
     "stepDescription": "Hatua ya {{currentStep}} kati ya {{totalSteps}}",
     "steps": {
-        "selectVehicle": { "title": "Chagua Chombo" },
-        "accidentDetails": { "title": "Maelezo ya Ajali" },
-        "uploadPhotos": { "title": "Pakia Picha ({{count}}/{{max}})" },
-        "supportingDocuments": { "title": "Nyaraka za Ziada" },
-        "reviewSubmit": { "title": "Pitia na Uwasilishe" }
+      "selectVehicle": {
+        "title": "Chagua Gari"
+      },
+      "accidentDetails": {
+        "title": "Maelezo ya Ajali"
+      },
+      "uploadPhotos": {
+        "title": "Pakia Picha za Ajali"
+      },
+      "supportingDocuments": {
+        "title": "Nyaraka za Ziada (Si lazima)"
+      },
+      "reviewSubmit": {
+        "title": "Hakiki na Wasilisha"
+      }
     },
     "selectVehicle": {
-        "label": "Dai hili ni la chombo gani?",
-        "placeholder": "Chagua chombo chako"
+      "label": "Dai hili ni kwa ajili ya gari gani?",
+      "placeholder": "Chagua gari lako"
     },
     "accidentDetails": {
-        "dateLabel": "Tarehe ya Ajali",
-        "timeLabel": "Muda wa Ajali",
-        "locationLabel": "Mahali pa Ajali",
-        "locationPlaceholder": "k.m., Barabara ya Morogoro, karibu na Ubungo interchange",
-        "descriptionLabel": "Elezea Ajali",
-        "descriptionPlaceholder": "Toa maelezo ya kina kuhusu kilichotokea...",
-        "audioInputToggleLabel": "Wezesha uingizaji wa sauti kwa maelezo",
-        "audioInputEnableText": "Tumia Kuamuru kwa Sauti",
-        "recordingInProgress": "Inarekodi..."
+      "dateLabel": "Tarehe ya Ajali",
+      "timeLabel": "Muda wa Ajali",
+      "locationLabel": "Mahali pa Ajali",
+      "locationPlaceholder": "Mfano, Kona ya Nyerere Rd na Msimbazi St, Dar es Salaam",
+      "descriptionLabel": "Elezea Ajali",
+      "descriptionPlaceholder": "Tafadhali toa maelezo kamili ya kilichotokea...",
+      "audioInputToggleLabel": "Washa/zima uingizaji wa sauti kwa maelezo",
+      "audioInputEnableText": "Tumia sauti kuelezea",
+      "recordingInProgress": "Inarekodi... ongea kwa uwazi."
     },
-     "uploadPhotos": {
-        "title": "Pakia Picha za Tukio ({{count}}/{{max}})",
-        "cameraToggleLabel": "Wezesha kamera kupiga picha",
-        "useCameraLabel": "Tumia Kamera",
-        "uploadLabel": "Bofya kupakia au buruta na uangushe",
-        "fileTypesAndSize": "PNG, JPG, GIF hadi MB 10. Upeo wa picha {{maxPhotos}}.",
-        "requiredPhotosIntro": "Lazima: Picha ya chombo kizima, Eneo lililoharibika kwa karibu, Eneo la tukio, Vyombo vingine vilivyohusika (kama vipo).",
-        "uploadedPhotosTitle": "Picha Zilizopakiwa",
-        "previewIndexedAlt": "Kionjo cha picha {{index}}",
-        "photoIndexed": "Picha ya {{index}}",
-        "previewTitle": "Kionjo: {{photoTitle}}",
-        "previewAlt": "Kionjo cha {{photoTitle}}"
+    "uploadPhotos": {
+      "title": "Pakia Picha za Ajali",
+      "cameraToggleLabel": "Washa/zima matumizi ya kamera kupakia picha",
+      "useCameraLabel": "Tumia Kamera Kupiga Picha",
+      "uploadLabel": "Bofya au gusa kupakia picha",
+      "fileTypesAndSize": "PNG, JPG, GIF hadi MB 10. Max picha {{maxPhotos}}.",
+      "requiredPhotosIntro": "Picha zinazohitajika",
+      "uploadedPhotosTitle": "Picha Zilizopakiwa",
+      "previewIndexedAlt": "Picha ya {{index}}",
+      "photoIndexed": "Picha {{index}}",
+      "previewTitle": "Hakiki: {{photoTitle}}",
+      "previewAlt": "Hakiki ya {{photoTitle}}"
     },
     "photoInstructions": {
-      "fullVehicle": { "title": "Picha ya Gari Zima", "description": "Piga picha inayoonyesha gari lote." },
-      "damageCloseUp": { "title": "Picha ya Karibu ya Uharibifu", "description": "Piga picha ya karibu ya eneo/maeneo yaliyoharibika." },
-      "surroundingArea": { "title": "Eneo la Tukio", "description": "Picha ya eneo la ajali na mazingira yake." },
-      "otherVehicles": { "title": "Magari Mengine (Kama yapo)", "description": "Picha ya magari mengine yaliyohusika, kama yapo." }
+        "fullVehicle": {
+            "title": "Mwonekano Kamili wa Gari",
+            "description": "Piga picha gari zima, ikionyesha hali yake ya sasa."
+        },
+        "damageCloseUp": {
+            "title": "Picha ya Karibu ya Uharibifu",
+            "description": "Lenga maeneo maalum yenye uharibifu."
+        },
+        "surroundingArea": {
+            "title": "Eneo la Karibu/Tukio",
+            "description": "Picha ya eneo la ajali, pamoja na hali ya barabara au alama za eneo."
+        },
+        "otherVehicles": {
+            "title": "Magari Mengine/Wahusika (ikiwa wapo)",
+            "description": "Ikiwa magari mengine au mali zilihusika, piga picha."
+        }
+    },
+    "photoError": {
+        "limitReachedTitle": "Idadi ya Juu ya Picha Imefikiwa",
+        "limitReachedDescription": "Umepakia idadi ya juu ya picha {{maxPhotos}}.",
+        "someNotAdded": "Picha {{countAdded}} zimeongezwa. {{countNotAdded}} hazikuweza kuongezwa kutokana na kikomo.",
+        "maxPhotos": "Idadi ya juu ya picha ni {{maxPhotos}}.",
+        "genericErrorTitle": "Hitilafu ya Picha",
+        "couldNotProcess": "Imeshindwa kuchakata picha iliyopigwa. Tafadhali jaribu tena."
     },
     "photoMessages": {
-      "limitReachedTitle": "Ukomo wa Picha Umefikiwa",
-      "limitReachedDescription": "Umepakia idadi ya juu zaidi ya picha {{maxPhotos}}.",
-      "allTypesCapturedTitle": "Aina Zote za Picha Muhimu Zimepigwa",
-      "allTypesCapturedDescription": "Bado unaweza kupakia zaidi ikiwa inahitajika, hadi ukomo wa {{maxPhotos}}, au endelea.",
-      "finishedGuidedCaptureTitle": "Upigaji Picha Elekezi Umekamilika",
-      "finishedGuidedCaptureDescription": "Aina zote za picha zilizopendekezwa zimekamilika. Unaweza kupakia zaidi mwenyewe ikiwa inahitajika."
+        "limitReachedTitle": "Idadi ya Juu Imefikiwa",
+        "limitReachedDescription": "Umepakia idadi ya juu ya picha {{maxPhotos}}. Unaweza kuendelea au kudhibiti picha zilizopo.",
+        "allTypesCapturedTitle": "Picha Zote za Mwongozo Zimepigwa",
+        "allTypesCapturedDescription": "Umepiga aina zote za picha zilizopendekezwa. Unaweza kuongeza zaidi mwenyewe au kuendelea.",
+        "finishedGuidedCaptureTitle": "Mwongozo wa Upigaji Picha Umekamilika",
+        "finishedGuidedCaptureDescription": "Maelekezo yote ya upigaji picha kwa mwongozo yamekamilika. Bado unaweza kupakia zaidi ikihitajika au kuendelea.",
+        "removePhotoAria": "Ondoa picha {{index}}"
     },
-     "cameraMessages": {
-        "initializing": "Inaandaa kamera...",
-        "starting": "Inaanzisha mkondo wa kamera...",
-        "feedLoading": "Mkondo wa kamera unapakia..."
+    "cameraMessages": {
+      "initializing": "Inaandaa kamera...",
+      "starting": "Inawasha kamera...",
+      "feedLoading": "Mlisho wa kamera unapakia..."
     },
-    "supportingDocuments": {
-        "title": "Pakia Nyaraka za Ziada (Si Lazima)",
-        "uploadLabel": "Pakia ripoti ya polisi, maelezo ya mashahidi, n.k.",
-        "fileTypes": "Faili za PDF, DOC, PNG, JPG.",
-        "selectedDocsTitle": "Nyaraka Zilizochaguliwa"
-    },
-    "reviewSubmit": {
-        "title": "Pitia Dai Lako",
-        "vehicleLabel": "Chombo",
-        "dateTimeLabel": "Tarehe na Muda wa Ajali",
-        "atTimeConnector": "saa",
-        "locationLabel": "Mahali",
-        "descriptionLabel": "Maelezo",
-        "photosUploadedLabel": "Picha Zilizopakiwa",
-        "documentsUploadedLabel": "Nyaraka Zilizopakiwa",
-        "finalCheckMessage": "Tafadhali pitia maelezo yote kwa makini kabla ya kuwasilisha. Huwezi kuhariri baada ya kuwasilisha."
-    },
-    "buttons": {
-        "back": "Rudi Nyuma",
-        "next": "Endelea",
-        "submit": "Wasilisha Dai",
-        "startRecording": "Anza Kurekodi",
-        "stopRecording": "Acha Kurekodi",
-        "micDenied": "Maikrofoni Imezimwa",
-        "capturePhoto": "Piga Picha",
-        "usePhoto": "Tumia Picha Hii",
-        "retakePhoto": "Piga Tena",
-        "removePhoto": "Ondoa picha",
-        "removeDocument": "Ondoa hati",
-        "skipPhoto": "Ruka: {{photoTitle}}"
-    },
-    "validationError": {
-        "title": "Hitilafu ya Uthibitishaji",
-        "defaultMessage": "Tafadhali sahihisha makosa kabla ya kuendelea.",
-        "specificFields": "Tafadhali angalia sehemu zifuatazo: {{fields}}"
+    "cameraError": {
+        "title": "Hitilafu ya Kamera",
+        "notSupported": "API ya kamera haitumiki na kivinjari chako.",
+        "videoElementNotReady": "Kipengele cha video hakiko tayari kwa kamera.",
+        "couldNotAccess": "Imeshindwa kufikia kamera. Tafadhali hakikisha ruhusa zimetolewa na hakuna programu nyingine inayotumia.",
+        "permissionDenied": "Ruhusa ya kamera imekataliwa. Tafadhali iwezeshe kwenye mipangilio ya kivinjari chako.",
+        "noCameraFound": "Hakuna kamera iliyopatikana. Tafadhali hakikisha kamera imeunganishwa na kuwashwa.",
+        "cameraInUse": "Kamera tayari inatumiwa na programu nyingine au kichupo kingine.",
+        "accessErrorTitle": "Hitilafu ya Ufikiaji wa Kamera",
+        "accessDeniedTitle": "Ufikiaji wa Kamera Umekataliwa"
     },
     "audioError": {
-      "title": "Hitilafu ya Kuingiza Sauti",
-      "generic": "Imeshindwa kuchakata sauti. Tafadhali andika badala yake.",
-      "noSpeech": "Hakuna sauti iliyogunduliwa. Tafadhali jaribu kuongea kwa uwazi.",
-      "micProblem": "Tatizo la maikrofoni. Tafadhali angalia maikrofoni yako.",
-      "micDenied": "Ruhusa ya maikrofoni imekataliwa. Tafadhali iwezeshe kwenye mipangilio ya kivinjari.",
-      "notSupported": "Utambuzi wa sauti hauauniwi na kivinjari chako."
+        "title": "Hitilafu ya Kuingiza Sauti",
+        "generic": "Hitilafu imetokea na utambuzi wa sauti.",
+        "noSpeech": "Hakuna sauti iliyogunduliwa. Jaribu kuongea kwa sauti zaidi.",
+        "micProblem": "Tatizo la maikrofoni. Hakikisha imeunganishwa na inafanya kazi.",
+        "micDenied": "Ruhusa ya maikrofoni imekataliwa. Tafadhali iwezeshe.",
+        "notSupported": "Utambuzi wa sauti hautumiki na kivinjari chako.",
+        "accessDeniedTitle": "Ufikiaji wa Maikrofoni Umekataliwa",
+        "accessDeniedDescription": "Tafadhali ruhusu ufikiaji wa maikrofoni kwenye mipangilio ya kivinjari chako kutumia kipengele hiki."
     },
     "micError": {
         "title": "Hitilafu ya Maikrofoni",
-        "notSupported": "Upatikanaji wa maikrofoni hauauniwi na kivinjari chako.",
-        "accessDeniedTitle": "Ruhusa ya Maikrofoni Imekataliwa",
-        "accessDeniedDescription": "Tafadhali wezesha ruhusa za maikrofoni katika mipangilio ya kivinjari chako ili kutumia uingizaji wa sauti."
+        "notSupported": "Ufikiaji wa maikrofoni (getUserMedia) hautumiki na kivinjari chako.",
+        "accessDeniedTitle": "Ufikiaji wa Maikrofoni Umekataliwa",
+        "accessDeniedDescription": "Tafadhali ruhusu ufikiaji wa maikrofoni kwenye mipangilio ya kivinjari chako kutumia kipengele hiki."
     },
-    "cameraError": {
-      "title": "Hitilafu ya Kamera",
-      "notSupported": "Upatikanaji wa kamera (getUserMedia) hauauniwi na kivinjari chako.",
-      "videoElementNotReady": "Kipengele cha kionjo cha kamera hakiko tayari. Tafadhali jaribu tena.",
-      "accessErrorTitle": "Suala la Upatikanaji wa Kamera",
-      "permissionDenied": "Ruhusa ya kamera ilikataliwa. Tafadhali iwezeshe kwenye mipangilio ya kivinjari chako.",
-      "noCameraFound": "Hakuna kamera iliyopatikana. Tafadhali hakikisha kamera imeunganishwa na kuwashwa.",
-      "cameraInUse": "Kamera tayari inatumiwa na programu nyingine au kichupo.",
-      "couldNotAccess": "Imeshindwa kufikia kamera. Hitilafu: {{errorName}} - {{errorMessage}}",
-      "genericErrorTitle": "Hitilafu ya Picha",
-      "couldNotProcess": "Imeshindwa kuchakata picha iliyopigwa. Tafadhali jaribu tena."
+    "supportingDocuments": {
+      "title": "Pakia Nyaraka za Ziada (Si lazima)",
+      "uploadLabel": "Bofya au gusa kupakia nyaraka",
+      "fileTypes": "PDF, DOC, PNG, JPG hadi MB 10 kila moja.",
+      "selectedDocsTitle": "Nyaraka Zilizochaguliwa"
     },
-    "photoError": {
-        "limitReachedTitle": "Ukomo wa Picha Umefikiwa",
-        "limitReachedDescription":"Umepakia idadi ya juu zaidi ya picha {{maxPhotos}}.",
-        "someNotAdded":"Picha {{countAdded}} zimeongezwa. {{countNotAdded}} hazikuweza kuongezwa kutokana na ukomo.",
-        "maxPhotos":"Upeo wa picha {{maxPhotos}} unaruhusiwa."
-    },
-    "submitSuccess": {
+    "reviewSubmit": {
+      "title": "Hakiki Dai Lako",
+      "vehicleLabel": "Gari",
+      "dateTimeLabel": "Tarehe na Muda wa Ajali",
+      "atTimeConnector": "saa",
+      "locationLabel": "Mahali",
+      "descriptionLabel": "Maelezo",
+      "photosUploadedLabel": "Picha Zilizopakiwa",
+      "documentsUploadedLabel": "Nyaraka Zilizopakiwa",
+      "finalCheckMessage": "Tafadhali hakiki maelezo yote kwa uangalifu kabla ya kuwasilisha. Taarifa hii itatumika kuchakata dai lako.",
+      "submitSuccess": {
         "title": "Dai Limewasilishwa kwa Mafanikio!",
-        "description": "Dai lako limepokelewa. Tutalipitia na kukujibu."
-    },
-    "submitError": {
-        "title": "Uwasilishaji wa Dai Imeshindwa",
+        "description": "Dai lako limepokelewa. Tutalipitia na kuwasiliana nawe hivi karibuni."
+      },
+      "submitError": {
+        "title": "Dai limeshindwa kuwasilishwa",
         "localStorageFailed": "Imeshindwa kuhifadhi dai lako kwenye hifadhi ya ndani. Tafadhali jaribu tena."
+      }
+    },
+    "validationError": {
+      "title": "Hitilafu ya Uhakiki",
+      "defaultMessage": "Tafadhali sahihisha makosa kabla ya kuendelea.",
+      "specificFields": "Tafadhali angalia sehemu zifuatazo: {{fields}}"
+    },
+    "buttons": {
+      "back": "Rudi Nyuma",
+      "next": "Endelea",
+      "submit": "Wasilisha Dai",
+      "startRecording": "Anza Kurekodi",
+      "stopRecording": "Acha Kurekodi",
+      "micDenied": "Maikrofoni Imekataliwa",
+      "capturePhoto": "Piga Picha",
+      "usePhoto": "Tumia Picha Hii",
+      "retakePhoto": "Piga Tena Picha",
+      "skipPhoto": "Ruka {{photoTitle}}",
+      "removePhoto": "Ondoa Picha",
+      "removeDocument": "Ondoa Waraka"
     }
+  },
+  "chatPage": {
+    "title": "Gumzo la Msaada (AI)"
   },
   "paymentsPage": {
     "title": "Malipo",
@@ -295,119 +338,120 @@
     "historyTab": "Historia ya Malipo",
     "historyTitle": "Historia Yako ya Malipo",
     "noHistoryFound": "Hakuna historia ya malipo iliyopatikana.",
-    "fetchHistoryError": "Imeshindwa kupata historia ya malipo."
+    "fetchHistoryError": "Imeshindwa kupakia historia yako ya malipo."
   },
   "profilePage": {
-    "title": "Wasifu Wangu",
+    "title": "Profaili Yangu",
     "notSet": "Haijawekwa",
-    "editProfileButton": "Hariri Wasifu",
-    "myVehiclesTitle": "Vyombo Vyangu",
-    "myVehiclesDescription": "Dhibiti vyombo vyako vilivyosajiliwa.",
-    "addVehicleButton": "Ongeza Chombo Kipya",
-    "noVehiclesAdded": "Bado hujaongeza vyombo vyovyote.",
+    "editProfileButton": "Hariri Profaili",
+    "myVehiclesTitle": "Magari Yangu",
+    "addVehicleButton": "Ongeza Gari",
+    "myVehiclesDescription": "Dhibiti magari yako yaliyosajiliwa hapa.",
+    "noVehiclesAdded": "Hakuna magari yaliyoongezwa bado. Ongeza gari lako kuanza.",
     "settingsAndActionsTitle": "Mipangilio na Vitendo",
-    "editProfileInfoLink": "Hariri Taarifa za Wasifu",
+    "editProfileInfoLink": "Hariri Taarifa za Profaili",
     "managePoliciesLink": "Dhibiti Sera Zangu",
     "notificationPreferencesLink": "Mapendeleo ya Taarifa",
-    "privacyDataLink": "Mipangilio ya Faragha na Data",
+    "privacyDataLink": "Faragha na Data",
     "logoutButton": "Toka Nje",
-    "loadError": "Imeshindwa kupakia wasifu wa mtumiaji. Tafadhali jaribu kuingia tena.",
-    "fetchVehiclesError": "Imeshindwa kupakia vyombo vyako. Tafadhali jaribu tena baadaye."
+    "fetchVehiclesError": "Imeshindwa kupakia magari yako.",
+    "loadError": "Imeshindwa kupakia profaili ya mtumiaji. Tafadhali jaribu kuingia tena."
   },
   "addVehicleForm": {
-    "title": "Ongeza Chombo Kipya",
-    "description": "Weka maelezo ya chombo chako.",
+    "title": "Ongeza Gari Jipya",
+    "description": "Weka maelezo ya gari lako hapa chini.",
     "make": {
-      "label": "Mtengenezaji wa Chombo",
-      "placeholder": "k.m., Toyota"
+      "label": "Mtengenezaji wa Gari",
+      "placeholder": "Mfano, Toyota"
     },
     "model": {
-      "label": "Mfano wa Chombo",
-      "placeholder": "k.m., IST"
+      "label": "Mfano wa Gari",
+      "placeholder": "Mfano, Corolla"
     },
     "year": {
       "label": "Mwaka wa Utengenezaji",
-      "placeholder": "k.m., 2015"
+      "placeholder": "Mfano, 2018"
     },
     "registrationNumber": {
       "label": "Namba ya Usajili",
-      "placeholder": "k.m., T123 ABC"
+      "placeholder": "Mfano, T123 ABC"
     },
     "documents": {
-      "label": "Nyaraka za Chombo (Si Lazima)",
-      "uploadTrigger": "Pakia Kadi ya Gari, n.k.",
-      "description": "Faili za PDF, DOC, PNG, JPG.",
+      "label": "Nyaraka za Gari (Si lazima)",
+      "uploadTrigger": "Pakia Kadi/Logbook",
+      "description": "PDF, PNG, JPG. Max 5MB.",
       "selectedLabel": "Zilizochaguliwa"
     },
-    "submitButton": "Ongeza Chombo",
+    "submitButton": "Ongeza Gari",
     "toast": {
-      "successTitle": "Chombo Kimeongezwa",
-      "successDescription": "{{make}} {{model}} kimeongezwa kwenye wasifu wako.",
-      "errorTitle": "Hitilafu Kuongeza Chombo",
-      "errorDefault": "Imeshindwa kuhifadhi chombo. Tafadhali jaribu tena."
+      "successTitle": "Gari Limeongezwa",
+      "successDescription": "{{make}} {{model}} limeongezwa kwa mafanikio.",
+      "errorTitle": "Hitilafu Kuongeza Gari",
+      "errorDefault": "Imeshindwa kuongeza gari. Tafadhali jaribu tena."
     }
   },
+  "quotesPage": {
+    "title": "Pata Nukuu ya Bima"
+  },
   "quoteForm": {
-    "title": "Pata Nukuu ya Bima",
-    "description": "Jaza maelezo ya chombo chako ili kupokea nukuu papo hapo.",
+    "title": "Pata Nukuu ya Bima Haraka",
+    "description": "Jaza maelezo ya gari lako kupokea makadirio ya nukuu.",
     "vehicleType": {
-      "label": "Aina ya Chombo",
-      "placeholder": "Chagua aina ya chombo",
-      "privateCar": "Gari Binafsi",
-      "motorcycle": "Pikipiki",
-      "commercial": "Chombo cha Biashara",
-      "motorVehicles": "Chombo cha Magurudumu (Gari, SUV, Pickup)",
-      "twoWheelers": "Magurudumu Mawili (Pikipiki, Scooter)",
-      "threeWheelers": "Magurudumu Matatu (Bajaji, Tuk-tuk)"
-    },
-    "vehicleUsage": {
-      "label": "Matumizi ya Chombo",
-      "placeholder": "Chagua matumizi ya chombo",
-      "private": "Binafsi",
-      "commercial": "Biashara"
+        "label": "Aina ya Gari",
+        "placeholder": "Chagua aina ya gari",
+        "motorVehicles": "Magari (Magari ya kawaida, SUV, Malori)",
+        "twoWheelers": "Vyombo vya Roda Mbili (Pikipiki, Scooters)",
+        "threeWheelers": "Vyombo vya Roda Tatu (Bajaji, Tuk-tuks)"
     },
     "vehicleMake": {
-      "label": "Mtengenezaji wa Chombo",
-      "placeholder": "k.m., Toyota, Honda, Bajaj"
+        "label": "Mtengenezaji wa Gari",
+        "placeholder": "Mfano, Toyota, Honda, Suzuki"
     },
     "vehicleModel": {
-      "label": "Mfano wa Chombo",
-      "placeholder": "k.m., Corolla, Boxer, RE"
+        "label": "Mfano wa Gari",
+        "placeholder": "Mfano, Corolla, IST, Alto"
     },
     "vehicleYear": {
-      "label": "Mwaka wa Utengenezaji",
-      "placeholder": "k.m., 2020"
+        "label": "Mwaka wa Utengenezaji",
+        "placeholder": "Mfano, 2020"
     },
     "vehicleValue": {
-      "label": "Thamani ya Chombo (TZS)",
-      "placeholder": "k.m., 15000000"
+        "label": "Thamani ya Gari Inayokadiriwa (TZS)",
+        "placeholder": "Mfano, 15000000"
     },
     "coverageType": {
-      "label": "Aina ya Bima Unayotaka",
-      "placeholder": "Chagua aina ya bima",
-      "comprehensive": "Bima Kubwa (Comprehensive)",
-      "thirdParty": "Bima ya Mhusika wa Tatu (Third Party Only)",
-      "tpft": "Bima ya Mhusika wa Tatu, Moto na Wizi"
+        "label": "Aina ya Bima Inayohitajika",
+        "placeholder": "Chagua aina ya bima",
+        "comprehensive": "Bima Kubwa (Comprehensive)",
+        "thirdParty": "Bima ya Akiba (Third Party Only)",
+        "tpft": "Bima ya Akiba, Moto na Wizi (TPFT)"
     },
     "hasPriorClaims": {
         "label": "Historia ya Madai ya Hivi Karibuni",
-        "description": "Weka tiki kama umekuwa na madai yaliyoathiri malipo yako katika miaka 1-2 iliyopita (kwa bima kubwa)."
+        "description": "Chagua ikiwa umekuwa na madai yanayoweza kuongeza malipo yako (kwa Bima Kubwa)."
+    },
+    "vehicleUsage": {
+        "label": "Matumizi ya Gari",
+        "placeholder": "Chagua matumizi ya gari",
+        "private": "Matumizi Binafsi",
+        "commercial": "Matumizi ya Kibiashara"
     },
     "submitButton": "Kokotoa Nukuu",
     "toast": {
-      "successTitle": "Nukuu Imetolewa!",
-      "successDescription": "Nukuu yako (ID: {{quoteId}}) iko tayari.",
-      "errorTitle": "Utoaji Nukuu Imeshindwa",
-      "errorDefault": "Imeshindwa kutoa nukuu kwa sasa. Tafadhali jaribu tena."
+        "successTitle": "Nukuu Imetolewa",
+        "successDescription": "Nukuu yako (ID: {{quoteId}}) iko tayari.",
+        "errorTitle": "Utoaji Nukuu Umeshindwa",
+        "errorDefault": "Hitilafu isiyotarajiwa imetokea. Tafadhali jaribu tena."
     },
     "result": {
-      "successTitle": "Nukuu Yako ya Bima",
-      "quoteIdLabel": "Namba ya Nukuu",
-      "premiumLabel": "Makadirio ya Malipo",
-      "summaryLabel": "Maelezo",
-      "effectiveCoverageRuleLabel": "Kanuni ya Bima Iliyotumika",
-      "errorTitle": "Imeshindwa Kutoa Nukuu",
-      "errorGuidance": "Tafadhali angalia ulichojaza au jaribu tena. Tatizo likiendelea, wasiliana na msaada."
+        "successTitle": "Nukuu Yako ya Bima",
+        "quoteIdLabel": "Kitambulisho cha Nukuu",
+        "premiumLabel": "Malipo Yanayokadiriwa",
+        "summaryLabel": "Muhtasari",
+        "effectiveCoverageRuleLabel": "Bima Iliyotumika",
+        "errorTitle": "Imeshindwa Kutoa Nukuu",
+        "errorGuidance": "Tafadhali angalia ulichojaza au jaribu tena baadaye. Tatizo likiendelea, wasiliana na msaada."
     }
   }
 }
+    
