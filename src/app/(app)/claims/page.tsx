@@ -90,7 +90,7 @@ export default function ClaimsPage() {
 
   return (
     <>
-      <PageHeader title={t('claimsPage.title')}>
+      <PageHeader title={t('claimsPage.title')} backHref="/dashboard">
         <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground">
           <Link href="/claims/new">
             <FilePlus2 className="mr-2 h-4 w-4" /> {t('claimsPage.newClaimButton')}
