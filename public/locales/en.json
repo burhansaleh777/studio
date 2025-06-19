@@ -285,7 +285,7 @@
         "accessDeniedDescription": "Please allow microphone access in your browser settings to use this feature."
     },
     "supportingDocuments": {
-      "title": "Upload Supporting Documents (Optional)",
+      "title": "Upload Supporting Documents",
       "uploadLabel": "Click or tap to upload documents",
       "fileTypes": "PDF, DOC, PNG, JPG up to 10MB each.",
       "selectedDocsTitle": "Selected Documents"

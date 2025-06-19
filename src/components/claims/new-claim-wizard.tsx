@@ -499,7 +499,7 @@ export function NewClaimWizard() {
       console.log("Claim Data Saved to localStorage:", newClaim);
       toast({
         title: t("newClaimWizard.submitSuccess.title"),
-        description: t("newClaimWizard.submitSuccess.description"), 
+        description: t("newClaimWizard.submitSuccess.description", { claimNumber: newClaim.claimNumber }), 
         variant: "default",
       });
 
@@ -600,7 +600,7 @@ export function NewClaimWizard() {
                 <FormField control={form.control} name="photos" render={() => ( 
                   <FormItem>
                     <FormLabel>
-                        {t('newClaimWizard.steps.uploadPhotos.title')}
+                        {t('newClaimWizard.uploadPhotos.title')}
                         {` (${currentPhotoCount}/${maxPhotoCount})`}
                     </FormLabel>
                     <div className="flex items-center space-x-2 mb-3">
@@ -798,5 +798,7 @@ function ReviewItem({ label, value, preWrap = false }: { label: string; value: s
     </div>
   );
 }
+
+    
 
     
