@@ -14,13 +14,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { Camera as CameraIcon, FileUp, CheckCircle, Car, FileTextIcon, Mic, MicOff, StopCircle, Loader2, AlertTriangle, ArrowRight, LucideXCircle, RefreshCcw } from "lucide-react";
+import { Camera as CameraIcon, FileUp, CheckCircle, Car, FileTextIcon, Mic, MicOff, StopCircle, Loader2, AlertTriangle, ArrowRight, LucideXCircle, RefreshCcw, Trash2, UploadCloud } from "lucide-react";
 import Image from "next/image";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { Dialog, DialogContent, DialogHeader, DialogTitle as DialogModalTitle } from "@/components/ui/dialog";
 
 
 // Mock data for user's vehicles
@@ -41,56 +42,63 @@ const claimSchemaStep2 = z.object({
   accidentDescription: z.string().min(20, "Please describe the accident in detail (min 20 characters)"),
 });
 
-const MAX_PHOTOS = 4;
+const MAX_ACCIDENT_PHOTOS = 4;
 
-const photoInstructions = [
+const accidentPhotoInstructions = [
   { id: 'fullVehicle', titleKey: "newClaimWizard.photoInstructions.fullVehicle.title", descriptionKey: "newClaimWizard.photoInstructions.fullVehicle.description", isOptional: false },
   { id: 'damageCloseUp', titleKey: "newClaimWizard.photoInstructions.damageCloseUp.title", descriptionKey: "newClaimWizard.photoInstructions.damageCloseUp.description", isOptional: false },
   { id: 'surroundingArea', titleKey: "newClaimWizard.photoInstructions.surroundingArea.title", descriptionKey: "newClaimWizard.photoInstructions.surroundingArea.description", isOptional: false },
-  { id: 'otherVehicles', titleKey: "newClaimWizard.photoInstructions.otherVehicles.title", descriptionKey: "newClaimWizard.photoInstructions.otherVehicles.description", isOptional: false },
+  { id: 'otherVehicles', titleKey: "newClaimWizard.photoInstructions.otherVehicles.title", descriptionKey: "newClaimWizard.photoInstructions.otherVehicles.description", isOptional: true }, // Made this optional for example
 ];
 
 
 const claimSchemaStep3 = z.object({
-  photos: z.array(z.instanceof(File))
-    .min(photoInstructions.filter(p => !p.isOptional).length, `Please upload at least ${photoInstructions.filter(p => !p.isOptional).length} photos covering all required types.`)
-    .max(MAX_PHOTOS, `Maximum ${MAX_PHOTOS} photos allowed.`)
+  accidentPhotos: z.array(z.instanceof(File))
+    .min(accidentPhotoInstructions.filter(p => !p.isOptional).length, `Please upload at least ${accidentPhotoInstructions.filter(p => !p.isOptional).length} accident photos covering all required types.`)
+    .max(MAX_ACCIDENT_PHOTOS, `Maximum ${MAX_ACCIDENT_PHOTOS} accident photos allowed.`)
     .refine(files => {
         if (!files) return false;
         const uploadedInstructionIds = new Set(files.map(file => file.name.split('-')[0]));
         
-        const allRequiredUploaded = photoInstructions
+        const allRequiredUploaded = accidentPhotoInstructions
           .filter(p => !p.isOptional)
           .every(p => uploadedInstructionIds.has(p.id));
         
-        return files.length >= photoInstructions.filter(p => !p.isOptional).length && allRequiredUploaded;
+        return files.length >= accidentPhotoInstructions.filter(p => !p.isOptional).length && allRequiredUploaded;
     }, (files) => {
-        const allRequiredPhotoInstructions = photoInstructions.filter(p => !p.isOptional);
+        const allRequiredPhotoInstructions = accidentPhotoInstructions.filter(p => !p.isOptional);
         const uploadedInstructionIds = new Set(files.map(file => file.name.split('-')[0]));
         const missingRequiredTitles = allRequiredPhotoInstructions
             .filter(p => !uploadedInstructionIds.has(p.id))
             .map(p => p.titleKey) // Will be translated later
             .join(', ');
         
-        let message = `Please upload ${allRequiredPhotoInstructions.length} photos covering all required types. Missing: ${missingRequiredTitles}. Currently ${files?.length || 0} photos uploaded.`;
+        let message = `Please upload ${allRequiredPhotoInstructions.length} accident photos covering all required types. Missing: ${missingRequiredTitles}. Currently ${files?.length || 0} photos uploaded.`;
         
         return { message };
     })
 });
 
+// Define types for the document fields
+type DocumentField = "driverLicense" | "registrationCard" | "inspectionReport" | "repairEstimate" | "policeReport";
 
 const claimSchemaStep4 = z.object({
-  documents: z.array(z.instanceof(File)).optional(),
+  driverLicense: z.instanceof(File, { message: "Driver's License is required." }),
+  registrationCard: z.instanceof(File, { message: "Vehicle Registration Card is required." }),
+  inspectionReport: z.instanceof(File).optional(),
+  repairEstimate: z.instanceof(File).optional(),
+  policeReport: z.instanceof(File).optional(), // Kept as single for now, can be array later
 });
 
+
 const combinedSchema = claimSchemaStep1.merge(claimSchemaStep2).merge(claimSchemaStep3).merge(claimSchemaStep4);
-type ClaimFormValues = z.infer<typeof combinedSchema>;
+export type ClaimFormValues = z.infer<typeof combinedSchema>; // Exporting for potential external use
 
 const stepsConfig = [
   { id: 1, titleKey: "newClaimWizard.steps.selectVehicle.title", icon: Car, schema: claimSchemaStep1, fields: ['vehicleId'] as const },
   { id: 2, titleKey: "newClaimWizard.steps.accidentDetails.title", icon: FileTextIcon, schema: claimSchemaStep2, fields: ['accidentDate', 'accidentTime', 'accidentLocation', 'accidentDescription'] as const },
-  { id: 3, titleKey: "newClaimWizard.steps.uploadPhotos.title", icon: CameraIcon, schema: claimSchemaStep3, fields: ['photos'] as const },
-  { id: 4, titleKey: "newClaimWizard.steps.supportingDocuments.title", icon: FileUp, schema: claimSchemaStep4, fields: ['documents'] as const },
+  { id: 3, titleKey: "newClaimWizard.steps.uploadAccidentPhotos.title", icon: CameraIcon, schema: claimSchemaStep3, fields: ['accidentPhotos'] as const },
+  { id: 4, titleKey: "newClaimWizard.steps.uploadDocuments.title", icon: FileUp, schema: claimSchemaStep4, fields: ['driverLicense', 'registrationCard', 'inspectionReport', 'repairEstimate', 'policeReport'] as const },
   { id: 5, titleKey: "newClaimWizard.steps.reviewSubmit.title", icon: CheckCircle, schema: z.object({}), fields: [] as const },
 ];
 
@@ -105,9 +113,17 @@ interface StoredClaim {
   accidentDate: string;
   accidentTime: string;
   accidentLocation: string;
-  photoCount: number;
-  documentCount: number;
+  accidentPhotoCount: number;
+  documentCounts: Record<DocumentField, number>; // e.g. { driverLicense: 1, policeReport: 0 }
 }
+
+const documentSlotsDefinition: Array<{ id: DocumentField; labelKey: string; isRequired: boolean; descriptionKey?: string }> = [
+    { id: 'driverLicense', labelKey: 'newClaimWizard.documents.driverLicenseLabel', isRequired: true, descriptionKey: 'newClaimWizard.documents.driverLicenseDescription' },
+    { id: 'registrationCard', labelKey: 'newClaimWizard.documents.registrationCardLabel', isRequired: true, descriptionKey: 'newClaimWizard.documents.registrationCardDescription' },
+    { id: 'inspectionReport', labelKey: 'newClaimWizard.documents.inspectionReportLabel', isRequired: false, descriptionKey: 'newClaimWizard.documents.inspectionReportDescription' },
+    { id: 'repairEstimate', labelKey: 'newClaimWizard.documents.repairEstimateLabel', isRequired: false, descriptionKey: 'newClaimWizard.documents.repairEstimateDescription' },
+    { id: 'policeReport', labelKey: 'newClaimWizard.documents.policeReportLabel', isRequired: false, descriptionKey: 'newClaimWizard.documents.policeReportDescription' },
+];
 
 
 export function NewClaimWizard() {
@@ -115,26 +131,29 @@ export function NewClaimWizard() {
   const { toast } = useToast();
   const { t } = useLanguage();
 
+  // --- Audio Input States ---
   const [isAudioInputEnabled, setIsAudioInputEnabled] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [hasMicPermission, setHasMicPermission] = useState<boolean | null>(null);
   const [speechApiAvailable, setSpeechApiAvailable] = useState(false);
   const speechRecognitionRef = useRef<SpeechRecognition | null>(null);
 
-  const [enableCamera, setEnableCamera] = useState(false);
-  const [isCameraActive, setIsCameraActive] = useState(false); 
+  // --- Camera States (shared for accident photos and documents) ---
+  const [showCameraModal, setShowCameraModal] = useState(false);
+  const [cameraFor, setCameraFor] = useState<'accidentPhoto' | DocumentField | null>(null); // 'accidentPhoto' or a DocumentField like 'driverLicense'
+  const [currentAccidentPhotoInstructionIndex, setCurrentAccidentPhotoInstructionIndex] = useState(0);
+  
   const [cameraPermissionStatus, setCameraPermissionStatus] = useState<'idle' | 'pending' | 'granted' | 'denied'>('idle');
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment');
-  
-  const [committedPhotoPreviews, setCommittedPhotoPreviews] = useState<string[]>([]);
-
-  const [currentPhotoInstructionIndex, setCurrentPhotoInstructionIndex] = useState(0);
-  const [capturedPhotoDataUrl, setCapturedPhotoDataUrl] = useState<string | null>(null);
+  const [capturedDataUrl, setCapturedDataUrl] = useState<string | null>(null); // Generic for any capture
   const [isProcessingPhoto, setIsProcessingPhoto] = useState(false);
-
+  
+  // --- File Previews ---
+  const [accidentPhotoPreviews, setAccidentPhotoPreviews] = useState<string[]>([]);
+  const [documentPreviews, setDocumentPreviews] = useState<Partial<Record<DocumentField, string>>>({}); // Store data URIs for previews
 
   const form = useForm<ClaimFormValues>({
     resolver: zodResolver(combinedSchema),
@@ -145,34 +164,72 @@ export function NewClaimWizard() {
       accidentTime: new Date().toTimeString().substring(0,5),
       accidentLocation: "",
       accidentDescription: "",
-      photos: [],
-      documents: [],
+      accidentPhotos: [],
+      driverLicense: undefined,
+      registrationCard: undefined,
+      inspectionReport: undefined,
+      repairEstimate: undefined,
+      policeReport: undefined,
     },
   });
   
-  const watchedPhotos = form.watch("photos");
-  const watchedDocuments = form.watch("documents");
+  const watchedAccidentPhotos = form.watch("accidentPhotos");
+  const watchedDriverLicense = form.watch("driverLicense");
+  const watchedRegistrationCard = form.watch("registrationCard");
+  const watchedInspectionReport = form.watch("inspectionReport");
+  const watchedRepairEstimate = form.watch("repairEstimate");
+  const watchedPoliceReport = form.watch("policeReport");
 
-  const translatedPhotoInstructions = photoInstructions.map(instr => ({
+  const watchedDocumentsState = {
+    driverLicense: watchedDriverLicense,
+    registrationCard: watchedRegistrationCard,
+    inspectionReport: watchedInspectionReport,
+    repairEstimate: watchedRepairEstimate,
+    policeReport: watchedPoliceReport,
+  };
+
+  const translatedAccidentPhotoInstructions = accidentPhotoInstructions.map(instr => ({
     ...instr,
     title: t(instr.titleKey),
     description: t(instr.descriptionKey)
   }));
 
+  // Manage Accident Photo Previews
   useEffect(() => {
-    const currentFiles = watchedPhotos || [];
+    const currentFiles = watchedAccidentPhotos || [];
     const newPreviews = currentFiles
         .filter(file => file instanceof File)
         .map(file => URL.createObjectURL(file as File));
     
-    committedPhotoPreviews.forEach(url => URL.revokeObjectURL(url));
-    setCommittedPhotoPreviews(newPreviews);
+    accidentPhotoPreviews.forEach(url => URL.revokeObjectURL(url));
+    setAccidentPhotoPreviews(newPreviews);
 
     return () => {
         newPreviews.forEach(url => URL.revokeObjectURL(url));
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchedPhotos]);
+  }, [watchedAccidentPhotos]);
+
+  // Manage Document Previews (for files that are images)
+  useEffect(() => {
+    const newDocPreviews: Partial<Record<DocumentField, string>> = {};
+    let urlsToRevoke: string[] = Object.values(documentPreviews);
+
+    (Object.keys(watchedDocumentsState) as DocumentField[]).forEach(docField => {
+        const file = watchedDocumentsState[docField];
+        if (file instanceof File && file.type.startsWith("image/")) {
+            newDocPreviews[docField] = URL.createObjectURL(file);
+        }
+    });
+    
+    setDocumentPreviews(newDocPreviews);
+
+    return () => {
+        Object.values(newDocPreviews).forEach(url => URL.revokeObjectURL(url));
+        urlsToRevoke.forEach(url => URL.revokeObjectURL(url)); // Revoke old ones if component unmounts
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watchedDriverLicense, watchedRegistrationCard, watchedInspectionReport, watchedRepairEstimate, watchedPoliceReport]);
 
 
   useEffect(() => {
@@ -182,7 +239,7 @@ export function NewClaimWizard() {
       const recognition = new SpeechRecognitionAPI();
       recognition.continuous = true;
       recognition.interimResults = true;
-      recognition.lang = 'en-US'; // This could be dynamic based on app language context
+      recognition.lang = 'en-US'; 
 
       recognition.onstart = () => setIsRecording(true);
       recognition.onresult = (event: SpeechRecognitionEvent) => {
@@ -222,8 +279,10 @@ export function NewClaimWizard() {
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
-    setIsCameraActive(false);
-  }, []);
+    if (cameraPermissionStatus !== 'denied' && cameraPermissionStatus !== 'pending') {
+      setCameraPermissionStatus('idle');
+    }
+  }, [cameraPermissionStatus]);
 
 
   const startCamera = useCallback(async () => {
@@ -238,14 +297,14 @@ export function NewClaimWizard() {
     }
 
     setCameraPermissionStatus('pending');
-    stopCurrentStream();
+    stopCurrentStream(); // Stop any existing stream
 
     try {
         const newStream = await navigator.mediaDevices.getUserMedia({
             video: {
                 facingMode,
-                width: { ideal: 1920 },
-                height: { ideal: 1080 }
+                width: { ideal: 1280 }, // Adjusted for potentially better document capture
+                height: { ideal: 720 }
             },
             audio: false
         });
@@ -269,7 +328,6 @@ export function NewClaimWizard() {
               throw new Error("Video element became null after metadata loaded but before play.");
             }
             await videoRef.current.play();
-            setIsCameraActive(true);
             setCameraPermissionStatus('granted');
         }
     } catch (accessError) {
@@ -292,24 +350,16 @@ export function NewClaimWizard() {
   }, [toast, facingMode, stopCurrentStream, t]); 
 
   useEffect(() => {
-    if (enableCamera && currentStep === 2 && !capturedPhotoDataUrl) {
-        startCamera();
-    } else if (!enableCamera || currentStep !== 2 || capturedPhotoDataUrl) {
-        stopCurrentStream();
-         if (cameraPermissionStatus !== 'denied' && cameraPermissionStatus !== 'pending') {
-             setCameraPermissionStatus('idle'); 
-         }
+    if (showCameraModal && cameraFor && !capturedDataUrl) {
+      startCamera();
+    } else if (!showCameraModal || capturedDataUrl) {
+      stopCurrentStream();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enableCamera, currentStep, capturedPhotoDataUrl, startCamera, stopCurrentStream]);
-
-
-  useEffect(() => {
-    if (currentStep !== 2 || !enableCamera) { 
-      setCapturedPhotoDataUrl(null);
-      setCurrentPhotoInstructionIndex(0);
-    }
-  }, [currentStep, enableCamera]);
+    // Cleanup stream when modal is closed or component unmounts
+    return () => {
+      stopCurrentStream();
+    };
+  }, [showCameraModal, cameraFor, capturedDataUrl, startCamera, stopCurrentStream]);
 
 
   const requestMicrophonePermission = async () => {
@@ -344,36 +394,34 @@ export function NewClaimWizard() {
     }
   };
 
-  const currentPhotoInstruction = translatedPhotoInstructions[currentPhotoInstructionIndex];
-  
-  const getCommittedPhotoCount = () => (form.getValues("photos") || []).length;
-  const canTakeMorePhotosOverall = () => getCommittedPhotoCount() < MAX_PHOTOS;
+  const currentAccidentPhotoInstruction = translatedAccidentPhotoInstructions[currentAccidentPhotoInstructionIndex];
+  const getCommittedAccidentPhotoCount = () => (form.getValues("accidentPhotos") || []).length;
+  const canTakeMoreAccidentPhotos = () => getCommittedAccidentPhotoCount() < MAX_ACCIDENT_PHOTOS;
 
 
-  const addFilesToForm = (newFiles: File[]) => {
-    const currentFiles: File[] = form.getValues("photos") || [];
-    const availableSlots = MAX_PHOTOS - currentFiles.length;
+  const addAccidentPhotosToForm = (newFiles: File[]) => {
+    const currentFiles: File[] = form.getValues("accidentPhotos") || [];
+    const availableSlots = MAX_ACCIDENT_PHOTOS - currentFiles.length;
 
     if (availableSlots <= 0) {
-      toast({ variant: "destructive", title: t("newClaimWizard.photoError.limitReachedTitle"), description: t("newClaimWizard.photoError.limitReachedDescription", { maxPhotos: MAX_PHOTOS }) });
+      toast({ variant: "destructive", title: t("newClaimWizard.photoError.limitReachedTitle"), description: t("newClaimWizard.photoError.limitReachedDescription", { maxPhotos: MAX_ACCIDENT_PHOTOS }) });
       return;
     }
     const filesToActuallyAdd = newFiles.slice(0, availableSlots);
-    form.setValue("photos", [...currentFiles, ...filesToActuallyAdd], { shouldValidate: true, shouldDirty: true });
+    form.setValue("accidentPhotos", [...currentFiles, ...filesToActuallyAdd], { shouldValidate: true, shouldDirty: true });
     if (filesToActuallyAdd.length < newFiles.length) {
       toast({ variant: "warning", title: t("newClaimWizard.photoError.limitReachedTitle"), description: t("newClaimWizard.photoError.someNotAdded", { countAdded: filesToActuallyAdd.length, countNotAdded: newFiles.length - filesToActuallyAdd.length }) });
     }
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAccidentPhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
-    if (files.length > 0) addFilesToForm(files);
+    if (files.length > 0) addAccidentPhotosToForm(files);
   };
   
-  const handleCaptureAndPreview = () => {
-    if (!videoRef.current || !canvasRef.current || !isCameraActive || !canTakeMorePhotosOverall() || isProcessingPhoto || !currentPhotoInstruction) {
-        if(!isCameraActive && enableCamera) console.warn("Camera not active, cannot capture.");
-        if(!canTakeMorePhotosOverall()) toast({variant: "warning", title: t("newClaimWizard.photoError.limitReachedTitle"), description: t("newClaimWizard.photoError.maxPhotos", {maxPhotos: MAX_PHOTOS})});
+  const handleCaptureForCamera = () => {
+    if (!videoRef.current || !canvasRef.current || cameraPermissionStatus !== 'granted' || isProcessingPhoto || !cameraFor) {
+        if(cameraPermissionStatus !== 'granted' && showCameraModal) console.warn("Camera not active, cannot capture.");
         return;
     }
     
@@ -386,36 +434,41 @@ export function NewClaimWizard() {
   
     if (context) {
       context.drawImage(video, 0, 0, canvas.width, canvas.height); 
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
-      setCapturedPhotoDataUrl(dataUrl);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.9); // Use JPEG for smaller file sizes
+      setCapturedDataUrl(dataUrl);
     }
     setIsProcessingPhoto(false);
+    stopCurrentStream(); // Stop stream after capture to show preview
   };
 
-  const handleUsePhoto = async () => {
-    if (!capturedPhotoDataUrl || !canTakeMorePhotosOverall() || !currentPhotoInstruction) return;
+  const handleUseCapturedPhoto = async () => {
+    if (!capturedDataUrl || !cameraFor || isProcessingPhoto) return;
   
     setIsProcessingPhoto(true);
     try {
-      const res = await fetch(capturedPhotoDataUrl);
+      const res = await fetch(capturedDataUrl);
       const blob = await res.blob();
-      const fileName = `${currentPhotoInstruction.id}-${Date.now()}.jpg`;
-      const file = new File([blob], fileName, { type: 'image/jpeg' });
+      const fileExtension = cameraFor === 'accidentPhoto' ? 'jpg' : 'jpg'; // could be different for documents
+      const baseFileName = cameraFor === 'accidentPhoto' ? currentAccidentPhotoInstruction.id : cameraFor;
+      const fileName = `${baseFileName}-${Date.now()}.${fileExtension}`;
+      const file = new File([blob], fileName, { type: `image/${fileExtension}` });
       
-      addFilesToForm([file]);
-      
-      setCapturedPhotoDataUrl(null);
-
-      const photosAfterAdd = getCommittedPhotoCount();
-      if (photosAfterAdd >= MAX_PHOTOS) {
-         toast({ title: t("newClaimWizard.photoMessages.limitReachedTitle"), description: t("newClaimWizard.photoMessages.limitReachedDescription", {maxPhotos: MAX_PHOTOS}) });
-         setEnableCamera(false);
-      } else if (currentPhotoInstructionIndex < translatedPhotoInstructions.length - 1) {
-        setCurrentPhotoInstructionIndex(prev => prev + 1);
-      } else {
-        toast({ title: t("newClaimWizard.photoMessages.allTypesCapturedTitle"), description: t("newClaimWizard.photoMessages.allTypesCapturedDescription") });
-        setEnableCamera(false);
+      if (cameraFor === 'accidentPhoto') {
+        addAccidentPhotosToForm([file]);
+        if (getCommittedAccidentPhotoCount() >= MAX_ACCIDENT_PHOTOS) {
+            toast({ title: t("newClaimWizard.photoMessages.limitReachedTitle"), description: t("newClaimWizard.photoMessages.limitReachedDescription", {maxPhotos: MAX_ACCIDENT_PHOTOS}) });
+            closeCameraModal();
+        } else if (currentAccidentPhotoInstructionIndex < translatedAccidentPhotoInstructions.length - 1) {
+            setCurrentAccidentPhotoInstructionIndex(prev => prev + 1);
+        } else {
+            toast({ title: t("newClaimWizard.photoMessages.allTypesCapturedTitle"), description: t("newClaimWizard.photoMessages.allTypesCapturedDescription") });
+            closeCameraModal();
+        }
+      } else { // It's for a document
+        form.setValue(cameraFor, file, { shouldValidate: true, shouldDirty: true });
+        closeCameraModal();
       }
+      setCapturedDataUrl(null); // Reset for next capture
     } catch (error) {
       console.error("Error processing photo:", error);
       toast({ variant: "destructive", title: t("newClaimWizard.photoError.genericErrorTitle"), description: t("newClaimWizard.photoError.couldNotProcess") });
@@ -424,23 +477,57 @@ export function NewClaimWizard() {
     }
   };
   
-  const handleRetakePhoto = () => {
-    setCapturedPhotoDataUrl(null);
-  };
-
-  const handleNextPhotoInstruction = () => {
-    setCapturedPhotoDataUrl(null); 
-    if (currentPhotoInstructionIndex < translatedPhotoInstructions.length - 1) {
-      setCurrentPhotoInstructionIndex(prev => prev + 1);
-    } else {
-      toast({ title: t("newClaimWizard.photoMessages.finishedGuidedCaptureTitle"), description: t("newClaimWizard.photoMessages.finishedGuidedCaptureDescription")});
-       setEnableCamera(false);
+  const handleRetakeCapturedPhoto = () => {
+    setCapturedDataUrl(null);
+    if (showCameraModal && cameraFor) { // Restart camera only if modal is supposed to be open
+        startCamera();
     }
   };
 
+  const handleSkipAccidentPhotoInstruction = () => {
+    setCapturedDataUrl(null); 
+    if (currentAccidentPhotoInstructionIndex < translatedAccidentPhotoInstructions.length - 1) {
+      setCurrentAccidentPhotoInstructionIndex(prev => prev + 1);
+    } else {
+      toast({ title: t("newClaimWizard.photoMessages.finishedGuidedCaptureTitle"), description: t("newClaimWizard.photoMessages.finishedGuidedCaptureDescription")});
+       setShowCameraModal(false); // Close modal if all are skipped/done
+    }
+  };
+
+  const openCameraModal = (type: 'accidentPhoto' | DocumentField) => {
+    setCameraFor(type);
+    if (type === 'accidentPhoto') {
+      setCurrentAccidentPhotoInstructionIndex(0); // Reset for accident photos
+    }
+    setCapturedDataUrl(null); // Clear any previous capture
+    setShowCameraModal(true);
+    // `startCamera` will be called by useEffect based on `showCameraModal` and `cameraFor`
+  };
+
+  const closeCameraModal = () => {
+    setShowCameraModal(false);
+    setCameraFor(null);
+    setCapturedDataUrl(null);
+    stopCurrentStream(); // Ensure stream is stopped
+  };
+
+  const handleDocumentFileUpload = (event: React.ChangeEvent<HTMLInputElement>, fieldName: DocumentField) => {
+    const file = event.target.files?.[0];
+    if (file) {
+        form.setValue(fieldName, file, { shouldValidate: true, shouldDirty: true });
+    }
+    event.target.value = ''; // Reset file input
+  };
+
+  const handleRemoveDocument = (fieldName: DocumentField) => {
+    form.setValue(fieldName, undefined, { shouldValidate: true, shouldDirty: true });
+    setDocumentPreviews(prev => ({...prev, [fieldName]: undefined}));
+  };
+
+
   const handleNext = async () => {
     const currentStepObj = stepsConfig[currentStep];
-    const fieldsToValidate = currentStepObj.id === 3 ? ['photos'] : currentStepObj.fields;
+    const fieldsToValidate = currentStepObj.fields;
     
     const isValid = await form.trigger(fieldsToValidate as any);
 
@@ -454,15 +541,18 @@ export function NewClaimWizard() {
        const errors = form.formState.errors;
        let errorMessage = t("newClaimWizard.validationError.defaultMessage");
        
-       if (currentStepObj.id === 3 && errors.photos) {
-           if (typeof errors.photos.message === 'string') {
-             errorMessage = errors.photos.message; // This message itself can be complex to translate if from Zod refine
+       // More specific error messaging based on current step's fields
+       const errorKeys = Object.keys(errors) as Array<keyof ClaimFormValues>;
+       const relevantErrorField = errorKeys.find(key => fieldsToValidate.includes(key as any));
+       
+       if (relevantErrorField && errors[relevantErrorField]) {
+           // @ts-ignore
+           const fieldErrorMessage = errors[relevantErrorField]?.message;
+           if (typeof fieldErrorMessage === 'string') {
+             errorMessage = fieldErrorMessage;
+           } else if (currentStepObj.id === 3 && errors.accidentPhotos && typeof errors.accidentPhotos.message === 'string') {
+             errorMessage = errors.accidentPhotos.message;
            }
-       } else if (fieldsToValidate && fieldsToValidate.length > 0) {
-            const fieldErrorKeys = Object.keys(errors).filter(key => fieldsToValidate.includes(key as any));
-            if (fieldErrorKeys.length > 0) {
-                errorMessage = t("newClaimWizard.validationError.specificFields", {fields: fieldErrorKeys.join(', ')});
-            }
        }
        toast({ variant: "destructive", title: t("newClaimWizard.validationError.title"), description: errorMessage });
     }
@@ -475,6 +565,14 @@ export function NewClaimWizard() {
   function onSubmit(data: ClaimFormValues) {
     const selectedVehicle = userVehicles.find(v => v.id === data.vehicleId);
 
+    const documentCounts: Record<DocumentField, number> = {
+        driverLicense: data.driverLicense ? 1 : 0,
+        registrationCard: data.registrationCard ? 1 : 0,
+        inspectionReport: data.inspectionReport ? 1 : 0,
+        repairEstimate: data.repairEstimate ? 1 : 0,
+        policeReport: data.policeReport ? 1 : 0,
+    };
+
     const newClaim: StoredClaim = {
       id: crypto.randomUUID(),
       policyNumber: selectedVehicle?.policyNumber || 'N/A',
@@ -486,14 +584,14 @@ export function NewClaimWizard() {
       accidentDate: data.accidentDate,
       accidentTime: data.accidentTime,
       accidentLocation: data.accidentLocation,
-      photoCount: (data.photos || []).length,
-      documentCount: (data.documents || []).length,
+      accidentPhotoCount: (data.accidentPhotos || []).length,
+      documentCounts,
     };
 
     try {
       const existingClaimsString = localStorage.getItem("userClaims");
       const existingClaims: StoredClaim[] = existingClaimsString ? JSON.parse(existingClaimsString) : [];
-      existingClaims.unshift(newClaim); // Add new claim to the beginning
+      existingClaims.unshift(newClaim); 
       localStorage.setItem("userClaims", JSON.stringify(existingClaims));
       
       console.log("Claim Data Saved to localStorage:", newClaim);
@@ -514,19 +612,19 @@ export function NewClaimWizard() {
     
     form.reset();
     setCurrentStep(0);
-    setCommittedPhotoPreviews([]); 
+    setAccidentPhotoPreviews([]); 
+    setDocumentPreviews({});
     if (speechRecognitionRef.current && isRecording) speechRecognitionRef.current.stop();
     setIsAudioInputEnabled(false);
-    setEnableCamera(false); 
-    setCurrentPhotoInstructionIndex(0);
-    setCapturedPhotoDataUrl(null);
-    stopCurrentStream();
+    closeCameraModal();
+    setCurrentAccidentPhotoInstructionIndex(0);
   }
   
   const progressValue = ((currentStep + 1) / stepsConfig.length) * 100;
   const CurrentIcon = stepsConfig[currentStep].icon;
   
-  let isEffectivelyAllGuidedInstructionsDone = currentPhotoInstructionIndex >= translatedPhotoInstructions.length;
+  const currentAccidentPhotoGuide = cameraFor === 'accidentPhoto' ? translatedAccidentPhotoInstructions[currentAccidentPhotoInstructionIndex] : null;
+  const isEffectivelyAllAccidentInstructionsDone = cameraFor === 'accidentPhoto' && currentAccidentPhotoInstructionIndex >= translatedAccidentPhotoInstructions.length;
 
 
   return (
@@ -542,7 +640,7 @@ export function NewClaimWizard() {
       <CardContent>
         <Form {...form}>
           <form className="space-y-6">
-            {currentStep === 0 && (
+            {currentStep === 0 && ( // Step 1: Select Vehicle
               <FormField control={form.control} name="vehicleId" render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t('newClaimWizard.selectVehicle.label')}</FormLabel>
@@ -555,7 +653,7 @@ export function NewClaimWizard() {
               )} />
             )}
 
-            {currentStep === 1 && (
+            {currentStep === 1 && ( // Step 2: Accident Details
               <>
                 <FormField control={form.control} name="accidentDate" render={({ field }) => (
                   <FormItem><FormLabel>{t('newClaimWizard.accidentDetails.dateLabel')}</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>
@@ -593,184 +691,147 @@ export function NewClaimWizard() {
               </>
             )}
 
-            {currentStep === 2 && (() => {
-              const currentPhotoCount = getCommittedPhotoCount();
-              const maxPhotoCount = MAX_PHOTOS;
+            {currentStep === 2 && (() => { // Step 3: Accident Photos
+              const currentPhotoCount = getCommittedAccidentPhotoCount();
+              const maxPhotoCount = MAX_ACCIDENT_PHOTOS;
               return (
-                <FormField control={form.control} name="photos" render={() => ( 
+                <FormField control={form.control} name="accidentPhotos" render={() => ( 
                   <FormItem>
                     <FormLabel>
-                        {t('newClaimWizard.uploadPhotos.title')}
-                        {` (${currentPhotoCount}/${maxPhotoCount})`}
+                        {t('newClaimWizard.uploadAccidentPhotos.label')} {`(${currentPhotoCount}/${maxPhotoCount})`}
                     </FormLabel>
-                    <div className="flex items-center space-x-2 mb-3">
-                      <Switch id="camera-toggle" checked={enableCamera} onCheckedChange={setEnableCamera} aria-label={t('newClaimWizard.uploadPhotos.cameraToggleLabel')} />
-                      <label htmlFor="camera-toggle" className="text-sm font-medium text-foreground">{t('newClaimWizard.uploadPhotos.useCameraLabel')}</label>
-                    </div>
+                    <div className="space-y-3">
+                        <Button type="button" onClick={() => openCameraModal('accidentPhoto')} className="w-full" variant="outline" disabled={!canTakeMoreAccidentPhotos()}>
+                            <CameraIcon className="mr-2 h-4 w-4" /> {t('newClaimWizard.buttons.takeAccidentPhotos')}
+                        </Button>
+                        
+                        <Card className="border-dashed border-2 hover:border-primary transition-colors">
+                          <CardContent className="p-6 text-center">
+                            <UploadCloud className="mx-auto h-10 w-10 text-muted-foreground mb-2" />
+                            <FormLabel htmlFor="accident-photo-upload" className="text-primary font-semibold cursor-pointer hover:underline">
+                              {t('newClaimWizard.uploadAccidentPhotos.uploadLabel')}
+                            </FormLabel>
+                            <FormControl>
+                              <Input id="accident-photo-upload" type="file" className="sr-only" accept="image/*" multiple onChange={handleAccidentPhotoUpload} disabled={!canTakeMoreAccidentPhotos()} />
+                            </FormControl>
+                            <p className="text-xs text-muted-foreground mt-1">{t('newClaimWizard.uploadPhotos.fileTypesAndSize', { maxPhotos: MAX_ACCIDENT_PHOTOS})}</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                               {t('newClaimWizard.uploadPhotos.requiredPhotosIntro')}: {translatedAccidentPhotoInstructions.filter(p => !p.isOptional).map(p => p.title).join(', ')}.
+                            </p>
+                          </CardContent>
+                        </Card>
 
-                    {enableCamera && currentPhotoInstruction && !isEffectivelyAllGuidedInstructionsDone && (
-                      <Card className="mb-4 p-3 bg-primary/5 border-primary/20">
-                        <CardTitle className="text-md mb-1">{currentPhotoInstruction.title}</CardTitle>
-                        <CardDescription className="text-sm">{currentPhotoInstruction.description}</CardDescription>
-                      </Card>
-                    )}
-                    
-                    {enableCamera && (
-                      <Card className="p-4 mb-3 bg-muted/30">
-                        {!capturedPhotoDataUrl ? (
-                          <>
-                            <div className="relative w-full aspect-video rounded-md bg-black mb-2 overflow-hidden">
-                               <video ref={videoRef} className="w-full h-full object-cover" playsInline muted />
-                               {cameraPermissionStatus === 'pending' && <Alert className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 text-white pointer-events-none"><Loader2 className="h-8 w-8 animate-spin text-primary" /><AlertDescription className="mt-2">{t('newClaimWizard.cameraMessages.initializing')}</AlertDescription></Alert>}
-                               {cameraPermissionStatus === 'denied' && <Alert variant="destructive" className="absolute inset-0 m-auto max-w-sm max-h-40 flex flex-col items-center justify-center"><AlertTriangle className="h-5 w-5 mb-1" /><AlertTitle className="text-sm">{t('newClaimWizard.cameraError.accessDeniedTitle')}</AlertTitle><AlertDescription className="text-xs text-center">{t('newClaimWizard.cameraError.permissionDenied')}</AlertDescription></Alert>}
-                               {cameraPermissionStatus === 'granted' && !isCameraActive && videoRef.current && videoRef.current.srcObject && <Alert className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 text-white pointer-events-none"><Loader2 className="h-8 w-8 animate-spin text-primary" /><AlertDescription className="mt-2">{t('newClaimWizard.cameraMessages.starting')}</AlertDescription></Alert>}
-                               {cameraPermissionStatus === 'granted' && isCameraActive && videoRef.current && !videoRef.current?.videoWidth && <Alert className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 text-white pointer-events-none"><AlertDescription>{t('newClaimWizard.cameraMessages.feedLoading')}</AlertDescription></Alert>}
-                            </div>
-                            
-                            <div className="flex flex-wrap gap-2 mt-2">
-                              {isCameraActive && cameraPermissionStatus === 'granted' && currentPhotoInstruction && !isEffectivelyAllGuidedInstructionsDone && (
-                                  <Button type="button" onClick={handleCaptureAndPreview} className="flex-1 min-w-[120px]" disabled={isProcessingPhoto || !canTakeMorePhotosOverall()}>
-                                  {isProcessingPhoto ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CameraIcon className="mr-2 h-4 w-4" />}
-                                  {t('newClaimWizard.buttons.capturePhoto')}
-                                  </Button>
-                              )}
-                            </div>
-
-                            {currentPhotoInstruction && (currentPhotoInstruction.isOptional || currentPhotoInstructionIndex >= translatedPhotoInstructions.filter(p=>!p.isOptional).length) && !isEffectivelyAllGuidedInstructionsDone && isCameraActive && cameraPermissionStatus === 'granted' && (
-                               <Button type="button" variant="outline" onClick={handleNextPhotoInstruction} className="w-full mt-2">
-                                  {t('newClaimWizard.buttons.skipPhoto', { photoTitle: currentPhotoInstruction.title })}
-                                  <ArrowRight className="ml-2 h-4 w-4"/>
-                              </Button>
-                            )}
-                          </>
-                        ) : ( 
-                          <div className="text-center">
-                             <p className="text-sm font-medium mb-2">{t('newClaimWizard.uploadPhotos.previewTitle', { photoTitle: currentPhotoInstruction?.title })}</p>
-                            <Image src={capturedPhotoDataUrl} alt={t('newClaimWizard.uploadPhotos.previewAlt', { photoTitle: currentPhotoInstruction?.title })} width={320} height={240} className="rounded-md mx-auto mb-3 max-w-full h-auto object-contain border" />
-                            <div className="flex justify-center gap-3">
-                              <Button type="button" onClick={handleUsePhoto} className="bg-green-600 hover:bg-green-700 text-white" disabled={isProcessingPhoto || !canTakeMorePhotosOverall()}>
-                                {isProcessingPhoto && form.getValues("photos").find(p=>p.name.startsWith(currentPhotoInstruction?.id || '')) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
-                                {t('newClaimWizard.buttons.usePhoto')}
-                              </Button>
-                              <Button type="button" variant="outline" onClick={handleRetakePhoto} disabled={isProcessingPhoto}>
-                                <CameraIcon className="mr-2 h-4 w-4" /> {t('newClaimWizard.buttons.retakePhoto')}
-                              </Button>
+                        {accidentPhotoPreviews.length > 0 && (
+                          <div className="mt-4">
+                            <p className="text-sm font-medium mb-2">{t('newClaimWizard.uploadPhotos.uploadedPhotosTitle')}:</p>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                              {accidentPhotoPreviews.map((src, index) => (
+                                <div key={index} className="relative aspect-square rounded-md overflow-hidden border shadow">
+                                  <Image src={src} alt={t('newClaimWizard.uploadPhotos.previewIndexedAlt', { index: index + 1 })} layout="fill" objectFit="cover" />
+                                   <Button 
+                                      type="button" 
+                                      variant="destructive" 
+                                      size="icon" 
+                                      className="absolute top-1 right-1 h-6 w-6 opacity-80 hover:opacity-100 z-10"
+                                      onClick={() => {
+                                        const currentPhotos = form.getValues("accidentPhotos") || [];
+                                        const updatedPhotos = currentPhotos.filter((_, i) => i !== index);
+                                        form.setValue("accidentPhotos", updatedPhotos, { shouldValidate: true, shouldDirty: true });
+                                      }}
+                                      aria-label={t('newClaimWizard.buttons.removePhoto')}
+                                    >
+                                      <LucideXCircle className="h-4 w-4" />
+                                    </Button>
+                                  <p className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-1 truncate">
+                                      { (watchedAccidentPhotos[index]?.name.split('-')[0] && translatedAccidentPhotoInstructions.find(instr => instr.id === watchedAccidentPhotos[index]?.name.split('-')[0])?.title) || t('newClaimWizard.uploadPhotos.photoIndexed', { index: index + 1 })}
+                                  </p>
+                                </div>
+                              ))}
                             </div>
                           </div>
                         )}
-                        <canvas ref={canvasRef} style={{ display: 'none' }} />
-                         {!canTakeMorePhotosOverall() && getCommittedPhotoCount() >= MAX_PHOTOS && <Alert variant="warning" className="mt-3"><AlertTriangle className="h-4 w-4" /><AlertTitle>{t('newClaimWizard.photoError.limitReachedTitle')}</AlertTitle><AlertDescription>{t('newClaimWizard.photoError.maxPhotos', {maxPhotos: MAX_PHOTOS})}</AlertDescription></Alert>}
-                         {isEffectivelyAllGuidedInstructionsDone && enableCamera && <Alert className="mt-3"><CheckCircle className="h-4 w-4"/><AlertTitle>{t('newClaimWizard.photoMessages.guidedCaptureCompleteTitle')}</AlertTitle><AlertDescription>{t('newClaimWizard.photoMessages.guidedCaptureCompleteDescription')}</AlertDescription></Alert>}
-                      </Card>
-                    )}
-                    
-                    <Card className="border-dashed border-2 hover:border-primary transition-colors">
-                      <CardContent className="p-6 text-center">
-                        <FileUp className="mx-auto h-12 w-12 text-muted-foreground mb-2" />
-                        <FormLabel htmlFor="photo-upload" className="text-primary font-semibold cursor-pointer hover:underline">
-                          {t('newClaimWizard.uploadPhotos.uploadLabel')}
-                        </FormLabel>
-                        <FormControl>
-                          <Input id="photo-upload" type="file" className="sr-only" accept="image/*" multiple onChange={handleFileUpload} disabled={!canTakeMorePhotosOverall()} />
-                        </FormControl>
-                        <p className="text-xs text-muted-foreground mt-1">{t('newClaimWizard.uploadPhotos.fileTypesAndSize', { maxPhotos: MAX_PHOTOS})}</p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                           {t('newClaimWizard.uploadPhotos.requiredPhotosIntro')}: {translatedPhotoInstructions.filter(p => !p.isOptional).map(p => p.title).join(', ')}.
-                        </p>
-                      </CardContent>
-                    </Card>
-                    {committedPhotoPreviews.length > 0 && (
-                      <div className="mt-4">
-                        <p className="text-sm font-medium mb-2">{t('newClaimWizard.uploadPhotos.uploadedPhotosTitle')}:</p>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                          {committedPhotoPreviews.map((src, index) => (
-                            <div key={index} className="relative aspect-square rounded-md overflow-hidden border shadow">
-                              <Image src={src} alt={t('newClaimWizard.uploadPhotos.previewIndexedAlt', { index: index + 1 })} layout="fill" objectFit="cover" />
-                               <Button 
-                                  type="button" 
-                                  variant="destructive" 
-                                  size="icon" 
-                                  className="absolute top-1 right-1 h-6 w-6 opacity-80 hover:opacity-100"
-                                  onClick={() => {
-                                    const currentPhotos = form.getValues("photos") || [];
-                                    const updatedPhotos = currentPhotos.filter((_, i) => i !== index);
-                                    form.setValue("photos", updatedPhotos, { shouldValidate: true, shouldDirty: true });
-                                  }}
-                                  aria-label={t('newClaimWizard.buttons.removePhoto')}
-                                >
-                                  <LucideXCircle className="h-4 w-4" />
-                                </Button>
-                              <p className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-1 truncate">
-                                  { (watchedPhotos[index]?.name.split('-')[0] && translatedPhotoInstructions.find(instr => instr.id === watchedPhotos[index]?.name.split('-')[0])?.title) || t('newClaimWizard.uploadPhotos.photoIndexed', { index: index + 1 })}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    <FormMessage className="mt-2" /> 
+                        <FormMessage className="mt-2" /> 
+                    </div>
                   </FormItem>
                 )} />
               )
             })()}
 
-            {currentStep === 3 && ( 
-               <FormField control={form.control} name="documents" render={() => ( 
-                <FormItem>
-                  <FormLabel>{t('newClaimWizard.supportingDocuments.title')}</FormLabel>
-                   <Card className="border-dashed border-2 hover:border-primary transition-colors">
-                    <CardContent className="p-6 text-center">
-                      <FileUp className="mx-auto h-12 w-12 text-muted-foreground mb-2" />
-                      <FormLabel htmlFor="document-upload" className="text-primary font-semibold cursor-pointer hover:underline">{t('newClaimWizard.supportingDocuments.uploadLabel')}</FormLabel>
-                      <FormControl><Input id="document-upload" type="file" className="sr-only" accept=".pdf,.doc,.docx,.png,.jpg" multiple 
-                        onChange={(e) => {
-                          const files = Array.from(e.target.files || []);
-                          const currentDocs = form.getValues("documents") || [];
-                          form.setValue("documents", [...currentDocs, ...files], {shouldValidate: true, shouldDirty: true});
-                        }}
-                      /></FormControl>
-                       <p className="text-xs text-muted-foreground mt-1">{t('newClaimWizard.supportingDocuments.fileTypes')}</p>
-                    </CardContent>
-                  </Card>
-                  {watchedDocuments && watchedDocuments.length > 0 && (
-                    <div className="mt-4 space-y-2">
-                      <p className="text-sm font-medium">{t('newClaimWizard.supportingDocuments.selectedDocsTitle')}:</p>
-                      <ul className="list-disc list-inside text-sm text-muted-foreground">
-                        {watchedDocuments.map((doc, index) => (
-                          <li key={index} className="flex justify-between items-center">
-                            <span>{doc.name} ({(doc.size / 1024).toFixed(1)} KB)</span>
-                            <Button 
-                              type="button" 
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-6 w-6 text-destructive"
-                              onClick={() => {
-                                const updatedDocs = watchedDocuments.filter((_, i) => i !== index);
-                                form.setValue("documents", updatedDocs, {shouldValidate:true, shouldDirty: true});
-                              }}
-                              aria-label={t('newClaimWizard.buttons.removeDocument')}
-                            >
-                              <LucideXCircle className="h-4 w-4" />
-                            </Button>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  <FormMessage />
-                </FormItem>
-              )} />
+            {currentStep === 3 && ( // Step 4: Upload Documents
+                <div className="space-y-6">
+                    {documentSlotsDefinition.map((docSlot) => (
+                        <FormField
+                            key={docSlot.id}
+                            control={form.control}
+                            name={docSlot.id}
+                            render={({ field }) => (
+                                <FormItem className="p-4 border rounded-lg shadow-sm bg-muted/20">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <FormLabel className="text-base font-semibold">
+                                            {t(docSlot.labelKey)}
+                                            {docSlot.isRequired && <span className="text-destructive ml-1">*</span>}
+                                        </FormLabel>
+                                        {field.value && (
+                                            <Button type="button" variant="ghost" size="sm" onClick={() => handleRemoveDocument(docSlot.id)} className="text-destructive hover:text-destructive">
+                                                <Trash2 className="mr-1 h-4 w-4" /> {t('newClaimWizard.buttons.removeDocument')}
+                                            </Button>
+                                        )}
+                                    </div>
+                                    {docSlot.descriptionKey && <p className="text-xs text-muted-foreground mb-3">{t(docSlot.descriptionKey)}</p>}
+
+                                    {!field.value ? (
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            <Button type="button" variant="outline" onClick={() => document.getElementById(`file-upload-${docSlot.id}`)?.click()}>
+                                                <UploadCloud className="mr-2 h-4 w-4" /> {t('newClaimWizard.buttons.uploadFile')}
+                                                <Input 
+                                                    id={`file-upload-${docSlot.id}`}
+                                                    type="file" 
+                                                    className="sr-only" 
+                                                    accept="image/*,.pdf,.doc,.docx" 
+                                                    onChange={(e) => handleDocumentFileUpload(e, docSlot.id)} 
+                                                />
+                                            </Button>
+                                            <Button type="button" variant="outline" onClick={() => openCameraModal(docSlot.id)}>
+                                                <CameraIcon className="mr-2 h-4 w-4" /> {t('newClaimWizard.buttons.takePhoto')}
+                                            </Button>
+                                        </div>
+                                    ) : (
+                                        <div className="mt-2 p-2 border rounded-md bg-background">
+                                            {documentPreviews[docSlot.id] ? (
+                                                <Image src={documentPreviews[docSlot.id]!} alt={t(docSlot.labelKey) + " preview"} width={120} height={90} className="rounded-md object-contain max-h-24 mx-auto border" />
+                                            ) : (
+                                                <FileTextIcon className="h-10 w-10 text-muted-foreground mx-auto my-2" />
+                                            )}
+                                            <p className="text-sm text-center truncate mt-1">{field.value.name}</p>
+                                            <p className="text-xs text-muted-foreground text-center">({(field.value.size / 1024).toFixed(1)} KB)</p>
+                                        </div>
+                                    )}
+                                    <FormMessage className="mt-2" />
+                                </FormItem>
+                            )}
+                        />
+                    ))}
+                </div>
             )}
 
-            {currentStep === 4 && ( 
+
+            {currentStep === 4 && ( // Step 5: Review and Submit
               <div className="space-y-3 p-2 rounded-md border bg-muted/20">
                 <h3 className="text-lg font-semibold mb-3 border-b pb-2">{t('newClaimWizard.reviewSubmit.title')}</h3>
                 <ReviewItem label={t('newClaimWizard.reviewSubmit.vehicleLabel')} value={userVehicles.find(v => v.id === form.getValues("vehicleId"))?.name || 'N/A'} />
                 <ReviewItem label={t('newClaimWizard.reviewSubmit.dateTimeLabel')} value={`${form.getValues("accidentDate")} ${t('newClaimWizard.reviewSubmit.atTimeConnector')} ${form.getValues("accidentTime")}`} />
                 <ReviewItem label={t('newClaimWizard.reviewSubmit.locationLabel')} value={form.getValues("accidentLocation")} />
                 <ReviewItem label={t('newClaimWizard.reviewSubmit.descriptionLabel')} value={form.getValues("accidentDescription")} preWrap />
-                <ReviewItem label={t('newClaimWizard.reviewSubmit.photosUploadedLabel')} value={`${form.getValues("photos")?.length || 0}`} />
-                <ReviewItem label={t('newClaimWizard.reviewSubmit.documentsUploadedLabel')} value={`${form.getValues("documents")?.length || 0}`} />
+                <ReviewItem label={t('newClaimWizard.reviewSubmit.accidentPhotosUploadedLabel')} value={`${form.getValues("accidentPhotos")?.length || 0}`} />
+                
+                <h4 className="text-md font-semibold mt-4 pt-2 border-t">{t('newClaimWizard.reviewSubmit.documentsUploadedTitle')}</h4>
+                {documentSlotsDefinition.map(slot => (
+                    <ReviewItem 
+                        key={slot.id} 
+                        label={t(slot.labelKey) + (slot.isRequired ? '*' : '')} 
+                        value={form.getValues(slot.id) ? (form.getValues(slot.id) as File).name : t('common.notProvided')} 
+                    />
+                ))}
                 <p className="text-sm text-muted-foreground pt-3">{t('newClaimWizard.reviewSubmit.finalCheckMessage')}</p>
               </div>
             )}
@@ -785,6 +846,88 @@ export function NewClaimWizard() {
           </form>
         </Form>
       </CardContent>
+
+        <Dialog open={showCameraModal} onOpenChange={(isOpen) => { if (!isOpen) closeCameraModal(); else setShowCameraModal(true); }}>
+            <DialogContent className="sm:max-w-[625px] p-0 overflow-hidden">
+                <DialogHeader className="p-4 border-b">
+                    <DialogModalTitle>
+                        {cameraFor === 'accidentPhoto' 
+                            ? (currentAccidentPhotoGuide?.title || t('newClaimWizard.cameraModal.titleAccidentPhoto'))
+                            : (cameraFor ? t(documentSlotsDefinition.find(d=>d.id === cameraFor)?.labelKey || 'newClaimWizard.cameraModal.titleDocument') : '')
+                        }
+                    </DialogModalTitle>
+                </DialogHeader>
+                <div className="p-4 space-y-3">
+                    {cameraFor === 'accidentPhoto' && currentAccidentPhotoGuide && (
+                         <Card className="p-3 bg-primary/5 border-primary/20 text-sm">
+                            <CardDescription>{currentAccidentPhotoGuide.description}</CardDescription>
+                        </Card>
+                    )}
+
+                    {!capturedDataUrl ? (
+                        <>
+                            <div className="relative w-full aspect-video rounded-md bg-black overflow-hidden">
+                               <video ref={videoRef} className="w-full h-full object-contain" playsInline muted autoPlay />
+                               {cameraPermissionStatus === 'pending' && <Alert className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 text-white pointer-events-none"><Loader2 className="h-8 w-8 animate-spin text-primary" /><AlertDescription className="mt-2">{t('newClaimWizard.cameraMessages.initializing')}</AlertDescription></Alert>}
+                               {cameraPermissionStatus === 'denied' && <Alert variant="destructive" className="absolute inset-0 m-auto max-w-sm max-h-40 flex flex-col items-center justify-center"><AlertTriangle className="h-5 w-5 mb-1" /><AlertTitle className="text-sm">{t('newClaimWizard.cameraError.accessDeniedTitle')}</AlertTitle><AlertDescription className="text-xs text-center">{t('newClaimWizard.cameraError.permissionDenied')}</AlertDescription></Alert>}
+                               {cameraPermissionStatus === 'granted' && videoRef.current && !videoRef.current?.videoWidth && <Alert className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 text-white pointer-events-none"><AlertDescription>{t('newClaimWizard.cameraMessages.feedLoading')}</AlertDescription></Alert>}
+                            </div>
+                            <div className="flex flex-wrap gap-2 mt-2 justify-center">
+                                {cameraPermissionStatus === 'granted' && cameraFor === 'accidentPhoto' && currentAccidentPhotoGuide && !isEffectivelyAllAccidentInstructionsDone && (
+                                  <Button type="button" onClick={handleCaptureForCamera} className="flex-1 min-w-[120px]" disabled={isProcessingPhoto || !canTakeMoreAccidentPhotos()}>
+                                    {isProcessingPhoto ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CameraIcon className="mr-2 h-4 w-4" />}
+                                    {t('newClaimWizard.buttons.capturePhoto')}
+                                  </Button>
+                                )}
+                                {cameraPermissionStatus === 'granted' && cameraFor !== 'accidentPhoto' && (
+                                     <Button type="button" onClick={handleCaptureForCamera} className="flex-1 min-w-[120px]" disabled={isProcessingPhoto}>
+                                        {isProcessingPhoto ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CameraIcon className="mr-2 h-4 w-4" />}
+                                        {t('newClaimWizard.buttons.capturePhoto')}
+                                    </Button>
+                                )}
+                                <Button type="button" variant="outline" onClick={() => setFacingMode(prev => prev === 'user' ? 'environment' : 'user')} disabled={cameraPermissionStatus !== 'granted'}>
+                                    <RefreshCcw className="mr-2 h-4 w-4" /> {t('newClaimWizard.buttons.switchCamera')}
+                                </Button>
+                            </div>
+                            {cameraFor === 'accidentPhoto' && currentAccidentPhotoGuide && (currentAccidentPhotoGuide.isOptional || currentAccidentPhotoInstructionIndex >= translatedAccidentPhotoInstructions.filter(p=>!p.isOptional).length) && !isEffectivelyAllAccidentInstructionsDone && cameraPermissionStatus === 'granted' && (
+                               <Button type="button" variant="ghost" onClick={handleSkipAccidentPhotoInstruction} className="w-full mt-2 text-sm">
+                                  {t('newClaimWizard.buttons.skipThisPhoto', { photoTitle: currentAccidentPhotoGuide.title })}
+                                  <ArrowRight className="ml-2 h-4 w-4"/>
+                              </Button>
+                            )}
+                            {cameraFor === 'accidentPhoto' && isEffectivelyAllAccidentInstructionsDone && (
+                                <Alert className="mt-3"><CheckCircle className="h-4 w-4"/><AlertTitle>{t('newClaimWizard.photoMessages.allTypesCapturedTitle')}</AlertTitle><AlertDescription>{t('newClaimWizard.photoMessages.allTypesCapturedDescription') + " " + t('newClaimWizard.photoMessages.canCloseOrUploadMore')}</AlertDescription></Alert>
+                            )}
+                        </>
+                    ) : ( 
+                        <div className="text-center">
+                            <p className="text-sm font-medium mb-2">
+                                {cameraFor === 'accidentPhoto' 
+                                    ? t('newClaimWizard.uploadPhotos.previewTitle', { photoTitle: currentAccidentPhotoGuide?.title || 'Photo' })
+                                    : t('newClaimWizard.uploadPhotos.previewTitle', { photoTitle: t(documentSlotsDefinition.find(d => d.id === cameraFor)?.labelKey || 'Document') })
+                                }
+                            </p>
+                            <Image src={capturedDataUrl} alt="Captured preview" width={320} height={240} className="rounded-md mx-auto mb-3 max-w-full h-auto object-contain border" />
+                            <div className="flex justify-center gap-3">
+                              <Button type="button" onClick={handleUseCapturedPhoto} className="bg-green-600 hover:bg-green-700 text-white" 
+                                disabled={isProcessingPhoto || (cameraFor === 'accidentPhoto' && !canTakeMoreAccidentPhotos())}
+                              >
+                                {isProcessingPhoto ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
+                                {t('newClaimWizard.buttons.usePhoto')}
+                              </Button>
+                              <Button type="button" variant="outline" onClick={handleRetakeCapturedPhoto} disabled={isProcessingPhoto}>
+                                <CameraIcon className="mr-2 h-4 w-4" /> {t('newClaimWizard.buttons.retakePhoto')}
+                              </Button>
+                            </div>
+                        </div>
+                    )}
+                    {!canTakeMoreAccidentPhotos() && cameraFor === 'accidentPhoto' && <Alert variant="warning" className="mt-3"><AlertTriangle className="h-4 w-4" /><AlertTitle>{t('newClaimWizard.photoError.limitReachedTitle')}</AlertTitle><AlertDescription>{t('newClaimWizard.photoError.maxPhotos', {maxPhotos: MAX_ACCIDENT_PHOTOS})}</AlertDescription></Alert>}
+                </div>
+                 <div className="p-4 border-t flex justify-end">
+                    <Button variant="outline" onClick={closeCameraModal}>{t('newClaimWizard.buttons.closeCamera')}</Button>
+                </div>
+            </DialogContent>
+        </Dialog>
     </Card>
   );
 }
@@ -792,13 +935,11 @@ export function NewClaimWizard() {
 function ReviewItem({ label, value, preWrap = false }: { label: string; value: string | number; preWrap?: boolean}) {
   const { t } = useLanguage(); 
   return (
-    <div className="flex flex-col sm:flex-row py-1">
-      <strong className="w-full sm:w-1/3 text-sm text-muted-foreground">{label}:</strong>
-      <span className={`w-full sm:w-2/3 text-sm ${preWrap ? 'whitespace-pre-wrap break-words' : ''}`}>{value || t('common.notApplicableShort')}</span>
+    <div className="flex flex-col sm:flex-row py-1 text-sm">
+      <strong className="w-full sm:w-2/5 text-muted-foreground">{label}:</strong>
+      <span className={`w-full sm:w-3/5 ${preWrap ? 'whitespace-pre-wrap break-words' : 'truncate'}`}>{value || t('common.notApplicableShort')}</span>
     </div>
   );
 }
-
-    
 
     
