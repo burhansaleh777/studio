@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Smartphone, CreditCard as CreditCardIcon, DollarSign } from "lucide-react"; // Renamed to avoid conflict
+import { Smartphone, CreditCard as CreditCardIcon } from "lucide-react"; // Renamed to avoid conflict
 import Image from "next/image";
 
 const paymentSchema = z.object({
@@ -61,7 +61,7 @@ export function MobilePaymentForm() {
     <Card className="w-full max-w-lg mx-auto shadow-xl">
       <CardHeader>
         <CardTitle className="text-xl flex items-center">
-          <DollarSign className="h-6 w-6 mr-2 text-primary" /> Secure Payment
+          Secure Payment
         </CardTitle>
         <CardDescription>Pay for your insurance policy quickly and safely.</CardDescription>
       </CardHeader>
