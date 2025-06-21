@@ -2,7 +2,7 @@
 // @ts-nocheck
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch } from "react-hook-form";
 import * as z from "zod";
@@ -31,76 +31,17 @@ const userVehicles = [
   { id: "v3", name: "Honda Fit (T789 DEF)", policyNumber: "BIMA-003" },
 ];
 
-const claimSchemaStep1 = z.object({
-  vehicleId: z.string().min(1, "Please select a vehicle"),
-});
-
-const claimSchemaStep2 = z.object({
-  accidentDate: z.string().refine((date) => !isNaN(Date.parse(date)), { message: "Invalid date" }),
-  accidentTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Invalid time format (HH:MM)"),
-  accidentLocation: z.string().min(5, "Please provide a detailed location"),
-  accidentDescription: z.string().min(20, "Please describe the accident in detail (min 20 characters)"),
-});
-
-const MAX_ACCIDENT_PHOTOS = 4;
-
 const accidentPhotoInstructions = [
   { id: 'fullVehicle', titleKey: "newClaimWizard.photoInstructions.fullVehicle.title", descriptionKey: "newClaimWizard.photoInstructions.fullVehicle.description", isOptional: false },
   { id: 'damageCloseUp', titleKey: "newClaimWizard.photoInstructions.damageCloseUp.title", descriptionKey: "newClaimWizard.photoInstructions.damageCloseUp.description", isOptional: false },
   { id: 'surroundingArea', titleKey: "newClaimWizard.photoInstructions.surroundingArea.title", descriptionKey: "newClaimWizard.photoInstructions.surroundingArea.description", isOptional: false },
-  { id: 'otherVehicles', titleKey: "newClaimWizard.photoInstructions.otherVehicles.title", descriptionKey: "newClaimWizard.photoInstructions.otherVehicles.description", isOptional: true }, // Made this optional for example
+  { id: 'otherVehicles', titleKey: "newClaimWizard.photoInstructions.otherVehicles.title", descriptionKey: "newClaimWizard.photoInstructions.otherVehicles.description", isOptional: false },
 ];
 
-
-const claimSchemaStep3 = z.object({
-  accidentPhotos: z.array(z.instanceof(File))
-    .min(accidentPhotoInstructions.filter(p => !p.isOptional).length, `Please upload at least ${accidentPhotoInstructions.filter(p => !p.isOptional).length} accident photos covering all required types.`)
-    .max(MAX_ACCIDENT_PHOTOS, `Maximum ${MAX_ACCIDENT_PHOTOS} accident photos allowed.`)
-    .refine(files => {
-        if (!files) return false;
-        const uploadedInstructionIds = new Set(files.map(file => file.name.split('-')[0]));
-        
-        const allRequiredUploaded = accidentPhotoInstructions
-          .filter(p => !p.isOptional)
-          .every(p => uploadedInstructionIds.has(p.id));
-        
-        return files.length >= accidentPhotoInstructions.filter(p => !p.isOptional).length && allRequiredUploaded;
-    }, (files) => {
-        const allRequiredPhotoInstructions = accidentPhotoInstructions.filter(p => !p.isOptional);
-        const uploadedInstructionIds = new Set(files.map(file => file.name.split('-')[0]));
-        const missingRequiredTitles = allRequiredPhotoInstructions
-            .filter(p => !uploadedInstructionIds.has(p.id))
-            .map(p => p.titleKey) // Will be translated later
-            .join(', ');
-        
-        let message = `Please upload ${allRequiredPhotoInstructions.length} accident photos covering all required types. Missing: ${missingRequiredTitles}. Currently ${files?.length || 0} photos uploaded.`;
-        
-        return { message };
-    })
-});
+const MAX_ACCIDENT_PHOTOS = 4;
 
 // Define types for the document fields
 type DocumentField = "driverLicense" | "registrationCard" | "inspectionReport" | "repairEstimate" | "policeReport";
-
-const claimSchemaStep4 = z.object({
-  driverLicense: z.instanceof(File, { message: "Driver's License is required." }),
-  registrationCard: z.instanceof(File, { message: "Vehicle Registration Card is required." }),
-  inspectionReport: z.instanceof(File).optional(),
-  repairEstimate: z.instanceof(File).optional(),
-  policeReport: z.instanceof(File).optional(), // Kept as single for now, can be array later
-});
-
-
-const combinedSchema = claimSchemaStep1.merge(claimSchemaStep2).merge(claimSchemaStep3).merge(claimSchemaStep4);
-export type ClaimFormValues = z.infer<typeof combinedSchema>; // Exporting for potential external use
-
-const stepsConfig = [
-  { id: 1, titleKey: "newClaimWizard.steps.selectVehicle.title", icon: Car, schema: claimSchemaStep1, fields: ['vehicleId'] as const },
-  { id: 2, titleKey: "newClaimWizard.steps.accidentDetails.title", icon: FileTextIcon, schema: claimSchemaStep2, fields: ['accidentDate', 'accidentTime', 'accidentLocation', 'accidentDescription'] as const },
-  { id: 3, titleKey: "newClaimWizard.steps.uploadAccidentPhotos.title", icon: CameraIcon, schema: claimSchemaStep3, fields: ['accidentPhotos'] as const },
-  { id: 4, titleKey: "newClaimWizard.steps.uploadDocuments.title", icon: FileUp, schema: claimSchemaStep4, fields: ['driverLicense', 'registrationCard', 'inspectionReport', 'repairEstimate', 'policeReport'] as const },
-  { id: 5, titleKey: "newClaimWizard.steps.reviewSubmit.title", icon: CheckCircle, schema: z.object({}), fields: [] as const },
-];
 
 interface StoredClaim {
   id: string;
@@ -155,7 +96,71 @@ export function NewClaimWizard() {
   const [accidentPhotoPreviews, setAccidentPhotoPreviews] = useState<string[]>([]);
   const [documentPreviews, setDocumentPreviews] = useState<Partial<Record<DocumentField, string>>>({}); // Store data URIs for previews
 
-  const form = useForm<ClaimFormValues>({
+  const { combinedSchema, stepsConfig } = useMemo(() => {
+    const claimSchemaStep1 = z.object({
+      vehicleId: z.string().min(1, t('newClaimWizard.validationError.vehicleRequired')),
+    });
+
+    const claimSchemaStep2 = z.object({
+      accidentDate: z.string().refine((date) => !isNaN(Date.parse(date)), { message: t('newClaimWizard.validationError.invalidDate') }),
+      accidentTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, t('newClaimWizard.validationError.invalidTime')),
+      accidentLocation: z.string().min(5, t('newClaimWizard.validationError.locationTooShort')),
+      accidentDescription: z.string().min(20, t('newClaimWizard.validationError.descriptionTooShort')),
+    });
+    
+    const requiredPhotoCount = accidentPhotoInstructions.filter(p => !p.isOptional).length;
+
+    const claimSchemaStep3 = z.object({
+        accidentPhotos: z.array(z.instanceof(File))
+            .min(requiredPhotoCount, t('newClaimWizard.validationError.notEnoughPhotos', { count: requiredPhotoCount }))
+            .max(MAX_ACCIDENT_PHOTOS, t('newClaimWizard.validationError.tooManyPhotos', { max: MAX_ACCIDENT_PHOTOS }))
+            .refine(files => {
+                if (!files) return false;
+                const uploadedInstructionIds = new Set(files.map(file => file.name.split('-')[0]));
+                const allRequiredUploaded = accidentPhotoInstructions
+                    .filter(p => !p.isOptional)
+                    .every(p => uploadedInstructionIds.has(p.id));
+                return allRequiredUploaded;
+            }, (files) => {
+                const allRequiredPhotoInstructions = accidentPhotoInstructions.filter(p => !p.isOptional);
+                const uploadedInstructionIds = new Set((files || []).map(file => file.name.split('-')[0]));
+                const missingRequiredTitles = allRequiredPhotoInstructions
+                    .filter(p => !uploadedInstructionIds.has(p.id))
+                    .map(p => t(p.titleKey))
+                    .join(', ');
+
+                const message = t('newClaimWizard.validationError.missingSpecificPhotos', {
+                    requiredCount: allRequiredPhotoInstructions.length,
+                    missingTitles: missingRequiredTitles,
+                    currentCount: files?.length || 0,
+                });
+
+                return { message };
+            })
+    });
+
+    const claimSchemaStep4 = z.object({
+      driverLicense: z.instanceof(File, { message: t('newClaimWizard.validationError.driverLicenseRequired') }),
+      registrationCard: z.instanceof(File, { message: t('newClaimWizard.validationError.regCardRequired') }),
+      inspectionReport: z.instanceof(File).optional(),
+      repairEstimate: z.instanceof(File).optional(),
+      policeReport: z.instanceof(File).optional(),
+    });
+
+    const combinedSchema = claimSchemaStep1.merge(claimSchemaStep2).merge(claimSchemaStep3).merge(claimSchemaStep4);
+    
+    const stepsConfig = [
+      { id: 1, titleKey: "newClaimWizard.steps.selectVehicle.title", icon: Car, schema: claimSchemaStep1, fields: ['vehicleId'] as const },
+      { id: 2, titleKey: "newClaimWizard.steps.accidentDetails.title", icon: FileTextIcon, schema: claimSchemaStep2, fields: ['accidentDate', 'accidentTime', 'accidentLocation', 'accidentDescription'] as const },
+      { id: 3, titleKey: "newClaimWizard.steps.uploadAccidentPhotos.title", icon: CameraIcon, schema: claimSchemaStep3, fields: ['accidentPhotos'] as const },
+      { id: 4, titleKey: "newClaimWizard.steps.uploadDocuments.title", icon: FileUp, schema: claimSchemaStep4, fields: ['driverLicense', 'registrationCard', 'inspectionReport', 'repairEstimate', 'policeReport'] as const },
+      { id: 5, titleKey: "newClaimWizard.steps.reviewSubmit.title", icon: CheckCircle, schema: z.object({}), fields: [] as const },
+    ];
+
+    return { combinedSchema, stepsConfig };
+  }, [t]);
+
+  const form = useForm<z.infer<typeof combinedSchema>>({
     resolver: zodResolver(combinedSchema),
     mode: "onChange", 
     defaultValues: {
@@ -542,7 +547,7 @@ export function NewClaimWizard() {
        let errorMessage = t("newClaimWizard.validationError.defaultMessage");
        
        // More specific error messaging based on current step's fields
-       const errorKeys = Object.keys(errors) as Array<keyof ClaimFormValues>;
+       const errorKeys = Object.keys(errors) as Array<keyof z.infer<typeof combinedSchema>>;
        const relevantErrorField = errorKeys.find(key => fieldsToValidate.includes(key as any));
        
        if (relevantErrorField && errors[relevantErrorField]) {
@@ -562,7 +567,7 @@ export function NewClaimWizard() {
     setCurrentStep((prev) => prev - 1);
   };
 
-  function onSubmit(data: ClaimFormValues) {
+  function onSubmit(data: z.infer<typeof combinedSchema>) {
     const selectedVehicle = userVehicles.find(v => v.id === data.vehicleId);
 
     const documentCounts: Record<DocumentField, number> = {
@@ -871,6 +876,7 @@ export function NewClaimWizard() {
                                {cameraPermissionStatus === 'pending' && <Alert className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 text-white pointer-events-none"><Loader2 className="h-8 w-8 animate-spin text-primary" /><AlertDescription className="mt-2">{t('newClaimWizard.cameraMessages.initializing')}</AlertDescription></Alert>}
                                {cameraPermissionStatus === 'denied' && <Alert variant="destructive" className="absolute inset-0 m-auto max-w-sm max-h-40 flex flex-col items-center justify-center"><AlertTriangle className="h-5 w-5 mb-1" /><AlertTitle className="text-sm">{t('newClaimWizard.cameraError.accessDeniedTitle')}</AlertTitle><AlertDescription className="text-xs text-center">{t('newClaimWizard.cameraError.permissionDenied')}</AlertDescription></Alert>}
                                {cameraPermissionStatus === 'granted' && videoRef.current && !videoRef.current?.videoWidth && <Alert className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 text-white pointer-events-none"><AlertDescription>{t('newClaimWizard.cameraMessages.feedLoading')}</AlertDescription></Alert>}
+                               <canvas ref={canvasRef} className="hidden" />
                             </div>
                             <div className="flex flex-wrap gap-2 mt-2 justify-center">
                                 {cameraPermissionStatus === 'granted' && cameraFor === 'accidentPhoto' && currentAccidentPhotoGuide && !isEffectivelyAllAccidentInstructionsDone && (
@@ -941,4 +947,3 @@ function ReviewItem({ label, value, preWrap = false }: { label: string; value: s
     </div>
   );
 }
-
