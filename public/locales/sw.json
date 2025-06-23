@@ -2,12 +2,12 @@
 {
   "welcome": {
     "title": "Karibu Bima Hub",
-    "subtitle": "Bima ya kisasa, inayopatikana kwa urahisi kwa kila mtu nchini Tanzania. Pata bima ndani ya dakika.",
-    "loginButton": "Ingia Kwenye Akaunti Yangu",
-    "registerButton": "Fungua Akaunti Mpya",
+    "subtitle": "Mshirika wako wa kisasa wa bima nchini Tanzania. Pata makadirio ya bima, dhibiti sera zako, na wasilisha madai kwa urahisi.",
+    "loginButton": "Ingia",
+    "registerButton": "Jisajili",
     "promoImageAlt": "Familia ikitabasamu na kulindwa na ngao ya bima",
     "rightsReserved": "Haki zote zimehifadhiwa.",
-    "tagline": "Ngao Yako, Mustakabali Wako."
+    "tagline": "Bima, imerahisishwa."
   },
   "splashScreen": {
     "loading": "Tunaimarisha amani yako..."
