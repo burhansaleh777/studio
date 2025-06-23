@@ -2,12 +2,12 @@
 {
   "welcome": {
     "title": "Welcome to Bima Hub",
-    "subtitle": "Modern, accessible insurance for everyone in Tanzania. Get covered in minutes.",
-    "loginButton": "Login to My Account",
-    "registerButton": "Create a New Account",
+    "subtitle": "Your modern insurance partner in Tanzania. Get quotes, manage policies, and file claims with ease.",
+    "loginButton": "Login",
+    "registerButton": "Register",
     "promoImageAlt": "Family smiling and protected by an insurance shield",
     "rightsReserved": "All rights reserved.",
-    "tagline": "Your Shield, Your Future."
+    "tagline": "Insurance, Simplified."
   },
   "splashScreen": {
     "loading": "Securing your peace of mind..."
